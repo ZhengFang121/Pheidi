@@ -1,3 +1,8 @@
 @import './fonts.css';
 @import './colors.css';
 @import './typography.css';
+@import './spacing.css';
+@import './radius.css';
+@import './shadow.css';
+
+@import './components/button.css';

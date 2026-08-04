@@ -2,7 +2,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 
 import PrimeVue from 'primevue/config'
-import Aura from '@primevue/themes/aura'
+import PheidiPreset from './theme/pheidiPreset'
 
 import 'primeicons/primeicons.css'
 import './styles/index.css'
@@ -19,9 +19,12 @@ app.use(pinia)
 app.use(router)
 
 app.use(PrimeVue, {
-	theme: {
-		preset: Aura,
-	},
+  theme: {
+    preset: PheidiPreset,
+    options: {
+      darkModeSelector: false,
+    },
+  },
 })
 
 app.mount('#app')

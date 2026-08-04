@@ -1,0 +1,7 @@
+:root {
+	/* Shadow */
+
+	--shadow-sm: 0 2px 8px rgba(60, 67, 94, 0.06);
+	--shadow-md: 0 4px 12px rgba(60, 67, 94, 0.08);
+	--shadow-lg: 0 8px 24px rgba(60, 67, 94, 0.12);
+}
