@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import express from 'express'
 import { connectDatabase } from './config/database.js'
+import userRoutes from './routes/userRoutes.js'
 
 const app = express()
 const port = Number(process.env.PORT) || 3000
@@ -12,6 +13,8 @@ app.get('/', (_req, res) => {
     message: 'Pheidi the Runner API is running!',
   })
 })
+
+app.use('/api/users', userRoutes)
 
 const startServer = async () => {
   try {
