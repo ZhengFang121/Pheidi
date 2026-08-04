@@ -15,3 +15,6 @@ dist/
 # operating system
 .DS_Store
 Thumbs.db
+
+# local ai instructions
+AGENTS.md
