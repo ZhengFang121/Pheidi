@@ -1,14 +1,11 @@
 :root {
   /* Font Family */
-  --font-family-base: 'GenSenRounded', sans-serif;
+  --font-family-base: 'GenSenRounded', 'Noto Sans TC', sans-serif;
 
   /* Font Weight */
-  --font-weight-el: 200;
-  --font-weight-l: 300;
-  --font-weight-r: 400;
-  --font-weight-m: 500;
-  --font-weight-b: 700;
-  --font-weight-h: 900;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
 
   /* Font Size */
   --font-size-xs: 0.75rem; /* 12px */
@@ -34,7 +31,7 @@ html,
 body {
   font-family: var(--font-family-base);
   font-size: var(--font-size-base);
-  font-weight: var(--font-weight-r);
+  font-weight: var(--font-weight-regular);
   line-height: var(--line-height-base);
   letter-spacing: var(--letter-spacing-base);
 
