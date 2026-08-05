@@ -1,25 +1,15 @@
 <template>
   <header class="header">
-    <div class="logo">
-      🏃 Pheidi
-    </div>
+    <div class="logo">🏃 Pheidi</div>
 
     <nav class="nav">
-      <RouterLink class="nav-link" to="/">
-        首頁
-      </RouterLink>
+      <RouterLink class="nav-link" to="/"> 首頁 </RouterLink>
 
-      <RouterLink class="nav-link" to="/player">
-        玩家
-      </RouterLink>
+      <RouterLink class="nav-link" to="/player"> 玩家 </RouterLink>
 
-      <RouterLink class="nav-link" to="/quest">
-        任務
-      </RouterLink>
+      <RouterLink class="nav-link" to="/quest"> 任務 </RouterLink>
 
-      <RouterLink class="nav-link" to="/community">
-        交流大廳
-      </RouterLink>
+      <RouterLink class="nav-link" to="/community"> 交流大廳 </RouterLink>
     </nav>
   </header>
 </template>

@@ -1,7 +1,3 @@
 <template>
-
-  <h1>
-    交流大廳
-  </h1>
-
+  <h1>交流大廳</h1>
 </template>

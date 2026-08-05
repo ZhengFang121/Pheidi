@@ -8,41 +8,40 @@ import QuestPage from '@/views/QuestPage.vue'
 import CommunityPage from '@/views/CommunityPage.vue'
 
 const router = createRouter({
-	history: createWebHistory(),
+  history: createWebHistory(),
 
-	routes: [
-		{
-			path: '/',
-			component: MainLayout,
+  routes: [
+    {
+      path: '/',
+      component: MainLayout,
 
-			children: [
-				{
-					path: '',
-					name: 'home',
-					component: HomePage,
-				},
+      children: [
+        {
+          path: '',
+          name: 'home',
+          component: HomePage,
+        },
 
-				{
-					path: 'player',
-					name: 'player',
-					component: PlayerPage,
-				},
+        {
+          path: 'player',
+          name: 'player',
+          component: PlayerPage,
+        },
 
-				{
-					path: 'quest',
-					name: 'quest',
-					component: QuestPage,
-				},
+        {
+          path: 'quest',
+          name: 'quest',
+          component: QuestPage,
+        },
 
-				{
-					path: 'community',
-					name: 'community',
-					component: CommunityPage,
-				},
-
-			],
-		},
-	],
+        {
+          path: 'community',
+          name: 'community',
+          component: CommunityPage,
+        },
+      ],
+    },
+  ],
 })
 
 export default router

@@ -1,35 +1,35 @@
 :root {
-	/* Sky - 自由、開始奔跑 */
-	--color-primary: #5bd0d4;
-	--color-primary-light: #8bdfdd;
-	--color-primary-soft: #b4ebe6;
+  /* Sky - 自由、開始奔跑 */
+  --color-primary: #5bd0d4;
+  --color-primary-light: #8bdfdd;
+  --color-primary-soft: #b4ebe6;
 
-	/* Grass - 成長、生命力 */
-	--color-secondary: #c5e0a6;
-	--color-secondary-light: #d9efc2;
-	--color-secondary-soft: #ebf4e1;
+  /* Grass - 成長、生命力 */
+  --color-secondary: #c5e0a6;
+  --color-secondary-light: #d9efc2;
+  --color-secondary-soft: #ebf4e1;
 
-	/* Sunrise - 能量、任務、成就 */
-	--color-accent: #ff9c46;
-	--color-accent-light: #ffe394;
-	--color-accent-soft: #fff6de;
+  /* Sunrise - 能量、任務、成就 */
+  --color-accent: #ff9c46;
+  --color-accent-light: #ffe394;
+  --color-accent-soft: #fff6de;
 
-	/*  Sunset - 沉澱、夜晚模式 */
-	--color-dark: #3c435e;
-	--color-dark-purple: #9b8ec7;
-	--color-dark-soft: #bda6ce;
-	--color-dark-sky: #9bc3c9;
+  /*  Sunset - 沉澱、夜晚模式 */
+  --color-dark: #3c435e;
+  --color-dark-purple: #9b8ec7;
+  --color-dark-soft: #bda6ce;
+  --color-dark-sky: #9bc3c9;
 
-	/* System Colors */
-	--color-success: #8bcb8b;
-	--color-warning: #f6b65b;
-	--color-error: #e98b8b;
+  /* System Colors */
+  --color-success: #8bcb8b;
+  --color-warning: #f6b65b;
+  --color-error: #e98b8b;
 
-	/* Neutral Colors  */
-	--color-text: #3c435e;
-	--color-text-secondary: #6f7185;
-	--color-background: #f8fcfc;
-	--color-background-soft: #ebf4e1;
-	--color-surface: #ffffff;
-	--color-border: #dce8e8;
+  /* Neutral Colors  */
+  --color-text: #3c435e;
+  --color-text-secondary: #6f7185;
+  --color-background: #f8fcfc;
+  --color-background-soft: #ebf4e1;
+  --color-surface: #ffffff;
+  --color-border: #dce8e8;
 }

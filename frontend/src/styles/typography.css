@@ -1,47 +1,47 @@
 :root {
-	/* Font Family */
-	--font-family-base: 'GenSenRounded', sans-serif;
+  /* Font Family */
+  --font-family-base: 'GenSenRounded', sans-serif;
 
-	/* Font Weight */
-	--font-weight-el: 200;
-	--font-weight-l: 300;
-	--font-weight-r: 400;
-	--font-weight-m: 500;
-	--font-weight-b: 700;
-	--font-weight-h: 900;
+  /* Font Weight */
+  --font-weight-el: 200;
+  --font-weight-l: 300;
+  --font-weight-r: 400;
+  --font-weight-m: 500;
+  --font-weight-b: 700;
+  --font-weight-h: 900;
 
-	/* Font Size */
-	--font-size-xs: 0.75rem; /* 12px */
-	--font-size-sm: 0.875rem; /* 14px */
-	--font-size-base: 1rem; /* 16px */
-	--font-size-md: 1.5rem; /* 24px */
-	--font-size-lg: 2rem; /* 32px */
-	--font-size-xl: 2.5rem; /* 40px */
-	--font-size-display: 3.5rem; /* 56px */
+  /* Font Size */
+  --font-size-xs: 0.75rem; /* 12px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-base: 1rem; /* 16px */
+  --font-size-md: 1.5rem; /* 24px */
+  --font-size-lg: 2rem; /* 32px */
+  --font-size-xl: 2.5rem; /* 40px */
+  --font-size-display: 3.5rem; /* 56px */
 
-	/* Line Height */
-	--line-height-tight: 1.2;
-	--line-height-heading: 1.4;
-	--line-height-base: 1.7;
+  /* Line Height */
+  --line-height-tight: 1.2;
+  --line-height-heading: 1.4;
+  --line-height-base: 1.7;
 
-	/* Letter Spacing */
-	--letter-spacing-tight: -0.02em; /* -0.32px */
-	--letter-spacing-base: 0;
-	--letter-spacing-wide: 0.05em; /* 0.8px */
+  /* Letter Spacing */
+  --letter-spacing-tight: -0.02em; /* -0.32px */
+  --letter-spacing-base: 0;
+  --letter-spacing-wide: 0.05em; /* 0.8px */
 }
 
 html,
 body {
-	font-family: var(--font-family-base);
-	font-size: var(--font-size-base);
-	font-weight: var(--font-weight-r);
-	line-height: var(--line-height-base);
-	letter-spacing: var(--letter-spacing-base);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-r);
+  line-height: var(--line-height-base);
+  letter-spacing: var(--letter-spacing-base);
 
-	color: var(--color-text);
-	background: var(--color-background);
+  color: var(--color-text);
+  background: var(--color-background);
 }
 
 #app {
-	font-family: inherit;
+  font-family: inherit;
 }

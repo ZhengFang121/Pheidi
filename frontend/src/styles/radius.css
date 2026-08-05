@@ -1,9 +1,9 @@
 :root {
-	/* Radius */
+  /* Radius */
 
-	--radius-sm: 0.5rem; /* 8px */
-	--radius-md: 0.75rem; /* 12px */
-	--radius-lg: 1.25rem; /* 20px */
-	--radius-xl: 2rem; /* 32px */
-	--radius-full: 9999px;
+  --radius-sm: 0.5rem; /* 8px */
+  --radius-md: 0.75rem; /* 12px */
+  --radius-lg: 1.25rem; /* 20px */
+  --radius-xl: 2rem; /* 32px */
+  --radius-full: 9999px;
 }

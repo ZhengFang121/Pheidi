@@ -1,27 +1,15 @@
 <template>
-
-<footer class="footer">
-
-<p>
-© 2026 Pheidi the Runner
-</p>
-
-</footer>
-
-
+  <footer class="footer">
+    <p>© 2026 Pheidi the Runner</p>
+  </footer>
 </template>
 
-
 <style scoped>
-
 .footer {
+  padding: 30px;
 
-padding:30px;
+  text-align: center;
 
-text-align:center;
-
-border-top:1px solid #ddd;
-
+  border-top: 1px solid #ddd;
 }
-
 </style>
