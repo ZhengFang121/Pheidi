@@ -22,9 +22,9 @@
   --line-height-base: 1.7;
 
   /* Letter Spacing */
-  --letter-spacing-tight: -0.02em; /* -0.32px */
-  --letter-spacing-base: 0;
-  --letter-spacing-wide: 0.05em; /* 0.8px */
+  --letter-spacing-tight: 0.05em;
+  --letter-spacing-base: 0.1em;
+  --letter-spacing-wide: 0.2em;
 }
 
 html,
