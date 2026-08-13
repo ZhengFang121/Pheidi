@@ -1,15 +1,29 @@
 <template>
   <header class="header">
-    <div class="logo">🏃 Pheidi</div>
+    <RouterLink to="/" class="logo">
+      <img src="/logo.svg" alt="跑者菲迪" />
+    </RouterLink>
 
     <nav class="nav">
-      <RouterLink class="nav-link" to="/"> 首頁 </RouterLink>
+      <RouterLink class="nav-link" to="/">
+        <span class="nav-label">首頁</span>
+        <span class="nav-label-en">Home</span>
+      </RouterLink>
 
-      <RouterLink class="nav-link" to="/player"> 玩家 </RouterLink>
+      <RouterLink class="nav-link" to="/player">
+        <span class="nav-label">足跡驛站</span>
+        <span class="nav-label-en">Trail Station</span>
+      </RouterLink>
 
-      <RouterLink class="nav-link" to="/quest"> 任務 </RouterLink>
+      <RouterLink class="nav-link" to="/quest">
+        <span class="nav-label">跑者學院</span>
+        <span class="nav-label-en">Runner Academy</span>
+      </RouterLink>
 
-      <RouterLink class="nav-link" to="/community"> 交流大廳 </RouterLink>
+      <RouterLink class="nav-link" to="/community">
+        <span class="nav-label">菲迪廣場</span>
+        <span class="nav-label-en">Pheidi Plaza</span>
+      </RouterLink>
     </nav>
   </header>
 </template>
@@ -28,10 +42,13 @@
 }
 
 .logo {
-  font-family: var(--font-family-base);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-b);
-  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo img {
+  height: 55px;
 }
 
 .nav {
@@ -40,14 +57,28 @@
 }
 
 .nav-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+
   color: var(--color-text);
   text-decoration: none;
 
   font-family: var(--font-family-base);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-m);
+  font-weight: var(--font-weight-medium);
 
   transition: color 0.2s ease;
+}
+
+.nav-label {
+  font-size: var(--font-size-base);
+  line-height: 1.2;
+}
+
+.nav-label-en {
+  font-size: 12px;
+  line-height: 1.2;
 }
 
 .nav-link:hover {
@@ -56,6 +87,6 @@
 
 .nav-link.router-link-active {
   color: var(--color-primary);
-  font-weight: var(--font-weight-b);
+  font-weight: var(--font-weight-bold);
 }
 </style>

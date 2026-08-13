@@ -3,7 +3,7 @@
 /* Regular */
 @font-face {
   font-family: "GenSenRounded";
-  src: url("/fonts/GenSenRounded2TW-R.woff2") format("woff2");
+  src: url("../assets/fonts/gensen/GenSenRounded2TW-R.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -12,7 +12,7 @@
 /* Medium */
 @font-face {
   font-family: "GenSenRounded";
-  src: url("/fonts/GenSenRounded2TW-M.woff2") format("woff2");
+  src: url("../assets/fonts/gensen/GenSenRounded2TW-M.otf") format("opentype");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -21,7 +21,7 @@
 /* Bold */
 @font-face {
   font-family: "GenSenRounded";
-  src: url("/fonts/GenSenRounded2TW-B.woff2") format("woff2");
+  src: url("../assets/fonts/gensen/GenSenRounded2TW-B.otf") format("opentype");
   font-weight: 700;
   font-style: normal;
   font-display: swap;

@@ -1,6 +1,6 @@
 <template>
   <footer class="footer">
-    <p>© 2026 Pheidi the Runner</p>
+    <p>© 2026 PHEIDI THE RUNNER</p>
   </footer>
 </template>
 
