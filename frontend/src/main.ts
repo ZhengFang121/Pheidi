@@ -6,6 +6,7 @@ import PheidiPreset from './theme/pheidiPreset'
 
 import 'primeicons/primeicons.css'
 import './styles/index.css'
+import './styles/base.css'
 
 import App from './App.vue'
 import router from './router'

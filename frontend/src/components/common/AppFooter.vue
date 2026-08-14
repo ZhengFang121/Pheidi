@@ -6,10 +6,17 @@
 
 <style scoped>
 .footer {
-  padding: 30px;
+  width: 100%;
+  padding: var(--space-4) var(--space-3);
 
+  color: var(--color-primary-pale);
   text-align: center;
+  letter-spacing: var(--letter-spacing-wide);
 
-  border-top: 1px solid #ddd;
+  background-color: var(--color-primary-light);
+}
+
+.footer p {
+  margin: 0;
 }
 </style>

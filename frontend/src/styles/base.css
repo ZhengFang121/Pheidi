@@ -1,0 +1,47 @@
+:root {
+  --layout-max-width: 1440px;
+  --layout-gutter: 32px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  color: var(--color-text);
+  background: var(--color-background);
+}
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.layout-container {
+  width: 100%;
+  max-width: var(--layout-max-width);
+  margin-inline: auto;
+  padding-inline: var(--layout-gutter);
+}
+
+@media (max-width: 768px) {
+  :root {
+    --layout-gutter: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --layout-gutter: 16px;
+  }
+}
