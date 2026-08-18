@@ -1,10 +1,18 @@
 import 'dotenv/config'
+import cors from 'cors'
 import express from 'express'
 import { connectDatabase } from './config/database.js'
 import userRoutes from './routes/userRoutes.js'
 
 const app = express()
 const port = Number(process.env.PORT) || 3000
+const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
+
+app.use(
+  cors({
+    origin: clientOrigin,
+  }),
+)
 
 app.use(express.json())
 
