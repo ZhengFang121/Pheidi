@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt'
-import { Schema, model } from 'mongoose'
+import { Schema, model, type Model } from 'mongoose'
 
 export interface IUser {
   username: string
@@ -8,7 +8,11 @@ export interface IUser {
   role: 'player' | 'admin'
 }
 
-const userSchema = new Schema<IUser>(
+interface UserMethods {
+  comparePassword(candidatePassword: string): Promise<boolean>
+}
+
+const userSchema = new Schema<IUser, Model<IUser>, UserMethods>(
   {
     username: {
       type: String,
@@ -38,6 +42,11 @@ const userSchema = new Schema<IUser>(
   },
   {
     timestamps: true,
+    methods: {
+      async comparePassword(candidatePassword: string) {
+        return bcrypt.compare(candidatePassword, this.password)
+      },
+    },
   },
 )
 
@@ -47,6 +56,6 @@ userSchema.pre('save', async function () {
   this.password = await bcrypt.hash(this.password, 12)
 })
 
-const User = model<IUser>('User', userSchema)
+const User = model('User', userSchema)
 
 export default User
