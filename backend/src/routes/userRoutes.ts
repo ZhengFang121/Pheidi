@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import jwt from 'jsonwebtoken'
+import { authenticateToken } from '../middleware/authMiddleware.js'
 import User from '../models/User.js'
 
 const router = Router()
@@ -62,6 +63,42 @@ router.post('/login', async (req, res) => {
 
     res.status(500).json({
       message: '登入失敗，請稍後再試',
+    })
+  }
+})
+
+router.get('/me', authenticateToken, async (req, res) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({
+        message: '請先登入',
+      })
+      return
+    }
+
+    const user = await User.findById(req.user.userId)
+
+    if (!user) {
+      res.status(404).json({
+        message: '找不到使用者',
+      })
+      return
+    }
+
+    res.status(200).json({
+      message: '取得使用者資料成功',
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+    })
+  } catch (error) {
+    console.error('Failed to get current user:', error)
+
+    res.status(500).json({
+      message: '取得使用者資料失敗',
     })
   }
 })
