@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, type FormSubmitEvent } from '@primevue/forms'
+import { isAxiosError } from 'axios'
 import Button from 'primevue/button'
 import Checkbox from 'primevue/checkbox'
 import InputText from 'primevue/inputtext'
@@ -10,6 +11,27 @@ import TabList from 'primevue/tablist'
 import TabPanel from 'primevue/tabpanel'
 import TabPanels from 'primevue/tabpanels'
 import Tabs from 'primevue/tabs'
+import { ref } from 'vue'
+
+import api from '@/services/api'
+
+interface RegisterResponse {
+  message: string
+  user: {
+    id: string
+    username: string
+    email: string
+    role: 'player' | 'admin'
+  }
+}
+
+interface ApiErrorResponse {
+  message?: string
+}
+
+const isRegistering = ref(false)
+const registerSuccessMessage = ref('')
+const registerErrorMessage = ref('')
 
 const loginInitialValues = {
   email: '',
@@ -38,7 +60,7 @@ const loginResolver = ({ values }: { values: Record<string, unknown> }) => {
 }
 
 const registerInitialValues = {
-  runnerName: '',
+  username: '',
   email: '',
   password: '',
   confirmPassword: '',
@@ -47,14 +69,14 @@ const registerInitialValues = {
 
 const registerResolver = ({ values }: { values: Record<string, unknown> }) => {
   const errors: Record<string, { message: string }[]> = {}
-  const runnerName = String(values.runnerName ?? '').trim()
+  const username = String(values.username ?? '').trim()
   const email = String(values.email ?? '').trim()
   const password = String(values.password ?? '')
   const confirmPassword = String(values.confirmPassword ?? '')
   const agreeToTerms = Boolean(values.agreeToTerms)
 
-  if (!runnerName) {
-    errors.runnerName = [{ message: '請輸入跑者名稱' }]
+  if (!username) {
+    errors.username = [{ message: '請輸入跑者名稱' }]
   }
 
   if (!email) {
@@ -117,18 +139,36 @@ const getFormValues = (event: FormSubmitEvent) => {
 
 const handleLogin = (event: FormSubmitEvent) => {
   if (!event.valid) return
-
-  const values = getFormValues(event)
-
-  console.log('登入資料：', values)
 }
 
-const handleRegister = (event: FormSubmitEvent) => {
+const handleRegister = async (event: FormSubmitEvent) => {
+  registerSuccessMessage.value = ''
+  registerErrorMessage.value = ''
+
   if (!event.valid) return
 
   const values = getFormValues(event)
 
-  console.log('註冊資料：', values)
+  isRegistering.value = true
+
+  try {
+    const response = await api.post<RegisterResponse>('/users', {
+      username: String(values.username ?? '').trim(),
+      email: String(values.email ?? '').trim(),
+      password: String(values.password ?? ''),
+    })
+
+    registerSuccessMessage.value = response.data.message
+    event.reset()
+  } catch (error: unknown) {
+    if (isAxiosError<ApiErrorResponse>(error)) {
+      registerErrorMessage.value = error.response?.data.message ?? '無法建立帳號，請稍後再試'
+    } else {
+      registerErrorMessage.value = '發生未預期的錯誤，請稍後再試'
+    }
+  } finally {
+    isRegistering.value = false
+  }
 }
 </script>
 
@@ -230,19 +270,19 @@ const handleRegister = (event: FormSubmitEvent) => {
 
                 <InputText
                   id="runner-name"
-                  name="runnerName"
+                  name="username"
                   type="text"
                   autocomplete="nickname"
                   placeholder="請輸入跑者名稱"
                   fluid
                 />
                 <Message
-                  v-if="$form.runnerName?.invalid"
+                  v-if="$form.username?.invalid"
                   severity="error"
                   size="small"
                   variant="simple"
                 >
-                  {{ $form.runnerName.error?.message }}
+                  {{ $form.username.error?.message }}
                 </Message>
               </div>
 
@@ -349,7 +389,34 @@ const handleRegister = (event: FormSubmitEvent) => {
                 </Message>
               </div>
 
-              <Button class="account-submit" type="submit" label="建立帳號" fluid />
+              <Message
+                v-if="registerSuccessMessage"
+                severity="success"
+                size="small"
+                variant="simple"
+                aria-live="polite"
+              >
+                {{ registerSuccessMessage }}
+              </Message>
+
+              <Message
+                v-if="registerErrorMessage"
+                severity="error"
+                size="small"
+                variant="simple"
+                aria-live="polite"
+              >
+                {{ registerErrorMessage }}
+              </Message>
+
+              <Button
+                class="account-submit"
+                type="submit"
+                label="建立帳號"
+                :loading="isRegistering"
+                :disabled="isRegistering"
+                fluid
+              />
             </Form>
           </TabPanel>
         </TabPanels>
