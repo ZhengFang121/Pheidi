@@ -27,6 +27,7 @@ const userSchema = new Schema<IUser, Model<IUser>, UserMethods>(
       unique: true,
       trim: true,
       lowercase: true,
+      match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     },
     password: {
       type: String,

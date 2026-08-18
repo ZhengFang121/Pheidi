@@ -4,6 +4,11 @@ import { authenticateToken } from '../middleware/authMiddleware.js'
 import User from '../models/User.js'
 
 const router = Router()
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const isDuplicateKeyError = (error: unknown) => {
+  return typeof error === 'object' && error !== null && Reflect.get(error, 'code') === 11000
+}
 
 router.post('/login', async (req, res) => {
   try {
@@ -105,16 +110,47 @@ router.get('/me', authenticateToken, async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { username, email, password } = req.body
+    const { username, email, password } = req.body ?? {}
 
-    if (!username || !email || !password) {
+    if (
+      typeof username !== 'string' ||
+      typeof email !== 'string' ||
+      typeof password !== 'string' ||
+      !username.trim() ||
+      !email.trim() ||
+      !password
+    ) {
       res.status(400).json({
         message: 'username、email 和 password 都是必填欄位',
       })
       return
     }
 
-    const existingUser = await User.findOne({ email })
+    const normalizedUsername = username.trim()
+    const normalizedEmail = email.trim().toLowerCase()
+
+    if (normalizedUsername.length < 2 || normalizedUsername.length > 20) {
+      res.status(400).json({
+        message: '跑者名稱需要 2 到 20 個字元',
+      })
+      return
+    }
+
+    if (!emailPattern.test(normalizedEmail)) {
+      res.status(400).json({
+        message: '請輸入正確的電子信箱格式',
+      })
+      return
+    }
+
+    if (password.length < 8) {
+      res.status(400).json({
+        message: '密碼至少需要 8 個字元',
+      })
+      return
+    }
+
+    const existingUser = await User.findOne({ email: normalizedEmail })
 
     if (existingUser) {
       res.status(409).json({
@@ -124,8 +160,8 @@ router.post('/', async (req, res) => {
     }
 
     const user = await User.create({
-      username,
-      email,
+      username: normalizedUsername,
+      email: normalizedEmail,
       password,
     })
 
@@ -139,6 +175,13 @@ router.post('/', async (req, res) => {
       },
     })
   } catch (error) {
+    if (isDuplicateKeyError(error)) {
+      res.status(409).json({
+        message: '這個 Email 已經註冊',
+      })
+      return
+    }
+
     console.error('Failed to create user:', error)
 
     res.status(500).json({
