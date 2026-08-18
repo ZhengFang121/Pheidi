@@ -19,7 +19,8 @@ const router = createRouter({
      * 所以不會顯示登入後導覽列與 Footer。
      */
     {
-      path: '/intro',
+      path: '/',
+      alias: '/intro',
       name: 'intro',
       component: IntroPage,
     },
@@ -31,34 +32,36 @@ const router = createRouter({
 
     /*
      * 登入後頁面統一放在 MainLayout 裡。
+     * 子路由使用絕對路徑，保留原本的頁面網址。
      */
     {
-      path: '/',
+      path: '/app',
       component: MainLayout,
+      redirect: '/home',
 
       children: [
         {
-          path: '',
+          path: '/home',
           name: 'home',
           component: HomePage,
         },
         {
-          path: 'station',
+          path: '/station',
           name: 'station',
           component: StationPage,
         },
         {
-          path: 'academy',
+          path: '/academy',
           name: 'academy',
           component: AcademyPage,
         },
         {
-          path: 'plaza',
+          path: '/plaza',
           name: 'plaza',
           component: PlazaPage,
         },
         {
-          path: 'account',
+          path: '/account',
           name: 'account',
           component: AccountPage,
         },

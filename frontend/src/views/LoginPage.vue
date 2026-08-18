@@ -15,13 +15,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import api from '@/services/api'
-
-interface AuthUser {
-  id: string
-  username: string
-  email: string
-  role: 'player' | 'admin'
-}
+import { useAuthStore, type AuthUser } from '@/stores/auth'
 
 interface RegisterResponse {
   message: string
@@ -38,10 +32,11 @@ interface ApiErrorResponse {
   message?: string
 }
 
-const authTokenKey = 'pheidi_auth_token'
-const authUserKey = 'pheidi_auth_user'
-
 const router = useRouter()
+const authStore = useAuthStore()
+
+const rememberedEmailKey = 'pheidi_remembered_email'
+const rememberedEmail = localStorage.getItem(rememberedEmailKey) ?? ''
 
 const isLoggingIn = ref(false)
 const loginSuccessMessage = ref('')
@@ -51,9 +46,10 @@ const registerSuccessMessage = ref('')
 const registerErrorMessage = ref('')
 
 const loginInitialValues = {
-  email: '',
+  email: rememberedEmail,
   password: '',
-  remember: false,
+  rememberEmail: Boolean(rememberedEmail),
+  keepSignedIn: false,
 }
 
 const loginResolver = ({ values }: { values: Record<string, unknown> }) => {
@@ -161,29 +157,33 @@ const handleLogin = async (event: FormSubmitEvent) => {
   if (!event.valid) return
 
   const values = getFormValues(event)
-  const remember = Boolean(values.remember)
+  const email = String(values.email ?? '').trim()
+  const rememberEmail = Boolean(values.rememberEmail)
+  const keepSignedIn = Boolean(values.keepSignedIn)
 
   isLoggingIn.value = true
 
   try {
     const response = await api.post<LoginResponse>('/users/login', {
-      email: String(values.email ?? '').trim(),
+      email,
       password: String(values.password ?? ''),
     })
 
-    localStorage.removeItem(authTokenKey)
-    localStorage.removeItem(authUserKey)
-    sessionStorage.removeItem(authTokenKey)
-    sessionStorage.removeItem(authUserKey)
+    if (rememberEmail) {
+      localStorage.setItem(rememberedEmailKey, email)
+    } else {
+      localStorage.removeItem(rememberedEmailKey)
+    }
 
-    const storage = remember ? localStorage : sessionStorage
-
-    storage.setItem(authTokenKey, response.data.token)
-    storage.setItem(authUserKey, JSON.stringify(response.data.user))
+    authStore.setAuth({
+      token: response.data.token,
+      user: response.data.user,
+      keepSignedIn,
+    })
 
     loginSuccessMessage.value = response.data.message
 
-    await router.push('/')
+    await router.push('/home')
   } catch (error: unknown) {
     if (isAxiosError<ApiErrorResponse>(error)) {
       loginErrorMessage.value = error.response?.data.message ?? '無法登入，請稍後再試'
@@ -295,11 +295,27 @@ const handleRegister = async (event: FormSubmitEvent) => {
                 </Message>
               </div>
 
-              <div class="account-form__options">
-                <div class="remember-option">
-                  <Checkbox input-id="remember" name="remember" binary />
+              <div class="account-form__preferences">
+                <div class="login-preferences">
+                  <div class="login-preference">
+                    <Checkbox
+                      input-id="remember-email"
+                      name="rememberEmail"
+                      binary
+                    />
 
-                  <label for="remember">記住我</label>
+                    <label for="remember-email">記住電子信箱</label>
+                  </div>
+
+                  <div class="login-preference">
+                    <Checkbox
+                      input-id="keep-signed-in"
+                      name="keepSignedIn"
+                      binary
+                    />
+
+                    <label for="keep-signed-in">維持登入狀態</label>
+                  </div>
                 </div>
 
                 <button class="forgot-password" type="button">忘記密碼？</button>
@@ -601,14 +617,20 @@ const handleRegister = async (event: FormSubmitEvent) => {
   line-height: var(--line-height-heading);
 }
 
-.account-form__options {
+.account-form__preferences {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-4);
 }
 
-.remember-option {
+.login-preferences {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.login-preference {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -616,7 +638,7 @@ const handleRegister = async (event: FormSubmitEvent) => {
   font-size: var(--font-size-sm);
 }
 
-.remember-option label {
+.login-preference label {
   cursor: pointer;
 }
 
