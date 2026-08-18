@@ -12,23 +12,40 @@ import TabPanel from 'primevue/tabpanel'
 import TabPanels from 'primevue/tabpanels'
 import Tabs from 'primevue/tabs'
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 import api from '@/services/api'
 
+interface AuthUser {
+  id: string
+  username: string
+  email: string
+  role: 'player' | 'admin'
+}
+
 interface RegisterResponse {
   message: string
-  user: {
-    id: string
-    username: string
-    email: string
-    role: 'player' | 'admin'
-  }
+  user: AuthUser
+}
+
+interface LoginResponse {
+  message: string
+  token: string
+  user: AuthUser
 }
 
 interface ApiErrorResponse {
   message?: string
 }
 
+const authTokenKey = 'pheidi_auth_token'
+const authUserKey = 'pheidi_auth_user'
+
+const router = useRouter()
+
+const isLoggingIn = ref(false)
+const loginSuccessMessage = ref('')
+const loginErrorMessage = ref('')
 const isRegistering = ref(false)
 const registerSuccessMessage = ref('')
 const registerErrorMessage = ref('')
@@ -137,8 +154,45 @@ const getFormValues = (event: FormSubmitEvent) => {
   )
 }
 
-const handleLogin = (event: FormSubmitEvent) => {
+const handleLogin = async (event: FormSubmitEvent) => {
+  loginSuccessMessage.value = ''
+  loginErrorMessage.value = ''
+
   if (!event.valid) return
+
+  const values = getFormValues(event)
+  const remember = Boolean(values.remember)
+
+  isLoggingIn.value = true
+
+  try {
+    const response = await api.post<LoginResponse>('/users/login', {
+      email: String(values.email ?? '').trim(),
+      password: String(values.password ?? ''),
+    })
+
+    localStorage.removeItem(authTokenKey)
+    localStorage.removeItem(authUserKey)
+    sessionStorage.removeItem(authTokenKey)
+    sessionStorage.removeItem(authUserKey)
+
+    const storage = remember ? localStorage : sessionStorage
+
+    storage.setItem(authTokenKey, response.data.token)
+    storage.setItem(authUserKey, JSON.stringify(response.data.user))
+
+    loginSuccessMessage.value = response.data.message
+
+    await router.push('/')
+  } catch (error: unknown) {
+    if (isAxiosError<ApiErrorResponse>(error)) {
+      loginErrorMessage.value = error.response?.data.message ?? '無法登入，請稍後再試'
+    } else {
+      loginErrorMessage.value = '發生未預期的錯誤，請稍後再試'
+    }
+  } finally {
+    isLoggingIn.value = false
+  }
 }
 
 const handleRegister = async (event: FormSubmitEvent) => {
@@ -251,7 +305,34 @@ const handleRegister = async (event: FormSubmitEvent) => {
                 <button class="forgot-password" type="button">忘記密碼？</button>
               </div>
 
-              <Button class="account-submit" type="submit" label="登入" fluid />
+              <Message
+                v-if="loginSuccessMessage"
+                severity="success"
+                size="small"
+                variant="simple"
+                aria-live="polite"
+              >
+                {{ loginSuccessMessage }}
+              </Message>
+
+              <Message
+                v-if="loginErrorMessage"
+                severity="error"
+                size="small"
+                variant="simple"
+                aria-live="polite"
+              >
+                {{ loginErrorMessage }}
+              </Message>
+
+              <Button
+                class="account-submit"
+                type="submit"
+                label="登入"
+                :loading="isLoggingIn"
+                :disabled="isLoggingIn"
+                fluid
+              />
             </Form>
           </TabPanel>
 
