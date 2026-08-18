@@ -4,7 +4,7 @@
       <Menubar :model="navigationItems" aria-label="主要導覽列" class="main-menu">
         <!-- Logo -->
         <template #start>
-          <RouterLink to="/" class="logo-link" aria-label="回到首頁">
+          <RouterLink to="/home" class="logo-link" aria-label="回到首頁">
             <img src="/logo.svg" alt="跑者菲迪 Pheidi the Runner" class="logo-image" />
           </RouterLink>
         </template>
@@ -142,6 +142,8 @@ import {
   SportShoe,
 } from '@lucide/vue'
 
+import { useAuthStore } from '@/stores/auth'
+
 interface NavigationItem extends MenuItem {
   labelEn?: string
   route?: string
@@ -153,6 +155,7 @@ interface AccountMenuItem extends MenuItem {
 }
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 const accountMenu = ref<InstanceType<typeof Menu> | null>(null)
 
@@ -163,13 +166,10 @@ function toggleAccountMenu(event: MouseEvent) {
   accountMenu.value?.toggle(event)
 }
 
-function handleLogout() {
-  /*
-   * 之後完成登入功能時，
-   * 在這裡清除 Pinia、Token 與使用者資料。
-   */
+async function handleLogout() {
+  authStore.logout()
 
-  router.replace('/intro')
+  await router.replace('/')
 }
 
 const accountItems = ref<AccountMenuItem[]>([

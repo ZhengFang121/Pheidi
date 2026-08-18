@@ -1,5 +1,4 @@
 import { createApp } from 'vue'
-import { createPinia } from 'pinia'
 
 import PrimeVue from 'primevue/config'
 import PheidiPreset from './theme/pheidiPreset'
@@ -10,10 +9,9 @@ import './styles/base.css'
 
 import App from './App.vue'
 import router from './router'
+import pinia from './stores'
 
 const app = createApp(App)
-
-const pinia = createPinia()
 
 app.use(pinia)
 
