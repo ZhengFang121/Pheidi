@@ -2,10 +2,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import MainLayout from '@/layouts/MainLayout.vue'
 
+import IntroPage from '@/views/IntroPage.vue'
+import LoginPage from '@/views/LoginPage.vue'
 import AccountPage from '@/views/AccountPage.vue'
 import AcademyPage from '@/views/AcademyPage.vue'
 import HomePage from '@/views/HomePage.vue'
-import IntroPage from '@/views/IntroPage.vue'
 import PlazaPage from '@/views/PlazaPage.vue'
 import StationPage from '@/views/StationPage.vue'
 
@@ -21,6 +22,11 @@ const router = createRouter({
       path: '/intro',
       name: 'intro',
       component: IntroPage,
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: LoginPage,
     },
 
     /*
