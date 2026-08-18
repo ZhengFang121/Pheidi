@@ -1,4 +1,5 @@
 import { createApp } from 'vue'
+import { isAxiosError } from 'axios'
 
 import PrimeVue from 'primevue/config'
 import PheidiPreset from './theme/pheidiPreset'
@@ -9,21 +10,43 @@ import './styles/base.css'
 
 import App from './App.vue'
 import router from './router'
+import api from './services/api'
 import pinia from './stores'
+import { useAuthStore } from './stores/auth'
 
 const app = createApp(App)
 
-app.use(pinia)
+const bootstrap = async () => {
+  app.use(pinia)
 
-app.use(router)
+  const authStore = useAuthStore(pinia)
 
-app.use(PrimeVue, {
-  theme: {
-    preset: PheidiPreset,
-    options: {
-      darkModeSelector: false,
+  await authStore.validateSession()
+
+  app.use(router)
+
+  api.interceptors.response.use(
+    (response) => response,
+    async (error: unknown) => {
+      if (isAxiosError(error) && error.response?.status === 401 && authStore.isAuthenticated) {
+        authStore.logout()
+        await router.replace('/login')
+      }
+
+      return Promise.reject(error)
     },
-  },
-})
+  )
 
-app.mount('#app')
+  app.use(PrimeVue, {
+    theme: {
+      preset: PheidiPreset,
+      options: {
+        darkModeSelector: false,
+      },
+    },
+  })
+
+  app.mount('#app')
+}
+
+void bootstrap()

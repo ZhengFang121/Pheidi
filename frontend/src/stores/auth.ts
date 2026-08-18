@@ -1,5 +1,8 @@
 import { computed, ref } from 'vue'
+import { isAxiosError } from 'axios'
 import { defineStore } from 'pinia'
+
+import api, { setApiAuthToken } from '@/services/api'
 
 export interface AuthUser {
   id: string
@@ -12,6 +15,11 @@ interface SetAuthPayload {
   token: string
   user: AuthUser
   keepSignedIn: boolean
+}
+
+interface CurrentUserResponse {
+  message: string
+  user: AuthUser
 }
 
 const authTokenKey = 'pheidi_auth_token'
@@ -50,11 +58,23 @@ const loadAuthStorage = () => {
   }
 }
 
+const updateStoredUser = (updatedUser: AuthUser) => {
+  const storage = localStorage.getItem(authTokenKey)
+    ? localStorage
+    : sessionStorage.getItem(authTokenKey)
+      ? sessionStorage
+      : null
+
+  storage?.setItem(authUserKey, JSON.stringify(updatedUser))
+}
+
 export const useAuthStore = defineStore('auth', () => {
   const storedAuth = loadAuthStorage()
 
   const token = ref<string | null>(storedAuth.token)
   const user = ref<AuthUser | null>(storedAuth.user)
+
+  setApiAuthToken(storedAuth.token)
 
   const isAuthenticated = computed(() => Boolean(token.value && user.value))
 
@@ -68,6 +88,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     token.value = newToken
     user.value = newUser
+    setApiAuthToken(newToken)
   }
 
   const logout = () => {
@@ -75,6 +96,22 @@ export const useAuthStore = defineStore('auth', () => {
 
     token.value = null
     user.value = null
+    setApiAuthToken(null)
+  }
+
+  const validateSession = async () => {
+    if (!token.value) return
+
+    try {
+      const response = await api.get<CurrentUserResponse>('/users/me')
+
+      user.value = response.data.user
+      updateStoredUser(response.data.user)
+    } catch (error: unknown) {
+      if (isAxiosError(error) && error.response?.status === 401) {
+        logout()
+      }
+    }
   }
 
   return {
@@ -83,5 +120,6 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     setAuth,
     logout,
+    validateSession,
   }
 })

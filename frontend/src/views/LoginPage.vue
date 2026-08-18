@@ -44,13 +44,15 @@ const loginErrorMessage = ref('')
 const isRegistering = ref(false)
 const registerSuccessMessage = ref('')
 const registerErrorMessage = ref('')
+const activeTab = ref<'login' | 'register'>('login')
+const loginFormKey = ref(0)
 
-const loginInitialValues = {
+const loginInitialValues = ref({
   email: rememberedEmail,
   password: '',
   rememberEmail: Boolean(rememberedEmail),
   keepSignedIn: false,
-}
+})
 
 const loginResolver = ({ values }: { values: Record<string, unknown> }) => {
   const errors: Record<string, { message: string }[]> = {}
@@ -90,6 +92,8 @@ const registerResolver = ({ values }: { values: Record<string, unknown> }) => {
 
   if (!username) {
     errors.username = [{ message: '請輸入跑者名稱' }]
+  } else if (username.length < 2 || username.length > 20) {
+    errors.username = [{ message: '跑者名稱需要 2 到 20 個字元' }]
   }
 
   if (!email) {
@@ -202,18 +206,30 @@ const handleRegister = async (event: FormSubmitEvent) => {
   if (!event.valid) return
 
   const values = getFormValues(event)
+  const registeredEmail = String(values.email ?? '').trim()
 
   isRegistering.value = true
 
   try {
     const response = await api.post<RegisterResponse>('/users', {
       username: String(values.username ?? '').trim(),
-      email: String(values.email ?? '').trim(),
+      email: registeredEmail,
       password: String(values.password ?? ''),
     })
 
     registerSuccessMessage.value = response.data.message
     event.reset()
+
+    loginInitialValues.value = {
+      email: registeredEmail,
+      password: '',
+      rememberEmail: false,
+      keepSignedIn: false,
+    }
+    loginSuccessMessage.value = `${response.data.message}，請登入帳號`
+    loginErrorMessage.value = ''
+    loginFormKey.value += 1
+    activeTab.value = 'login'
   } catch (error: unknown) {
     if (isAxiosError<ApiErrorResponse>(error)) {
       registerErrorMessage.value = error.response?.data.message ?? '無法建立帳號，請稍後再試'
@@ -235,7 +251,7 @@ const handleRegister = async (event: FormSubmitEvent) => {
         <p class="account-card__description">登入帳號，或建立新的跑者身分。</p>
       </header>
 
-      <Tabs value="login" class="account-tabs">
+      <Tabs v-model:value="activeTab" class="account-tabs">
         <TabList>
           <Tab value="login">登入</Tab>
           <Tab value="register">註冊</Tab>
@@ -244,6 +260,7 @@ const handleRegister = async (event: FormSubmitEvent) => {
         <TabPanels>
           <TabPanel value="login">
             <Form
+              :key="loginFormKey"
               v-slot="$form"
               :initial-values="loginInitialValues"
               :resolver="loginResolver"
@@ -263,12 +280,7 @@ const handleRegister = async (event: FormSubmitEvent) => {
                   placeholder="runner@example.com"
                   fluid
                 />
-                <Message
-                  v-if="$form.email?.invalid"
-                  severity="error"
-                  size="small"
-                  variant="simple"
-                >
+                <Message v-if="$form.email?.invalid" severity="error" size="small" variant="simple">
                   {{ $form.email.error?.message }}
                 </Message>
               </div>
@@ -298,21 +310,13 @@ const handleRegister = async (event: FormSubmitEvent) => {
               <div class="account-form__preferences">
                 <div class="login-preferences">
                   <div class="login-preference">
-                    <Checkbox
-                      input-id="remember-email"
-                      name="rememberEmail"
-                      binary
-                    />
+                    <Checkbox input-id="remember-email" name="rememberEmail" binary />
 
                     <label for="remember-email">記住電子信箱</label>
                   </div>
 
                   <div class="login-preference">
-                    <Checkbox
-                      input-id="keep-signed-in"
-                      name="keepSignedIn"
-                      binary
-                    />
+                    <Checkbox input-id="keep-signed-in" name="keepSignedIn" binary />
 
                     <label for="keep-signed-in">維持登入狀態</label>
                   </div>
@@ -371,6 +375,7 @@ const handleRegister = async (event: FormSubmitEvent) => {
                   type="text"
                   autocomplete="nickname"
                   placeholder="請輸入跑者名稱"
+                  :maxlength="20"
                   fluid
                 />
                 <Message
@@ -394,12 +399,7 @@ const handleRegister = async (event: FormSubmitEvent) => {
                   placeholder="runner@example.com"
                   fluid
                 />
-                <Message
-                  v-if="$form.email?.invalid"
-                  severity="error"
-                  size="small"
-                  variant="simple"
-                >
+                <Message v-if="$form.email?.invalid" severity="error" size="small" variant="simple">
                   {{ $form.email.error?.message }}
                 </Message>
               </div>
@@ -417,11 +417,7 @@ const handleRegister = async (event: FormSubmitEvent) => {
                   fluid
                 />
 
-                <div
-                  v-if="$form.password?.value"
-                  class="password-strength"
-                  aria-live="polite"
-                >
+                <div v-if="$form.password?.value" class="password-strength" aria-live="polite">
                   <div class="password-strength__track">
                     <span
                       class="password-strength__bar"
@@ -472,7 +468,14 @@ const handleRegister = async (event: FormSubmitEvent) => {
 
                   <label for="agree-to-terms">
                     我已閱讀並同意
-                    <button class="terms-link" type="button">服務條款</button>
+                    <RouterLink
+                      to="/terms"
+                      class="terms-link"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      服務條款
+                    </RouterLink>
                   </label>
                 </div>
 
@@ -673,19 +676,24 @@ const handleRegister = async (event: FormSubmitEvent) => {
 
 .terms-link {
   padding: 0;
-  border: 0;
   color: var(--color-dark-light);
-  background: transparent;
   font-family: inherit;
   font-size: inherit;
   font-weight: var(--font-weight-medium);
   letter-spacing: inherit;
+  text-decoration: none;
   cursor: pointer;
 }
 
 .terms-link:hover {
   color: var(--color-dark);
   text-decoration: underline;
+}
+
+.terms-link:focus-visible {
+  border-radius: var(--radius-sm);
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .account-submit {

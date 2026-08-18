@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth'
 
 import IntroPage from '@/views/IntroPage.vue'
 import LoginPage from '@/views/LoginPage.vue'
+import TermsPage from '@/views/TermsPage.vue'
 import AccountPage from '@/views/AccountPage.vue'
 import AcademyPage from '@/views/AcademyPage.vue'
 import HomePage from '@/views/HomePage.vue'
@@ -30,6 +31,11 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: LoginPage,
+    },
+    {
+      path: '/terms',
+      name: 'terms',
+      component: TermsPage,
     },
 
     /*
