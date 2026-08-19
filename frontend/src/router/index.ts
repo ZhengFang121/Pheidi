@@ -17,6 +17,7 @@ import StationPage from '@/views/StationPage.vue'
 import TermsPage from '@/views/TermsPage.vue'
 
 import AdminDashboardPage from '@/views/admin/AdminDashboardPage.vue'
+import UserManagementPage from '@/views/admin/UserManagementPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -112,6 +113,11 @@ const router = createRouter({
           path: '',
           name: 'admin-dashboard',
           component: AdminDashboardPage,
+        },
+        {
+          path: 'users',
+          name: 'admin-users',
+          component: UserManagementPage,
         },
       ],
     },

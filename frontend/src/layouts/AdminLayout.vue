@@ -11,6 +11,11 @@
           <LayoutDashboard class="admin-navigation-icon" aria-hidden="true" />
           <span>儀表板</span>
         </RouterLink>
+
+        <RouterLink to="/admin/users" class="admin-navigation-link">
+          <UsersRound class="admin-navigation-icon" aria-hidden="true" />
+          <span>玩家管理</span>
+        </RouterLink>
       </nav>
 
       <RouterLink to="/home" class="back-to-site-link">
@@ -35,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, LayoutDashboard } from '@lucide/vue'
+import { ArrowLeft, LayoutDashboard, UsersRound } from '@lucide/vue'
 </script>
 
 <style scoped>
