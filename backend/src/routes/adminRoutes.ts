@@ -8,6 +8,7 @@ const router = Router()
 const defaultPage = 1
 const defaultLimit = 10
 const maximumLimit = 50
+const mongoObjectIdPattern = /^[a-f\d]{24}$/i
 
 const parsePositiveInteger = (value: unknown, fallback: number) => {
   if (typeof value !== 'string') return fallback
@@ -144,6 +145,100 @@ router.get('/users', async (req, res) => {
 
     res.status(500).json({
       message: '取得玩家列表失敗',
+    })
+  }
+})
+
+router.patch('/users/:userId/role', async (req, res) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({
+        message: '請先登入',
+      })
+      return
+    }
+
+    const { userId } = req.params
+    const { role } = req.body ?? {}
+
+    if (!userId || !mongoObjectIdPattern.test(userId)) {
+      res.status(400).json({
+        message: '使用者 ID 格式不正確',
+      })
+      return
+    }
+
+    if (role !== 'player' && role !== 'admin') {
+      res.status(400).json({
+        message: '使用者角色只能是 player 或 admin',
+      })
+      return
+    }
+
+    if (userId === req.user.userId) {
+      res.status(403).json({
+        message: '不能修改自己的管理員角色',
+      })
+      return
+    }
+
+    const targetUser = await User.findById(userId)
+
+    if (!targetUser) {
+      res.status(404).json({
+        message: '找不到指定的使用者',
+      })
+      return
+    }
+
+    if (targetUser.role === role) {
+      res.status(200).json({
+        message: '使用者角色沒有變更',
+        user: {
+          id: targetUser._id,
+          username: targetUser.username,
+          email: targetUser.email,
+          role: targetUser.role,
+          createdAt: targetUser.createdAt,
+          updatedAt: targetUser.updatedAt,
+        },
+      })
+      return
+    }
+
+    if (targetUser.role === 'admin' && role === 'player') {
+      const adminCount = await User.countDocuments({
+        role: 'admin',
+      })
+
+      if (adminCount <= 1) {
+        res.status(409).json({
+          message: '系統必須保留至少一位管理員',
+        })
+        return
+      }
+    }
+
+    targetUser.role = role
+
+    await targetUser.save()
+
+    res.status(200).json({
+      message: role === 'admin' ? '已將使用者設為管理員' : '已將使用者設為玩家',
+      user: {
+        id: targetUser._id,
+        username: targetUser.username,
+        email: targetUser.email,
+        role: targetUser.role,
+        createdAt: targetUser.createdAt,
+        updatedAt: targetUser.updatedAt,
+      },
+    })
+  } catch (error: unknown) {
+    console.error('Failed to update user role:', error)
+
+    res.status(500).json({
+      message: '修改使用者角色失敗',
     })
   }
 })
