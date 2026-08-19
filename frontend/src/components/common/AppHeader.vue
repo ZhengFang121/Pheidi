@@ -11,11 +11,7 @@
 
         <!-- 中間導覽選單 -->
         <template #item="{ item, props }">
-          <RouterLink
-            v-slot="{ href, navigate, isActive }"
-            :to="item.route ?? '/'"
-            custom
-          >
+          <RouterLink v-slot="{ href, navigate, isActive }" :to="item.route ?? '/'" custom>
             <a
               v-ripple
               :href="href"
@@ -124,7 +120,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { Component } from 'vue'
 import { useRouter } from 'vue-router'
 import type { MenuItem } from 'primevue/menuitem'
@@ -134,6 +130,7 @@ import Menubar from 'primevue/menubar'
 import {
   Check,
   CircleUserRound,
+  LayoutDashboard,
   LibraryBig,
   LogOut,
   NotebookPen,
@@ -172,23 +169,40 @@ async function handleLogout() {
   await router.replace('/')
 }
 
-const accountItems = ref<AccountMenuItem[]>([
-  {
-    label: '帳號管理',
-    lucideIcon: Settings,
-    command: () => {
-      router.push('/account')
+const accountItems = computed<AccountMenuItem[]>(() => {
+  const items: AccountMenuItem[] = [
+    {
+      label: '帳號管理',
+      lucideIcon: Settings,
+      command: () => {
+        router.push('/account')
+      },
     },
-  },
-  {
-    separator: true,
-  },
-  {
-    label: '登出',
-    lucideIcon: LogOut,
-    command: handleLogout,
-  },
-])
+  ]
+
+  if (authStore.isAdmin) {
+    items.push({
+      label: '後台管理',
+      lucideIcon: LayoutDashboard,
+      command: () => {
+        router.push('/admin')
+      },
+    })
+  }
+
+  items.push(
+    {
+      separator: true,
+    },
+    {
+      label: '登出',
+      lucideIcon: LogOut,
+      command: handleLogout,
+    },
+  )
+
+  return items
+})
 
 const navigationItems = ref<NavigationItem[]>([
   {

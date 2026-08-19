@@ -77,6 +77,7 @@ export const useAuthStore = defineStore('auth', () => {
   setApiAuthToken(storedAuth.token)
 
   const isAuthenticated = computed(() => Boolean(token.value && user.value))
+  const isAdmin = computed(() => user.value?.role === 'admin')
 
   const setAuth = ({ token: newToken, user: newUser, keepSignedIn }: SetAuthPayload) => {
     clearAuthStorage()
@@ -118,6 +119,7 @@ export const useAuthStore = defineStore('auth', () => {
     token,
     user,
     isAuthenticated,
+    isAdmin,
     setAuth,
     logout,
     validateSession,
