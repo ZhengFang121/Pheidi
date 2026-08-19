@@ -32,6 +32,57 @@ router.get('/check', (_req, res) => {
   })
 })
 
+router.get('/dashboard', async (_req, res) => {
+  try {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+
+    const [
+      totalUsers,
+      totalPlayers,
+      totalAdmins,
+      newUsersLastSevenDays,
+      latestUsers,
+    ] = await Promise.all([
+      User.countDocuments(),
+      User.countDocuments({ role: 'player' }),
+      User.countDocuments({ role: 'admin' }),
+      User.countDocuments({
+        createdAt: {
+          $gte: sevenDaysAgo,
+        },
+      }),
+      User.find()
+        .select('_id username email role createdAt')
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean(),
+    ])
+
+    res.status(200).json({
+      message: '取得管理員儀表板資料成功',
+      statistics: {
+        totalUsers,
+        totalPlayers,
+        totalAdmins,
+        newUsersLastSevenDays,
+      },
+      latestUsers: latestUsers.map((user) => ({
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt,
+      })),
+    })
+  } catch (error: unknown) {
+    console.error('Failed to get admin dashboard:', error)
+
+    res.status(500).json({
+      message: '取得管理員儀表板資料失敗',
+    })
+  }
+})
+
 router.get('/users', async (req, res) => {
   try {
     const page = parsePositiveInteger(req.query.page, defaultPage)
