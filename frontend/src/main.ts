@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import { isAxiosError } from 'axios'
 
 import PrimeVue from 'primevue/config'
+import ConfirmationService from 'primevue/confirmationservice'
 import PheidiPreset from './theme/pheidiPreset'
 
 import 'primeicons/primeicons.css'
@@ -45,6 +46,8 @@ const bootstrap = async () => {
       },
     },
   })
+
+  app.use(ConfirmationService)
 
   app.mount('#app')
 }

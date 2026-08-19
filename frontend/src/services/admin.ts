@@ -49,6 +49,11 @@ export interface GetAdminUsersParams {
   search?: string
 }
 
+export interface UpdateAdminUserRoleResponse {
+  message: string
+  user: AdminUser
+}
+
 export const getAdminUsers = async (params: GetAdminUsersParams = {}) => {
   const response = await api.get<AdminUserListResponse>('/admin/users', {
     params,
@@ -59,6 +64,20 @@ export const getAdminUsers = async (params: GetAdminUsersParams = {}) => {
 
 export const getAdminDashboard = async () => {
   const response = await api.get<AdminDashboardResponse>('/admin/dashboard')
+
+  return response.data
+}
+
+export const updateAdminUserRole = async (
+  userId: string,
+  role: AdminUser['role'],
+) => {
+  const response = await api.patch<UpdateAdminUserRoleResponse>(
+    `/admin/users/${userId}/role`,
+    {
+      role,
+    },
+  )
 
   return response.data
 }
