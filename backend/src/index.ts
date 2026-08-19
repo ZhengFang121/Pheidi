@@ -4,6 +4,7 @@ import express from 'express'
 
 import { connectDatabase } from './config/database.js'
 import adminRoutes from './routes/adminRoutes.js'
+import articleRoutes from './routes/articleRoutes.js'
 import userRoutes from './routes/userRoutes.js'
 
 const app = express()
@@ -29,6 +30,7 @@ app.get('/', (_req, res) => {
   })
 })
 
+app.use('/api/admin/articles', articleRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/users', userRoutes)
 
