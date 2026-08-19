@@ -5,6 +5,11 @@ import { connectDatabase } from './config/database.js'
 import userRoutes from './routes/userRoutes.js'
 
 const app = express()
+
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1)
+}
+
 const port = Number(process.env.PORT) || 3000
 const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
 

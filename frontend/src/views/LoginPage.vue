@@ -322,7 +322,7 @@ const handleRegister = async (event: FormSubmitEvent) => {
                   </div>
                 </div>
 
-                <button class="forgot-password" type="button">忘記密碼？</button>
+                <RouterLink class="forgot-password" to="/forgot-password"> 忘記密碼？ </RouterLink>
               </div>
 
               <Message
@@ -659,6 +659,12 @@ const handleRegister = async (event: FormSubmitEvent) => {
 .forgot-password:hover {
   color: var(--color-dark);
   text-decoration: underline;
+}
+
+.forgot-password:focus-visible {
+  border-radius: var(--radius-sm);
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .terms-option {

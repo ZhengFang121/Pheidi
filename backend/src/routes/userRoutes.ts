@@ -1,25 +1,140 @@
+import { createHash, randomBytes } from 'node:crypto'
 import { Router } from 'express'
 import jwt from 'jsonwebtoken'
+
 import { authenticateToken } from '../middleware/authMiddleware.js'
 import User from '../models/User.js'
+import { sendPasswordResetEmail } from '../services/emailService.js'
+import { rateLimit } from 'express-rate-limit'
 
 const router = Router()
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 3,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: {
+    message: '申請次數過多，請 15 分鐘後再試',
+  },
+})
 
 const isDuplicateKeyError = (error: unknown) => {
   return typeof error === 'object' && error !== null && Reflect.get(error, 'code') === 11000
 }
 
+router.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
+  const responseMessage = '如果這個電子信箱已經註冊，我們會寄出密碼重設信'
+
+  try {
+    const { email } = req.body ?? {}
+
+    if (typeof email !== 'string' || !emailPattern.test(email.trim().toLowerCase())) {
+      res.status(400).json({
+        message: '請輸入正確的電子信箱格式',
+      })
+      return
+    }
+
+    const normalizedEmail = email.trim().toLowerCase()
+    const user = await User.findOne({ email: normalizedEmail })
+
+    if (user) {
+      try {
+        const resetToken = randomBytes(32).toString('hex')
+        const resetTokenHash = createHash('sha256').update(resetToken).digest('hex')
+        const clientOrigin = process.env.CLIENT_ORIGIN
+
+        if (!clientOrigin) {
+          throw new Error('找不到 CLIENT_ORIGIN 環境變數')
+        }
+
+        user.passwordResetTokenHash = resetTokenHash
+        user.passwordResetExpiresAt = new Date(Date.now() + 30 * 60 * 1000)
+
+        await user.save()
+
+        const resetUrl = new URL('/reset-password', clientOrigin)
+        resetUrl.searchParams.set('token', resetToken)
+
+        await sendPasswordResetEmail({
+          recipientEmail: user.email,
+          resetUrl: resetUrl.toString(),
+        })
+      } catch (error) {
+        console.error('Failed to create or send password reset email:', error)
+      }
+    }
+
+    res.status(200).json({
+      message: responseMessage,
+    })
+  } catch (error) {
+    console.error('Failed to request password reset:', error)
+
+    res.status(500).json({
+      message: '無法處理密碼重設申請，請稍後再試',
+    })
+  }
+})
+
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, password } = req.body ?? {}
+
+    if (typeof token !== 'string' || !token) {
+      res.status(400).json({
+        message: '密碼重設連結無效或已經過期',
+      })
+      return
+    }
+
+    if (typeof password !== 'string' || password.length < 8) {
+      res.status(400).json({
+        message: '密碼至少需要 8 個字元',
+      })
+      return
+    }
+
+    const tokenHash = createHash('sha256').update(token).digest('hex')
+
+    const user = await User.findOne({
+      passwordResetTokenHash: tokenHash,
+      passwordResetExpiresAt: {
+        $gt: new Date(),
+      },
+    }).select('+passwordResetTokenHash +passwordResetExpiresAt')
+
+    if (!user) {
+      res.status(400).json({
+        message: '密碼重設連結無效或已經過期',
+      })
+      return
+    }
+
+    user.password = password
+    user.passwordResetTokenHash = undefined
+    user.passwordResetExpiresAt = undefined
+
+    await user.save()
+
+    res.status(200).json({
+      message: '密碼重設成功，請使用新密碼登入',
+    })
+  } catch (error) {
+    console.error('Failed to reset password:', error)
+
+    res.status(500).json({
+      message: '無法重設密碼，請稍後再試',
+    })
+  }
+})
+
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body
 
-    if (
-      typeof email !== 'string' ||
-      typeof password !== 'string' ||
-      !email.trim() ||
-      !password
-    ) {
+    if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) {
       res.status(400).json({
         message: 'email 和 password 都是必填欄位',
       })

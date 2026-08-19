@@ -6,6 +6,8 @@ import { useAuthStore } from '@/stores/auth'
 
 import IntroPage from '@/views/IntroPage.vue'
 import LoginPage from '@/views/LoginPage.vue'
+import ForgotPasswordPage from '@/views/ForgotPasswordPage.vue'
+import ResetPasswordPage from '@/views/ResetPasswordPage.vue'
 import TermsPage from '@/views/TermsPage.vue'
 import AccountPage from '@/views/AccountPage.vue'
 import AcademyPage from '@/views/AcademyPage.vue'
@@ -31,6 +33,16 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: LoginPage,
+    },
+    {
+      path: '/forgot-password',
+      name: 'forgot-password',
+      component: ForgotPasswordPage,
+    },
+    {
+      path: '/reset-password',
+      name: 'reset-password',
+      component: ResetPasswordPage,
     },
     {
       path: '/terms',

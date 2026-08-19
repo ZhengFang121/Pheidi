@@ -6,6 +6,8 @@ export interface IUser {
   email: string
   password: string
   role: 'player' | 'admin'
+passwordResetTokenHash?: string | undefined
+passwordResetExpiresAt?: Date | undefined
 }
 
 interface UserMethods {
@@ -39,6 +41,14 @@ const userSchema = new Schema<IUser, Model<IUser>, UserMethods>(
       type: String,
       enum: ['player', 'admin'],
       default: 'player',
+    },
+    passwordResetTokenHash: {
+      type: String,
+      select: false,
+    },
+    passwordResetExpiresAt: {
+      type: Date,
+      select: false,
     },
   },
   {
