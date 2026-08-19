@@ -160,6 +160,7 @@ import { ref } from 'vue'
 import type { Component } from 'vue'
 import {
   ArrowLeft,
+  Files,
   LayoutDashboard,
   Menu,
   PanelLeftClose,
@@ -187,6 +188,11 @@ const navigationItems: AdminNavigationItem[] = [
     route: '/admin/users',
     icon: UsersRound,
   },
+  {
+  label: '文章管理',
+  route: '/admin/articles',
+  icon: Files,
+},
 ]
 
 const isSidebarCollapsed = ref(

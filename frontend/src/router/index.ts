@@ -17,6 +17,7 @@ import StationPage from '@/views/StationPage.vue'
 import TermsPage from '@/views/TermsPage.vue'
 
 import AdminDashboardPage from '@/views/admin/AdminDashboardPage.vue'
+import ArticleManagementPage from '@/views/admin/ArticleManagementPage.vue'
 import UserManagementPage from '@/views/admin/UserManagementPage.vue'
 
 const router = createRouter({
@@ -118,6 +119,11 @@ const router = createRouter({
           path: 'users',
           name: 'admin-users',
           component: UserManagementPage,
+        },
+        {
+          path: 'articles',
+          name: 'admin-articles',
+          component: ArticleManagementPage,
         },
       ],
     },
