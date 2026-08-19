@@ -1,6 +1,8 @@
 import type { RequestHandler } from 'express'
 import jwt from 'jsonwebtoken'
 
+import User from '../models/User.js'
+
 export const authenticateToken: RequestHandler = (req, res, next) => {
   const authorization = req.headers.authorization
 
@@ -61,6 +63,37 @@ export const authenticateToken: RequestHandler = (req, res, next) => {
 
     res.status(401).json({
       message: '無效的登入憑證',
+    })
+  }
+}
+
+export const requireAdmin: RequestHandler = async (req, res, next) => {
+  if (!req.user) {
+    res.status(401).json({
+      message: '請先登入',
+    })
+    return
+  }
+
+  try {
+    const adminUser = await User.exists({
+      _id: req.user.userId,
+      role: 'admin',
+    })
+
+    if (!adminUser) {
+      res.status(403).json({
+        message: '您沒有管理員權限',
+      })
+      return
+    }
+
+    next()
+  } catch (error: unknown) {
+    console.error('Failed to verify admin permission:', error)
+
+    res.status(500).json({
+      message: '無法驗證管理員權限',
     })
   }
 }
