@@ -6,8 +6,10 @@ export interface IUser {
   email: string
   password: string
   role: 'player' | 'admin'
-passwordResetTokenHash?: string | undefined
-passwordResetExpiresAt?: Date | undefined
+  passwordResetTokenHash?: string | undefined
+  passwordResetExpiresAt?: Date | undefined
+  createdAt?: Date
+  updatedAt?: Date
 }
 
 interface UserMethods {
