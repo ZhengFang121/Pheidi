@@ -96,10 +96,12 @@
         </div>
       </div>
 
+      <!-- eslint-disable vue/no-v-html -->
       <div
         class="article-body"
         v-html="article.content"
       />
+      <!-- eslint-enable vue/no-v-html -->
     </article>
   </section>
 </template>
