@@ -1,10 +1,11 @@
 import 'dotenv/config'
 import cors from 'cors'
 import express from 'express'
-
 import { connectDatabase } from './config/database.js'
+
 import adminRoutes from './routes/adminRoutes.js'
 import articleRoutes from './routes/articleRoutes.js'
+import publicArticleRoutes from './routes/publicArticleRoutes.js'
 import userRoutes from './routes/userRoutes.js'
 
 const app = express()
@@ -31,6 +32,7 @@ app.get('/', (_req, res) => {
 })
 
 app.use('/api/admin/articles', articleRoutes)
+app.use('/api/articles', publicArticleRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/users', userRoutes)
 

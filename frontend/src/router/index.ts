@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/auth'
 
 import AccountPage from '@/views/AccountPage.vue'
 import AcademyPage from '@/views/AcademyPage.vue'
+import ArticleDetailPage from '@/views/ArticleDetailPage.vue'
 import ForgotPasswordPage from '@/views/ForgotPasswordPage.vue'
 import HomePage from '@/views/HomePage.vue'
 import IntroPage from '@/views/IntroPage.vue'
@@ -82,6 +83,12 @@ const router = createRouter({
           path: '/academy',
           name: 'academy',
           component: AcademyPage,
+          meta: { requiresAuth: true },
+        },
+        {
+          path: '/academy/:slug',
+          name: 'article-detail',
+          component: ArticleDetailPage,
           meta: { requiresAuth: true },
         },
         {
