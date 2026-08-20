@@ -55,6 +55,20 @@ export interface AdminArticleResponse {
   article: AdminArticleDetail
 }
 
+export interface AdminArticleCoverImage {
+  url: string
+  publicId: string
+  width: number
+  height: number
+  format: string
+  bytes: number
+}
+
+export interface UploadAdminArticleCoverResponse {
+  message: string
+  image: AdminArticleCoverImage
+}
+
 export interface DeleteAdminArticleResponse {
   message: string
 }
@@ -216,6 +230,22 @@ export const updateAdminArticleStatus = async (
       status,
     },
   )
+
+  return response.data
+}
+
+export const uploadAdminArticleCover = async (
+  file: File,
+) => {
+  const formData = new FormData()
+
+  formData.append('image', file)
+
+  const response =
+    await api.post<UploadAdminArticleCoverResponse>(
+      '/admin/uploads/article-cover',
+      formData,
+    )
 
   return response.data
 }

@@ -1,18 +1,12 @@
 <template>
   <form class="article-form" @submit.prevent="handleSubmit">
-    <Message
-      v-if="errorMessage"
-      severity="error"
-      :closable="false"
-    >
+    <Message v-if="errorMessage" severity="error" :closable="false">
       {{ errorMessage }}
     </Message>
 
     <div class="form-grid">
       <div class="form-field form-field--wide">
-        <label for="article-title" class="form-label">
-          文章標題
-        </label>
+        <label for="article-title" class="form-label"> 文章標題 </label>
 
         <InputText
           id="article-title"
@@ -29,9 +23,7 @@
       </div>
 
       <div class="form-field">
-        <label for="article-slug" class="form-label">
-          網址識別
-        </label>
+        <label for="article-slug" class="form-label"> 網址識別 </label>
 
         <InputText
           id="article-slug"
@@ -42,9 +34,7 @@
           fluid
         />
 
-        <small class="field-hint">
-          只能使用小寫英文字母、數字與連字號。
-        </small>
+        <small class="field-hint"> 只能使用小寫英文字母、數字與連字號。 </small>
 
         <small v-if="fieldErrors.slug" class="field-error">
           {{ fieldErrors.slug }}
@@ -52,9 +42,7 @@
       </div>
 
       <div class="form-field">
-        <label for="article-category" class="form-label">
-          文章分類
-        </label>
+        <label for="article-category" class="form-label"> 文章分類 </label>
 
         <Select
           id="article-category"
@@ -67,9 +55,7 @@
       </div>
 
       <div class="form-field form-field--full">
-        <label for="article-summary" class="form-label">
-          文章摘要
-        </label>
+        <label for="article-summary" class="form-label"> 文章摘要 </label>
 
         <Textarea
           id="article-summary"
@@ -86,42 +72,58 @@
             {{ fieldErrors.summary }}
           </small>
 
-          <small class="character-count">
-            {{ form.summary.length }} / 300
-          </small>
+          <small class="character-count"> {{ form.summary.length }} / 300 </small>
         </div>
       </div>
 
       <div class="form-field form-field--full">
-        <label for="article-cover-image" class="form-label">
-          封面圖片網址
-        </label>
+        <span class="form-label"> 封面圖片 </span>
 
-        <InputText
-          id="article-cover-image"
-          v-model="form.coverImageUrl"
-          type="url"
-          placeholder="https://example.com/images/article-cover.jpg"
-          :invalid="Boolean(fieldErrors.coverImageUrl)"
-          fluid
+        <input
+          ref="coverImageInput"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          class="cover-file-input"
+          @change="handleCoverImageChange"
         />
 
-        <small class="field-hint">
-          目前先使用 HTTP 或 HTTPS 圖片網址，之後再串接圖片上傳。
-        </small>
+        <div class="cover-actions">
+          <Button
+            type="button"
+            :label="form.coverImageUrl ? '更換封面圖片' : '上傳封面圖片'"
+            icon="pi pi-upload"
+            severity="secondary"
+            outlined
+            :loading="isUploadingCover"
+            :disabled="isSubmitting"
+            @click="openCoverImagePicker"
+          />
 
-        <small
-          v-if="fieldErrors.coverImageUrl"
-          class="field-error"
-        >
-          {{ fieldErrors.coverImageUrl }}
-        </small>
+          <Button
+            v-if="form.coverImageUrl"
+            type="button"
+            label="移除封面"
+            icon="pi pi-trash"
+            severity="danger"
+            text
+            :disabled="isSubmitting || isUploadingCover"
+            @click="removeCoverImage"
+          />
+        </div>
+
+        <small class="field-hint"> 支援 JPG、PNG、WebP、GIF，檔案不能超過 5 MB。 </small>
+
+        <Message v-if="coverUploadError" severity="error" :closable="false">
+          {{ coverUploadError }}
+        </Message>
+
+        <div v-if="form.coverImageUrl" class="cover-preview">
+          <img :src="form.coverImageUrl" alt="文章封面預覽" class="cover-preview-image" />
+        </div>
       </div>
 
       <div class="form-field form-field--full">
-        <label class="form-label">
-          文章內容
-        </label>
+        <label class="form-label"> 文章內容 </label>
 
         <Editor
           v-model="form.content"
@@ -147,16 +149,8 @@
             </span>
 
             <span class="ql-formats">
-              <button
-                class="ql-list"
-                value="ordered"
-                type="button"
-              />
-              <button
-                class="ql-list"
-                value="bullet"
-                type="button"
-              />
+              <button class="ql-list" value="ordered" type="button" />
+              <button class="ql-list" value="bullet" type="button" />
               <button class="ql-blockquote" type="button" />
             </span>
 
@@ -179,7 +173,7 @@
         label="取消"
         severity="secondary"
         outlined
-        :disabled="isSubmitting"
+        :disabled="isSubmitting || isUploadingCover"
         @click="emit('cancel')"
       />
 
@@ -187,13 +181,15 @@
         type="submit"
         :label="submitLabel"
         :loading="isSubmitting"
+        :disabled="isUploadingCover"
       />
     </div>
   </form>
 </template>
 
 <script setup lang="ts">
-import { reactive, watch } from 'vue'
+import { reactive, ref, watch } from 'vue'
+import { isAxiosError } from 'axios'
 
 import Button from 'primevue/button'
 import Editor from 'primevue/editor'
@@ -202,9 +198,10 @@ import Message from 'primevue/message'
 import Select from 'primevue/select'
 import Textarea from 'primevue/textarea'
 
-import type {
-  AdminArticleCategory,
-  AdminArticleFormPayload,
+import {
+  uploadAdminArticleCover,
+  type AdminArticleCategory,
+  type AdminArticleFormPayload,
 } from '@/services/admin'
 
 interface CategoryOption {
@@ -240,6 +237,15 @@ const emit = defineEmits<{
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
+const maximumCoverImageSize = 5 * 1024 * 1024
+
+const allowedCoverImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+
+const coverImageInput = ref<HTMLInputElement | null>(null)
+
+const isUploadingCover = ref(false)
+const coverUploadError = ref('')
+
 const categoryOptions: CategoryOption[] = [
   {
     label: '學習',
@@ -268,15 +274,11 @@ const form = reactive<AdminArticleFormPayload>({
   coverImageUrl: '',
 })
 
-const fieldErrors = reactive<
-  Partial<Record<keyof AdminArticleFormPayload, string>>
->({})
+const fieldErrors = reactive<Partial<Record<keyof AdminArticleFormPayload, string>>>({})
 
 const clearFieldErrors = () => {
   for (const field of Object.keys(fieldErrors)) {
-    delete fieldErrors[
-      field as keyof AdminArticleFormPayload
-    ]
+    delete fieldErrors[field as keyof AdminArticleFormPayload]
   }
 }
 
@@ -297,6 +299,59 @@ const getPlainTextContent = (html: string) => {
   return container.textContent?.replace(/\u00a0/g, ' ').trim() ?? ''
 }
 
+const openCoverImagePicker = () => {
+  coverImageInput.value?.click()
+}
+
+const removeCoverImage = () => {
+  form.coverImageUrl = ''
+  coverUploadError.value = ''
+
+  if (coverImageInput.value) {
+    coverImageInput.value.value = ''
+  }
+}
+
+const handleCoverImageChange = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+
+  input.value = ''
+
+  if (!file) return
+
+  coverUploadError.value = ''
+
+  if (!allowedCoverImageTypes.has(file.type)) {
+    coverUploadError.value = '封面圖片只支援 JPG、PNG、WebP 或 GIF'
+    return
+  }
+
+  if (file.size > maximumCoverImageSize) {
+    coverUploadError.value = '封面圖片不能超過 5 MB'
+    return
+  }
+
+  isUploadingCover.value = true
+
+  try {
+    const response = await uploadAdminArticleCover(file)
+
+    form.coverImageUrl = response.image.url
+  } catch (error: unknown) {
+    if (isAxiosError(error)) {
+      coverUploadError.value =
+        typeof error.response?.data?.message === 'string'
+          ? error.response.data.message
+          : '封面圖片上傳失敗，請稍後再試'
+    } else {
+      coverUploadError.value = '封面圖片上傳失敗，請稍後再試'
+    }
+  } finally {
+    isUploadingCover.value = false
+  }
+}
+
 const validateForm = () => {
   clearFieldErrors()
 
@@ -310,18 +365,14 @@ const validateForm = () => {
   }
 
   if (!slugPattern.test(normalizedSlug)) {
-    fieldErrors.slug =
-      '網址識別只能包含小寫英文字母、數字與連字號'
+    fieldErrors.slug = '網址識別只能包含小寫英文字母、數字與連字號'
   }
 
   if (!normalizedSummary) {
     fieldErrors.summary = '請填寫文章摘要'
   }
 
-  if (
-    normalizedCoverImageUrl &&
-    !isValidHttpUrl(normalizedCoverImageUrl)
-  ) {
+  if (normalizedCoverImageUrl && !isValidHttpUrl(normalizedCoverImageUrl)) {
     fieldErrors.coverImageUrl = '封面圖片網址格式不正確'
   }
 
@@ -333,6 +384,7 @@ const validateForm = () => {
 }
 
 const handleSubmit = () => {
+  if (isUploadingCover.value) return
   if (!validateForm()) return
 
   emit('submit', {
@@ -350,6 +402,7 @@ watch(
   (initialValue) => {
     Object.assign(form, initialValue)
     clearFieldErrors()
+    coverUploadError.value = ''
   },
   {
     immediate: true,
@@ -417,6 +470,44 @@ watch(
   margin-left: auto;
 }
 
+.cover-file-input {
+  position: absolute;
+
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+
+  white-space: nowrap;
+
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.cover-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cover-preview {
+  width: min(100%, 640px);
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+
+  background: var(--color-primary-pale);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.cover-preview-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+}
+
 .article-editor {
   overflow: hidden;
 
@@ -457,6 +548,11 @@ watch(
 @media (max-width: 768px) {
   .article-form {
     padding: var(--space-3);
+  }
+
+  .cover-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .form-grid {
