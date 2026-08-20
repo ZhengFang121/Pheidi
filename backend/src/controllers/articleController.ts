@@ -7,6 +7,9 @@ import Article, {
   type ArticleCategory,
   type ArticleStatus,
 } from '../models/Article.js'
+import { isDuplicateKeyError } from '../utils/mongoose.js'
+import { parsePositiveInteger } from '../utils/query.js'
+import { escapeRegularExpression } from '../utils/regex.js'
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const mongoObjectIdPattern = /^[a-f\d]{24}$/i
@@ -47,18 +50,6 @@ type ArticleValidationResult =
       isValid: false
       message: string
     }
-
-const parsePositiveInteger = (value: unknown, fallback: number) => {
-  if (typeof value !== 'string') return fallback
-
-  const parsedValue = Number.parseInt(value, 10)
-
-  return Number.isInteger(parsedValue) && parsedValue > 0 ? parsedValue : fallback
-}
-
-const escapeRegularExpression = (value: string) => {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
 
 const isArticleCategory = (value: unknown): value is ArticleCategory => {
   return typeof value === 'string' && ARTICLE_CATEGORIES.some((category) => category === value)
@@ -215,10 +206,6 @@ const validateArticleFormData = (body: unknown): ArticleValidationResult => {
         : {}),
     },
   }
-}
-
-const hasDuplicateKeyError = (error: unknown) => {
-  return typeof error === 'object' && error !== null && 'code' in error && error.code === 11000
 }
 
 /*
@@ -437,7 +424,7 @@ router.patch('/:articleId', async (req, res) => {
       },
     })
   } catch (error: unknown) {
-    if (hasDuplicateKeyError(error)) {
+    if (isDuplicateKeyError(error)) {
       res.status(409).json({
         message: '這個網址識別已經被其他文章使用',
       })
@@ -603,7 +590,7 @@ router.post('/', async (req, res) => {
       },
     })
   } catch (error: unknown) {
-    if (hasDuplicateKeyError(error)) {
+    if (isDuplicateKeyError(error)) {
       res.status(409).json({
         message: '這個網址識別已經被其他文章使用',
       })

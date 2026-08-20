@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken'
 import { authenticateToken } from '../middleware/authMiddleware.js'
 import User from '../models/User.js'
 import { sendPasswordResetEmail } from '../services/emailService.js'
+import { isDuplicateKeyError } from '../utils/mongoose.js'
 import { rateLimit } from 'express-rate-limit'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -17,10 +18,6 @@ const forgotPasswordLimiter = rateLimit({
     message: '申請次數過多，請 15 分鐘後再試',
   },
 })
-
-const isDuplicateKeyError = (error: unknown) => {
-  return typeof error === 'object' && error !== null && Reflect.get(error, 'code') === 11000
-}
 
 export const registerUserHandlers = (router: Router) => {
 router.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {

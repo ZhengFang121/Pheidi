@@ -4,7 +4,7 @@ import type {
   UploadApiResponse,
 } from 'cloudinary'
 
-import cloudinary from '../config/cloudinary.js'
+import cloudinary from '../configs/cloudinary.js'
 const maximumImageSize = 5 * 1024 * 1024
 
 const allowedImageTypes = new Set([

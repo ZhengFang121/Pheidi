@@ -1,24 +1,14 @@
 import type { Router } from 'express'
 
 import User from '../models/User.js'
+import { parsePositiveInteger } from '../utils/query.js'
+import { escapeRegularExpression } from '../utils/regex.js'
 
 
 const defaultPage = 1
 const defaultLimit = 10
 const maximumLimit = 50
 const mongoObjectIdPattern = /^[a-f\d]{24}$/i
-
-const parsePositiveInteger = (value: unknown, fallback: number) => {
-  if (typeof value !== 'string') return fallback
-
-  const parsedValue = Number.parseInt(value, 10)
-
-  return Number.isInteger(parsedValue) && parsedValue > 0 ? parsedValue : fallback
-}
-
-const escapeRegularExpression = (value: string) => {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
 
 /*
  * 所有 /api/admin 路由都必須先通過登入與管理員驗證。

@@ -1,6 +1,8 @@
 import type { Router } from 'express'
 
 import Article, { ARTICLE_CATEGORIES, type ArticleCategory } from '../models/Article.js'
+import { parsePositiveInteger } from '../utils/query.js'
+import { escapeRegularExpression } from '../utils/regex.js'
 
 export const registerPublicArticleHandlers = (router: Router) => {
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -20,18 +22,6 @@ type PublicArticleListFilter = {
     title?: ArticleSearchCondition
     summary?: ArticleSearchCondition
   }>
-}
-
-const parsePositiveInteger = (value: unknown, fallback: number) => {
-  if (typeof value !== 'string') return fallback
-
-  const parsedValue = Number.parseInt(value, 10)
-
-  return Number.isInteger(parsedValue) && parsedValue > 0 ? parsedValue : fallback
-}
-
-const escapeRegularExpression = (value: string) => {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 const isArticleCategory = (value: unknown): value is ArticleCategory => {

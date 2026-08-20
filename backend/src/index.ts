@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import cors from 'cors'
 import express from 'express'
-import { connectDatabase } from './config/database.js'
+import { connectDatabase } from './configs/database.js'
 
 import adminRoutes from './routes/adminRoutes.js'
 import articleRoutes from './routes/articleRoutes.js'
