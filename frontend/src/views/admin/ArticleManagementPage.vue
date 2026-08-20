@@ -99,7 +99,7 @@
         paginator
         striped-rows
         scrollable
-        table-style="min-width: 1040px"
+        table-style="min-width: 1240px"
         paginator-template="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
         current-page-report-template="第 {currentPage} 頁，共 {totalPages} 頁"
         class="article-table"
@@ -159,7 +159,7 @@
           </template>
         </Column>
 
-        <Column header="操作" style="width: 190px">
+        <Column header="操作" style="width: 300px">
           <template #body="{ data }">
             <div class="article-actions">
               <Button
@@ -171,6 +171,19 @@
                 size="small"
                 class="article-action-button"
                 @click="goToEditArticle(data.id)"
+              />
+
+              <Button
+                type="button"
+                :label="data.status === 'published' ? '改為草稿' : '發布'"
+                :icon="data.status === 'published' ? 'pi pi-undo' : 'pi pi-send'"
+                :severity="data.status === 'published' ? 'warn' : 'success'"
+                outlined
+                size="small"
+                class="article-action-button"
+                :loading="updatingArticleStatusId === data.id"
+                :disabled="updatingArticleStatusId !== null && updatingArticleStatusId !== data.id"
+                @click="confirmArticleStatusChange(data)"
               />
 
               <Button
@@ -211,6 +224,7 @@ import { useConfirm } from 'primevue/useconfirm'
 import {
   deleteAdminArticle,
   getAdminArticles,
+  updateAdminArticleStatus,
   type AdminArticle,
   type AdminArticleCategory,
   type AdminArticlePagination,
@@ -289,6 +303,7 @@ const activeStatus = ref<AdminArticleStatus | null>(null)
 
 const isLoading = ref(false)
 const deletingArticleId = ref<string | null>(null)
+const updatingArticleStatusId = ref<string | null>(null)
 const errorMessage = ref('')
 const successMessage = ref('')
 
@@ -336,6 +351,72 @@ const goToEditArticle = (articleId: string) => {
   })
 }
 
+const updateArticleStatus = async (
+  article: AdminArticle,
+) => {
+  const nextStatus: AdminArticleStatus =
+    article.status === 'published'
+      ? 'draft'
+      : 'published'
+
+  updatingArticleStatusId.value = article.id
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  try {
+    const response = await updateAdminArticleStatus(
+      article.id,
+      nextStatus,
+    )
+
+    articles.value = articles.value.map((currentArticle) =>
+      currentArticle.id === response.article.id
+        ? response.article
+        : currentArticle,
+    )
+
+    successMessage.value = response.message
+  } catch (error: unknown) {
+    if (isAxiosError(error)) {
+      errorMessage.value =
+        typeof error.response?.data?.message === 'string'
+          ? error.response.data.message
+          : '無法更新文章發布狀態，請稍後再試'
+    } else {
+      errorMessage.value =
+        '無法更新文章發布狀態，請稍後再試'
+    }
+  } finally {
+    updatingArticleStatusId.value = null
+  }
+}
+
+const confirmArticleStatusChange = (
+  article: AdminArticle,
+) => {
+  const isPublished = article.status === 'published'
+
+  confirm.require({
+    header: isPublished
+      ? '確認取消發布'
+      : '確認發布文章',
+    message: isPublished
+      ? `確定要將「${article.title}」改回草稿嗎？改為草稿後，前台將不再顯示這篇文章。`
+      : `確定要發布「${article.title}」嗎？發布後，文章將可以顯示於前台。`,
+    icon: 'pi pi-exclamation-triangle',
+    acceptLabel: isPublished
+      ? '改為草稿'
+      : '確認發布',
+    rejectLabel: '取消',
+    acceptClass: isPublished
+      ? 'p-button-warn'
+      : 'p-button-success',
+    accept: () => {
+      void updateArticleStatus(article)
+    },
+  })
+}
+
 const deleteArticle = async (article: AdminArticle) => {
   deletingArticleId.value = article.id
   errorMessage.value = ''
@@ -347,9 +428,7 @@ const deleteArticle = async (article: AdminArticle) => {
     successMessage.value = response.message
 
     const targetPage =
-      articles.value.length === 1 && pagination.page > 1
-        ? pagination.page - 1
-        : pagination.page
+      articles.value.length === 1 && pagination.page > 1 ? pagination.page - 1 : pagination.page
 
     await loadArticles(targetPage, pagination.limit)
   } catch (error: unknown) {

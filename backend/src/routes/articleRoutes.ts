@@ -455,6 +455,79 @@ router.patch('/:articleId', async (req, res) => {
   }
 })
 
+// 更新文章發布狀態
+router.patch('/:articleId/status', async (req, res) => {
+  try {
+    const { articleId } = req.params
+
+    if (!articleId || !mongoObjectIdPattern.test(articleId)) {
+      res.status(400).json({
+        message: '文章 ID 格式不正確',
+      })
+      return
+    }
+
+    const status =
+      typeof req.body === 'object' &&
+      req.body !== null &&
+      'status' in req.body
+        ? req.body.status
+        : undefined
+
+    if (!isArticleStatus(status)) {
+      res.status(400).json({
+        message: '文章發布狀態不正確',
+      })
+      return
+    }
+
+    const article = await Article.findById(articleId)
+
+    if (!article) {
+      res.status(404).json({
+        message: '找不到指定的文章',
+      })
+      return
+    }
+
+    article.status = status
+    article.publishedAt =
+      status === 'published'
+        ? article.publishedAt ?? new Date()
+        : undefined
+
+    await article.save()
+    await article.populate('author', 'username email')
+
+    res.status(200).json({
+      message:
+        status === 'published'
+          ? '文章發布成功'
+          : '文章已改為草稿',
+      article: {
+        id: article._id,
+        title: article.title,
+        slug: article.slug,
+        summary: article.summary,
+        content: article.content,
+        category: article.category,
+        coverImageUrl: article.coverImageUrl,
+        status: article.status,
+        author: article.author,
+        publishedAt: article.publishedAt,
+        createdAt: article.createdAt,
+        updatedAt: article.updatedAt,
+      },
+    })
+  } catch (error: unknown) {
+    console.error('Failed to update article status:', error)
+
+    res.status(500).json({
+      message: '更新文章發布狀態失敗',
+    })
+  }
+})
+
 // 刪除文章
 router.delete('/:articleId', async (req, res) => {
   try {

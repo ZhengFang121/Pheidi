@@ -205,3 +205,17 @@ export const deleteAdminArticle = async (
 
   return response.data
 }
+
+export const updateAdminArticleStatus = async (
+  articleId: string,
+  status: AdminArticleStatus,
+) => {
+  const response = await api.patch<AdminArticleResponse>(
+    `/admin/articles/${articleId}/status`,
+    {
+      status,
+    },
+  )
+
+  return response.data
+}
