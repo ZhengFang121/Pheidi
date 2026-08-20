@@ -381,6 +381,7 @@ router.get('/:articleId', async (req, res) => {
   }
 })
 
+// 更新文章
 router.patch('/:articleId', async (req, res) => {
   try {
     const { articleId } = req.params
@@ -454,6 +455,40 @@ router.patch('/:articleId', async (req, res) => {
   }
 })
 
+// 刪除文章
+router.delete('/:articleId', async (req, res) => {
+  try {
+    const { articleId } = req.params
+
+    if (!articleId || !mongoObjectIdPattern.test(articleId)) {
+      res.status(400).json({
+        message: '文章 ID 格式不正確',
+      })
+      return
+    }
+
+    const article = await Article.findByIdAndDelete(articleId)
+
+    if (!article) {
+      res.status(404).json({
+        message: '找不到指定的文章',
+      })
+      return
+    }
+
+    res.status(200).json({
+      message: '文章刪除成功',
+    })
+  } catch (error: unknown) {
+    console.error('Failed to delete article:', error)
+
+    res.status(500).json({
+      message: '刪除文章失敗',
+    })
+  }
+})
+
+// 新增文章
 router.post('/', async (req, res) => {
   try {
     if (!req.user) {

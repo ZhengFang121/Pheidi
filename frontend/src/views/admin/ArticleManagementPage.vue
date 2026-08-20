@@ -1,5 +1,7 @@
 <template>
   <section class="article-management-page">
+    <ConfirmDialog />
+
     <div class="page-heading">
       <div>
         <p class="page-eyebrow">ARTICLE MANAGEMENT</p>
@@ -78,6 +80,10 @@
         </div>
       </form>
 
+      <Message v-if="successMessage" severity="success" :closable="false">
+        {{ successMessage }}
+      </Message>
+
       <Message v-if="errorMessage" severity="error" :closable="false">
         {{ errorMessage }}
       </Message>
@@ -153,18 +159,33 @@
           </template>
         </Column>
 
-        <Column header="操作" style="width: 96px">
+        <Column header="操作" style="width: 190px">
           <template #body="{ data }">
-            <Button
-              type="button"
-              label="編輯"
-              icon="pi pi-pencil"
-              severity="secondary"
-              outlined
-              size="small"
-              class="article-action-button"
-              @click="goToEditArticle(data.id)"
-            />
+            <div class="article-actions">
+              <Button
+                type="button"
+                label="編輯"
+                icon="pi pi-pencil"
+                severity="secondary"
+                outlined
+                size="small"
+                class="article-action-button"
+                @click="goToEditArticle(data.id)"
+              />
+
+              <Button
+                type="button"
+                label="刪除"
+                icon="pi pi-trash"
+                severity="danger"
+                outlined
+                size="small"
+                class="article-action-button"
+                :loading="deletingArticleId === data.id"
+                :disabled="deletingArticleId !== null && deletingArticleId !== data.id"
+                @click="confirmDeleteArticle(data)"
+              />
+            </div>
           </template>
         </Column>
       </DataTable>
@@ -179,13 +200,16 @@ import { useRouter } from 'vue-router'
 
 import Button from 'primevue/button'
 import Column from 'primevue/column'
+import ConfirmDialog from 'primevue/confirmdialog'
 import DataTable from 'primevue/datatable'
 import InputText from 'primevue/inputtext'
 import Message from 'primevue/message'
 import Select from 'primevue/select'
 import Tag from 'primevue/tag'
+import { useConfirm } from 'primevue/useconfirm'
 
 import {
+  deleteAdminArticle,
   getAdminArticles,
   type AdminArticle,
   type AdminArticleCategory,
@@ -209,6 +233,8 @@ interface StatusOption {
 }
 
 const router = useRouter()
+
+const confirm = useConfirm()
 
 const categoryOptions: CategoryOption[] = [
   {
@@ -262,7 +288,9 @@ const activeCategory = ref<AdminArticleCategory | null>(null)
 const activeStatus = ref<AdminArticleStatus | null>(null)
 
 const isLoading = ref(false)
+const deletingArticleId = ref<string | null>(null)
 const errorMessage = ref('')
+const successMessage = ref('')
 
 const pagination = reactive<AdminArticlePagination>({
   page: 1,
@@ -304,6 +332,50 @@ const goToEditArticle = (articleId: string) => {
     name: 'admin-article-edit',
     params: {
       articleId,
+    },
+  })
+}
+
+const deleteArticle = async (article: AdminArticle) => {
+  deletingArticleId.value = article.id
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  try {
+    const response = await deleteAdminArticle(article.id)
+
+    successMessage.value = response.message
+
+    const targetPage =
+      articles.value.length === 1 && pagination.page > 1
+        ? pagination.page - 1
+        : pagination.page
+
+    await loadArticles(targetPage, pagination.limit)
+  } catch (error: unknown) {
+    if (isAxiosError(error)) {
+      errorMessage.value =
+        typeof error.response?.data?.message === 'string'
+          ? error.response.data.message
+          : '無法刪除文章，請稍後再試'
+    } else {
+      errorMessage.value = '無法刪除文章，請稍後再試'
+    }
+  } finally {
+    deletingArticleId.value = null
+  }
+}
+
+const confirmDeleteArticle = (article: AdminArticle) => {
+  confirm.require({
+    header: '確認刪除文章',
+    message: `確定要永久刪除「${article.title}」嗎？此操作無法復原。`,
+    icon: 'pi pi-exclamation-triangle',
+    acceptLabel: '確認刪除',
+    rejectLabel: '取消',
+    acceptClass: 'p-button-danger',
+    accept: () => {
+      void deleteArticle(article)
     },
   })
 }
@@ -497,6 +569,12 @@ onMounted(() => {
   color: var(--color-text-secondary);
   font-size: var(--font-size-xs);
   letter-spacing: var(--letter-spacing-tight);
+}
+
+.article-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .article-action-button {

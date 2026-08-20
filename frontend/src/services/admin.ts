@@ -55,6 +55,10 @@ export interface AdminArticleResponse {
   article: AdminArticleDetail
 }
 
+export interface DeleteAdminArticleResponse {
+  message: string
+}
+
 export interface AdminArticlePagination {
   page: number
   limit: number
@@ -187,6 +191,16 @@ export const updateAdminArticle = async (
   const response = await api.patch<AdminArticleResponse>(
     `/admin/articles/${articleId}`,
     payload,
+  )
+
+  return response.data
+}
+
+export const deleteAdminArticle = async (
+  articleId: string,
+) => {
+  const response = await api.delete<DeleteAdminArticleResponse>(
+    `/admin/articles/${articleId}`,
   )
 
   return response.data
