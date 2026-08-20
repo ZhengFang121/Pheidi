@@ -13,14 +13,13 @@
         <RouterLink
           to="/admin"
           class="admin-brand"
-          :aria-label="isSidebarCollapsed ? '回到管理員儀表板' : undefined"
+          aria-label="回到管理員首頁"
         >
-          <span class="admin-brand-mark">P</span>
-
-          <span class="admin-brand-text">
-            <span class="admin-brand-title">跑者菲迪</span>
-            <span class="admin-brand-subtitle">ADMIN</span>
-          </span>
+          <img
+            :src="isSidebarCollapsed ? '/logo-3.svg' : '/logo-2.svg'"
+            alt="跑者菲迪"
+            class="admin-brand-logo"
+          />
         </RouterLink>
 
         <button
@@ -68,11 +67,11 @@
       <RouterLink
         to="/home"
         class="back-to-site-link"
-        :title="isSidebarCollapsed ? '返回前台' : undefined"
+        :title="isSidebarCollapsed ? '回到網站' : undefined"
       >
         <ArrowLeft class="back-to-site-icon" aria-hidden="true" />
 
-        <span class="back-to-site-label">返回前台</span>
+        <span class="back-to-site-label">回到網站</span>
       </RouterLink>
     </aside>
 
@@ -114,12 +113,11 @@
           class="mobile-drawer-brand"
           @click="closeMobileDrawer"
         >
-          <span class="admin-brand-mark">P</span>
-
-          <span class="admin-brand-text">
-            <span class="admin-brand-title">跑者菲迪</span>
-            <span class="admin-brand-subtitle">ADMIN</span>
-          </span>
+          <img
+            src="/logo-2.svg"
+            alt="跑者菲迪"
+            class="admin-brand-logo"
+          />
         </RouterLink>
       </template>
 
@@ -148,7 +146,7 @@
           @click="closeMobileDrawer"
         >
           <ArrowLeft class="mobile-navigation-icon" aria-hidden="true" />
-          <span>返回前台</span>
+          <span>回到網站</span>
         </RouterLink>
       </template>
     </Drawer>
@@ -179,7 +177,7 @@ const sidebarStorageKey = 'pheidi_admin_sidebar_collapsed'
 
 const navigationItems: AdminNavigationItem[] = [
   {
-    label: '儀表板',
+    label: '首頁',
     route: '/admin',
     icon: LayoutDashboard,
   },
@@ -217,8 +215,9 @@ const closeMobileDrawer = () => {
 
 <style scoped>
 .admin-layout {
-  --admin-sidebar-width: 240px;
-  --admin-sidebar-collapsed-width: 80px;
+  --admin-sidebar-width: 185px;
+  --admin-sidebar-collapsed-width: 72px;
+  --admin-sidebar-brand-height: 232px;
 
   display: grid;
   grid-template-columns: var(--admin-sidebar-width) minmax(0, 1fr);
@@ -247,23 +246,24 @@ const closeMobileDrawer = () => {
   gap: var(--space-4);
 
   height: 100vh;
-  padding: var(--space-3);
 
   overflow: hidden;
 
-  background: var(--color-dark);
+  background: var(--color-primary-pale);
 }
 
 .admin-sidebar-header {
+  position: relative;
+
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-1);
+  justify-content: center;
 
-  min-height: 48px;
-  padding-bottom: var(--space-3);
+  flex: 0 0 var(--admin-sidebar-brand-height);
+  min-height: var(--admin-sidebar-brand-height);
+  padding: var(--space-2) var(--space-3);
 
-  border-bottom: 1px solid rgb(255 255 255 / 15%);
+  border-bottom: 1px solid var(--color-primary-soft);
 }
 
 .admin-brand,
@@ -273,8 +273,19 @@ const closeMobileDrawer = () => {
   align-items: center;
   gap: var(--space-2);
 
-  color: white;
+  color: var(--color-primary);
   text-decoration: none;
+}
+
+.admin-brand {
+  justify-content: center;
+  width: 100%;
+}
+
+.admin-brand-logo {
+  display: block;
+  width: 112px;
+  height: auto;
 }
 
 .admin-brand-mark {
@@ -332,7 +343,7 @@ const closeMobileDrawer = () => {
   height: 40px;
   padding: 0;
 
-  color: white;
+  color: var(--color-primary);
 
   cursor: pointer;
 
@@ -345,10 +356,19 @@ const closeMobileDrawer = () => {
     background-color 0.2s ease;
 }
 
+.sidebar-toggle-button {
+  position: absolute;
+  top: var(--space-1);
+  right: var(--space-1);
+
+  width: 32px;
+  height: 32px;
+}
+
 .sidebar-toggle-button:hover,
 .sidebar-toggle-button:focus-visible {
-  color: var(--color-dark);
-  background: var(--color-primary);
+  color: var(--color-surface);
+  background: var(--color-primary-light);
 }
 
 .sidebar-toggle-button:focus-visible,
@@ -370,18 +390,27 @@ const closeMobileDrawer = () => {
   gap: var(--space-1);
 }
 
+/* 展開狀態：統一四個選單的左右外距 */
+.admin-layout:not(.is-sidebar-collapsed) .admin-navigation {
+  margin-inline: var(--space-4);
+}
+
+.admin-layout:not(.is-sidebar-collapsed) .back-to-site-link {
+  margin-right: var(--space-4);
+  margin-left: var(--space-4);
+}
+
 .admin-navigation-link,
 .back-to-site-link {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
 
   min-height: 48px;
-  padding: var(--space-2);
 
   overflow: hidden;
 
-  color: rgb(255 255 255 / 75%);
+  color: var(--color-primary);
   text-decoration: none;
   white-space: nowrap;
 
@@ -392,11 +421,16 @@ const closeMobileDrawer = () => {
     background-color 0.2s ease;
 }
 
+.admin-layout:not(.is-sidebar-collapsed) .admin-navigation-link,
+.admin-layout:not(.is-sidebar-collapsed) .back-to-site-link {
+  padding-left: var(--space-5);
+}
+
 .admin-navigation-link:hover,
 .admin-navigation-link.router-link-exact-active,
 .back-to-site-link:hover {
-  color: white;
-  background: rgb(255 255 255 / 12%);
+  color: var(--color-surface);
+  background: var(--color-primary-light);
 }
 
 .admin-navigation-link:focus-visible,
@@ -422,18 +456,36 @@ const closeMobileDrawer = () => {
 }
 
 .back-to-site-link {
-  margin-top: auto;
+  margin: auto var(--space-2) var(--space-3);
 }
 
 /* Collapsed state */
 .is-sidebar-collapsed .admin-sidebar {
   align-items: center;
-  padding-inline: var(--space-2);
 }
 
 .is-sidebar-collapsed .admin-sidebar-header {
-  flex-direction: column;
-  padding-bottom: var(--space-2);
+  width: 100%;
+  flex-basis: 100px;
+  min-height: 100px;
+  padding: var(--space-3) var(--space-1) var(--space-1);
+}
+
+.is-sidebar-collapsed .sidebar-toggle-button {
+  top: calc(100% + var(--space-5));
+  right: auto;
+  left: 50%;
+
+  width: calc(100% - var(--space-2) * 2);
+  height: 48px;
+  padding: var(--space-2);
+
+  transform: translateX(-50%);
+}
+
+.is-sidebar-collapsed .sidebar-toggle-icon {
+  width: 20px;
+  height: 20px;
 }
 
 .is-sidebar-collapsed .admin-brand-text,
@@ -445,9 +497,20 @@ const closeMobileDrawer = () => {
   opacity: 0;
 }
 
+.is-sidebar-collapsed .admin-brand-logo {
+  width: 40px;
+}
+
 .is-sidebar-collapsed .admin-navigation,
-.is-sidebar-collapsed .admin-navigation-link,
 .is-sidebar-collapsed .back-to-site-link {
+  width: calc(100% - var(--space-2) * 2);
+}
+
+.is-sidebar-collapsed .admin-navigation {
+  margin-top: var(--space-8);
+}
+
+.is-sidebar-collapsed .admin-navigation-link {
   width: 100%;
 }
 
@@ -467,7 +530,7 @@ const closeMobileDrawer = () => {
   gap: var(--space-3);
 
   min-height: 100px;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-6);
 
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
@@ -490,7 +553,7 @@ const closeMobileDrawer = () => {
 }
 
 .admin-content {
-  padding: var(--space-4);
+  padding: var(--space-5) var(--space-6);
 }
 
 .mobile-menu-button {
@@ -558,12 +621,12 @@ const closeMobileDrawer = () => {
 }
 
 :global(.admin-mobile-drawer .p-drawer-header) {
-  color: white;
-  background: var(--color-dark);
+  color: var(--color-primary);
+  background: var(--color-primary-pale);
 }
 
 :global(.admin-mobile-drawer .p-drawer-close-button) {
-  color: white;
+  color: var(--color-primary);
 }
 
 :global(.admin-mobile-drawer .p-drawer-content) {

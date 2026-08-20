@@ -2,8 +2,8 @@
   <section class="dashboard-page">
     <div class="dashboard-heading">
       <div>
-        <p class="dashboard-eyebrow">DASHBOARD</p>
-        <h2 class="dashboard-title">儀表板</h2>
+        <p class="dashboard-eyebrow">HOME</p>
+        <h2 class="dashboard-title">首頁</h2>
         <p class="dashboard-description">
           查看跑者菲迪目前的使用者統計與最新註冊狀態。
         </p>
@@ -221,16 +221,16 @@ onMounted(() => {
   margin: 0 0 var(--space-1);
 
   color: var(--color-primary);
-  font-size: var(--font-size-caption);
+  font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
-  letter-spacing: var(--letter-spacing-wider);
+  letter-spacing: var(--letter-spacing-wide);
 }
 
 .dashboard-title {
   margin: 0 0 var(--space-2);
 
   color: var(--color-text);
-  font-size: var(--font-size-h1);
+  font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-heading);
 }
@@ -239,7 +239,7 @@ onMounted(() => {
   margin: 0;
 
   color: var(--color-text-secondary);
-  line-height: var(--line-height-body);
+  line-height: var(--line-height-base);
 }
 
 .error-content {

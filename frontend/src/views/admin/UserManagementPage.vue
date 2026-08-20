@@ -285,16 +285,16 @@ onMounted(() => {
   margin: 0 0 var(--space-1);
 
   color: var(--color-primary);
-  font-size: var(--font-size-caption);
+  font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
-  letter-spacing: var(--letter-spacing-wider);
+  letter-spacing: var(--letter-spacing-wide);
 }
 
 .page-title {
   margin: 0 0 var(--space-2);
 
   color: var(--color-text);
-  font-size: var(--font-size-h1);
+  font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-heading);
 }
@@ -303,7 +303,7 @@ onMounted(() => {
   margin: 0;
 
   color: var(--color-text-secondary);
-  line-height: var(--line-height-body);
+  line-height: var(--line-height-base);
 }
 
 .user-total {
@@ -321,12 +321,12 @@ onMounted(() => {
 
 .user-total-label {
   color: var(--color-text-secondary);
-  font-size: var(--font-size-caption);
+  font-size: var(--font-size-xs);
 }
 
 .user-total-value {
   color: var(--color-primary);
-  font-size: var(--font-size-h2);
+  font-size: var(--font-size-lg);
   line-height: 1;
 }
 
