@@ -6,15 +6,8 @@ import InputText from 'primevue/inputtext'
 import Message from 'primevue/message'
 import { ref } from 'vue'
 
-import api from '@/services/api'
-
-interface ForgotPasswordResponse {
-  message: string
-}
-
-interface ApiErrorResponse {
-  message?: string
-}
+import { forgotPassword } from '@/services/auth'
+import type { ApiErrorResponse } from '@/types/api'
 
 const initialValues = {
   email: '',
@@ -40,10 +33,7 @@ const resolver = ({ values }: { values: Record<string, unknown> }) => {
 
 const getFormValues = (event: FormSubmitEvent) => {
   return Object.fromEntries(
-    Object.entries(event.states).map(([fieldName, fieldState]) => [
-      fieldName,
-      fieldState.value,
-    ]),
+    Object.entries(event.states).map(([fieldName, fieldState]) => [fieldName, fieldState.value]),
   )
 }
 
@@ -58,19 +48,13 @@ const handleSubmit = async (event: FormSubmitEvent) => {
   isSubmitting.value = true
 
   try {
-    const response = await api.post<ForgotPasswordResponse>(
-      '/users/forgot-password',
-      {
-        email: String(values.email ?? '').trim(),
-      },
-    )
+    const response = await forgotPassword(String(values.email ?? '').trim())
 
-    successMessage.value = response.data.message
+    successMessage.value = response.message
     isSubmitted.value = true
   } catch (error: unknown) {
     if (isAxiosError<ApiErrorResponse>(error)) {
-      errorMessage.value =
-        error.response?.data.message ?? '無法處理密碼重設申請，請稍後再試'
+      errorMessage.value = error.response?.data.message ?? '無法處理密碼重設申請，請稍後再試'
     } else {
       errorMessage.value = '發生未預期的錯誤，請稍後再試'
     }

@@ -207,8 +207,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
-import { isAxiosError } from 'axios'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import Button from 'primevue/button'
@@ -222,119 +221,44 @@ import Tag from 'primevue/tag'
 import { useConfirm } from 'primevue/useconfirm'
 
 import {
-  deleteAdminArticle,
-  getAdminArticles,
-  updateAdminArticleStatus,
-  type AdminArticle,
-  type AdminArticleCategory,
-  type AdminArticlePagination,
-  type AdminArticleStatus,
-} from '@/services/admin'
-
-interface PageEvent {
-  rows: number
-  page: number
-}
-
-interface CategoryOption {
-  label: string
-  value: AdminArticleCategory
-}
-
-interface StatusOption {
-  label: string
-  value: AdminArticleStatus
-}
+  articleCategoryOptions as categoryOptions,
+  articleStatusOptions as statusOptions,
+  getArticleCategoryLabel,
+  getArticleStatusLabel,
+} from '@/constants/article'
+import { useAdminArticleList } from '@/composables/useAdminArticleList'
+import { deleteAdminArticle, updateAdminArticleStatus } from '@/services/adminArticles'
+import type { AdminArticle, ArticleStatus } from '@/types/article'
+import { getApiErrorMessage } from '@/utils/apiError'
+import { formatNumericDate } from '@/utils/date'
 
 const router = useRouter()
 
 const confirm = useConfirm()
 
-const categoryOptions: CategoryOption[] = [
-  {
-    label: '學習',
-    value: 'learning',
-  },
-  {
-    label: '裝備',
-    value: 'equipment',
-  },
-  {
-    label: '補給',
-    value: 'nutrition',
-  },
-  {
-    label: '賽事',
-    value: 'events',
-  },
-]
-
-const statusOptions: StatusOption[] = [
-  {
-    label: '草稿',
-    value: 'draft',
-  },
-  {
-    label: '已發布',
-    value: 'published',
-  },
-]
-
-const categoryLabels: Record<AdminArticleCategory, string> = {
-  learning: '學習',
-  equipment: '裝備',
-  nutrition: '補給',
-  events: '賽事',
-}
-
-const statusLabels: Record<AdminArticleStatus, string> = {
-  draft: '草稿',
-  published: '已發布',
-}
-
-const articles = ref<AdminArticle[]>([])
-const searchInput = ref('')
-const categoryInput = ref<AdminArticleCategory | null>(null)
-const statusInput = ref<AdminArticleStatus | null>(null)
-
-const activeSearch = ref('')
-const activeCategory = ref<AdminArticleCategory | null>(null)
-const activeStatus = ref<AdminArticleStatus | null>(null)
-
-const isLoading = ref(false)
 const deletingArticleId = ref<string | null>(null)
 const updatingArticleStatusId = ref<string | null>(null)
-const errorMessage = ref('')
 const successMessage = ref('')
 
-const pagination = reactive<AdminArticlePagination>({
-  page: 1,
-  limit: 10,
-  total: 0,
-  totalPages: 0,
-})
+const {
+  articles,
+  searchInput,
+  categoryInput,
+  statusInput,
+  isLoading,
+  errorMessage,
+  pagination,
+  first,
+  hasActiveFilters,
+  loadArticles,
+  searchArticles: handleSearch,
+  clearFilters,
+  changePage: handlePageChange,
+} = useAdminArticleList()
 
-const first = computed(() => (pagination.page - 1) * pagination.limit)
-
-const hasActiveFilters = computed(() =>
-  Boolean(activeSearch.value || activeCategory.value || activeStatus.value),
-)
-
-const getCategoryLabel = (category: AdminArticleCategory) => {
-  return categoryLabels[category]
-}
-
-const getStatusLabel = (status: AdminArticleStatus) => {
-  return statusLabels[status]
-}
-
-const formatDate = (date: string) => {
-  return new Intl.DateTimeFormat('zh-TW', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date(date))
-}
+const getCategoryLabel = getArticleCategoryLabel
+const getStatusLabel = getArticleStatusLabel
+const formatDate = formatNumericDate
 
 const goToCreateArticle = () => {
   void router.push({
@@ -351,66 +275,40 @@ const goToEditArticle = (articleId: string) => {
   })
 }
 
-const updateArticleStatus = async (
-  article: AdminArticle,
-) => {
-  const nextStatus: AdminArticleStatus =
-    article.status === 'published'
-      ? 'draft'
-      : 'published'
+const updateArticleStatus = async (article: AdminArticle) => {
+  const nextStatus: ArticleStatus = article.status === 'published' ? 'draft' : 'published'
 
   updatingArticleStatusId.value = article.id
   errorMessage.value = ''
   successMessage.value = ''
 
   try {
-    const response = await updateAdminArticleStatus(
-      article.id,
-      nextStatus,
-    )
+    const response = await updateAdminArticleStatus(article.id, nextStatus)
 
     articles.value = articles.value.map((currentArticle) =>
-      currentArticle.id === response.article.id
-        ? response.article
-        : currentArticle,
+      currentArticle.id === response.article.id ? response.article : currentArticle,
     )
 
     successMessage.value = response.message
   } catch (error: unknown) {
-    if (isAxiosError(error)) {
-      errorMessage.value =
-        typeof error.response?.data?.message === 'string'
-          ? error.response.data.message
-          : '無法更新文章發布狀態，請稍後再試'
-    } else {
-      errorMessage.value =
-        '無法更新文章發布狀態，請稍後再試'
-    }
+    errorMessage.value = getApiErrorMessage(error, '無法更新文章發布狀態，請稍後再試')
   } finally {
     updatingArticleStatusId.value = null
   }
 }
 
-const confirmArticleStatusChange = (
-  article: AdminArticle,
-) => {
+const confirmArticleStatusChange = (article: AdminArticle) => {
   const isPublished = article.status === 'published'
 
   confirm.require({
-    header: isPublished
-      ? '確認取消發布'
-      : '確認發布文章',
+    header: isPublished ? '確認取消發布' : '確認發布文章',
     message: isPublished
       ? `確定要將「${article.title}」改回草稿嗎？改為草稿後，前台將不再顯示這篇文章。`
       : `確定要發布「${article.title}」嗎？發布後，文章將可以顯示於前台。`,
     icon: 'pi pi-exclamation-triangle',
-    acceptLabel: isPublished
-      ? '改為草稿'
-      : '確認發布',
+    acceptLabel: isPublished ? '改為草稿' : '確認發布',
     rejectLabel: '取消',
-    acceptClass: isPublished
-      ? 'p-button-warn'
-      : 'p-button-success',
+    acceptClass: isPublished ? 'p-button-warn' : 'p-button-success',
     accept: () => {
       void updateArticleStatus(article)
     },
@@ -432,14 +330,7 @@ const deleteArticle = async (article: AdminArticle) => {
 
     await loadArticles(targetPage, pagination.limit)
   } catch (error: unknown) {
-    if (isAxiosError(error)) {
-      errorMessage.value =
-        typeof error.response?.data?.message === 'string'
-          ? error.response.data.message
-          : '無法刪除文章，請稍後再試'
-    } else {
-      errorMessage.value = '無法刪除文章，請稍後再試'
-    }
+    errorMessage.value = getApiErrorMessage(error, '無法刪除文章，請稍後再試')
   } finally {
     deletingArticleId.value = null
   }
@@ -457,59 +348,6 @@ const confirmDeleteArticle = (article: AdminArticle) => {
       void deleteArticle(article)
     },
   })
-}
-
-const loadArticles = async (page = pagination.page, limit = pagination.limit) => {
-  isLoading.value = true
-  errorMessage.value = ''
-
-  try {
-    const response = await getAdminArticles({
-      page,
-      limit,
-      search: activeSearch.value || undefined,
-      category: activeCategory.value || undefined,
-      status: activeStatus.value || undefined,
-    })
-
-    articles.value = response.articles
-    Object.assign(pagination, response.pagination)
-  } catch (error: unknown) {
-    if (isAxiosError(error)) {
-      errorMessage.value =
-        typeof error.response?.data?.message === 'string'
-          ? error.response.data.message
-          : '無法取得文章列表，請稍後再試'
-    } else {
-      errorMessage.value = '無法取得文章列表，請稍後再試'
-    }
-  } finally {
-    isLoading.value = false
-  }
-}
-
-const handleSearch = async () => {
-  activeSearch.value = searchInput.value.trim()
-  activeCategory.value = categoryInput.value
-  activeStatus.value = statusInput.value
-
-  await loadArticles(1, pagination.limit)
-}
-
-const clearFilters = async () => {
-  searchInput.value = ''
-  categoryInput.value = null
-  statusInput.value = null
-
-  activeSearch.value = ''
-  activeCategory.value = null
-  activeStatus.value = null
-
-  await loadArticles(1, pagination.limit)
-}
-
-const handlePageChange = async (event: PageEvent) => {
-  await loadArticles(event.page + 1, event.rows)
 }
 
 onMounted(() => {

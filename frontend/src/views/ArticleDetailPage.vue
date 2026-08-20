@@ -108,33 +108,19 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { isAxiosError } from 'axios'
 import { useRoute } from 'vue-router'
-import {
-  ArrowLeft,
-  BookOpen,
-} from '@lucide/vue'
+import { ArrowLeft, BookOpen } from '@lucide/vue'
 
 import Button from 'primevue/button'
 import Message from 'primevue/message'
 import Skeleton from 'primevue/skeleton'
 import Tag from 'primevue/tag'
 
-import {
-  getArticleBySlug,
-  type ArticleCategory,
-  type ArticleDetail,
-} from '@/services/articles'
-
-const categoryLabels: Record<
-  ArticleCategory,
-  string
-> = {
-  learning: '學習',
-  equipment: '裝備',
-  nutrition: '補給',
-  events: '賽事',
-}
+import { getArticleCategoryLabel } from '@/constants/article'
+import { getArticleBySlug } from '@/services/articles'
+import type { ArticleDetail } from '@/types/article'
+import { getApiErrorMessage, hasApiErrorStatus } from '@/utils/apiError'
+import { formatLongDate } from '@/utils/date'
 
 const route = useRoute()
 
@@ -142,25 +128,11 @@ const article = ref<ArticleDetail | null>(null)
 const isLoading = ref(false)
 const errorMessage = ref('')
 
-const getCategoryLabel = (
-  category: ArticleCategory,
-) => {
-  return categoryLabels[category]
-}
-
-const formatDate = (date: string) => {
-  return new Intl.DateTimeFormat('zh-TW', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(new Date(date))
-}
+const getCategoryLabel = getArticleCategoryLabel
+const formatDate = formatLongDate
 
 const loadArticle = async () => {
-  const slug =
-    typeof route.params.slug === 'string'
-      ? route.params.slug
-      : ''
+  const slug = typeof route.params.slug === 'string' ? route.params.slug : ''
 
   if (!slug) {
     errorMessage.value = '文章網址不正確'
@@ -172,25 +144,14 @@ const loadArticle = async () => {
   article.value = null
 
   try {
-    const response =
-      await getArticleBySlug(slug)
+    const response = await getArticleBySlug(slug)
 
     article.value = response.article
   } catch (error: unknown) {
-    if (isAxiosError(error)) {
-      if (error.response?.status === 404) {
-        errorMessage.value =
-          '找不到這篇文章，文章可能尚未發布或已不存在'
-      } else {
-        errorMessage.value =
-          typeof error.response?.data?.message ===
-          'string'
-            ? error.response.data.message
-            : '無法取得文章，請稍後再試'
-      }
+    if (hasApiErrorStatus(error, 404)) {
+      errorMessage.value = '找不到這篇文章，文章可能尚未發布或已不存在'
     } else {
-      errorMessage.value =
-        '無法取得文章，請稍後再試'
+      errorMessage.value = getApiErrorMessage(error, '無法取得文章，請稍後再試')
     }
   } finally {
     isLoading.value = false

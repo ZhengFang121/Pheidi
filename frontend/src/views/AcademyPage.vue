@@ -143,8 +143,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
-import { isAxiosError } from 'axios'
+import { onMounted } from 'vue'
 import { BookOpen } from '@lucide/vue'
 
 import Button from 'primevue/button'
@@ -154,138 +153,36 @@ import Paginator from 'primevue/paginator'
 import Skeleton from 'primevue/skeleton'
 import Tag from 'primevue/tag'
 
-import {
-  getArticles,
-  type ArticleCategory,
-  type ArticleListItem,
-  type ArticlePagination,
-} from '@/services/articles'
+import { articleCategoryOptions, getArticleCategoryLabel } from '@/constants/article'
+import { useArticleList } from '@/composables/useArticleList'
+import { formatLongDate } from '@/utils/date'
 
-interface CategoryOption {
-  label: string
-  value: ArticleCategory | null
-}
-
-interface PageEvent {
-  page: number
-  rows: number
-}
-
-const categoryOptions: CategoryOption[] = [
+const categoryOptions = [
   {
     label: '全部',
     value: null,
   },
-  {
-    label: '學習',
-    value: 'learning',
-  },
-  {
-    label: '裝備',
-    value: 'equipment',
-  },
-  {
-    label: '補給',
-    value: 'nutrition',
-  },
-  {
-    label: '賽事',
-    value: 'events',
-  },
+  ...articleCategoryOptions,
 ]
 
-const categoryLabels: Record<ArticleCategory, string> = {
-  learning: '學習',
-  equipment: '裝備',
-  nutrition: '補給',
-  events: '賽事',
-}
+const {
+  articles,
+  searchInput,
+  activeSearch,
+  activeCategory,
+  isLoading,
+  errorMessage,
+  pagination,
+  first,
+  loadArticles,
+  searchArticles: handleSearch,
+  clearSearch,
+  changeCategory: handleCategoryChange,
+  changePage: handlePageChange,
+} = useArticleList()
 
-const articles = ref<ArticleListItem[]>([])
-const searchInput = ref('')
-const activeSearch = ref('')
-const activeCategory = ref<ArticleCategory | null>(null)
-const isLoading = ref(false)
-const errorMessage = ref('')
-
-const pagination = reactive<ArticlePagination>({
-  page: 1,
-  limit: 12,
-  total: 0,
-  totalPages: 0,
-})
-
-const first = computed(() => (pagination.page - 1) * pagination.limit)
-
-const getCategoryLabel = (category: ArticleCategory) => {
-  return categoryLabels[category]
-}
-
-const formatDate = (date: string) => {
-  return new Intl.DateTimeFormat('zh-TW', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(new Date(date))
-}
-
-const loadArticles = async (page = pagination.page, limit = pagination.limit) => {
-  isLoading.value = true
-  errorMessage.value = ''
-
-  try {
-    const response = await getArticles({
-      page,
-      limit,
-      search: activeSearch.value || undefined,
-      category: activeCategory.value || undefined,
-    })
-
-    articles.value = response.articles
-    Object.assign(pagination, response.pagination)
-  } catch (error: unknown) {
-    if (isAxiosError(error)) {
-      errorMessage.value =
-        typeof error.response?.data?.message === 'string'
-          ? error.response.data.message
-          : '無法取得跑者學院文章，請稍後再試'
-    } else {
-      errorMessage.value = '無法取得跑者學院文章，請稍後再試'
-    }
-  } finally {
-    isLoading.value = false
-  }
-}
-
-const handleSearch = async () => {
-  activeSearch.value = searchInput.value.trim()
-
-  await loadArticles(1, pagination.limit)
-}
-
-const clearSearch = async () => {
-  searchInput.value = ''
-  activeSearch.value = ''
-
-  await loadArticles(1, pagination.limit)
-}
-
-const handleCategoryChange = async (category: ArticleCategory | null) => {
-  if (activeCategory.value === category) return
-
-  activeCategory.value = category
-
-  await loadArticles(1, pagination.limit)
-}
-
-const handlePageChange = async (event: PageEvent) => {
-  await loadArticles(event.page + 1, event.rows)
-
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth',
-  })
-}
+const getCategoryLabel = getArticleCategoryLabel
+const formatDate = formatLongDate
 
 onMounted(() => {
   void loadArticles()

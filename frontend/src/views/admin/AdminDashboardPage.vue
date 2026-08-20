@@ -104,13 +104,7 @@
 import { computed, onMounted, ref } from 'vue'
 import type { Component } from 'vue'
 import { isAxiosError } from 'axios'
-import {
-  ArrowRight,
-  ShieldCheck,
-  UserPlus,
-  UserRound,
-  UsersRound,
-} from '@lucide/vue'
+import { ArrowRight, ShieldCheck, UserPlus, UserRound, UsersRound } from '@lucide/vue'
 import Button from 'primevue/button'
 import Column from 'primevue/column'
 import DataTable from 'primevue/datatable'
@@ -118,11 +112,9 @@ import Message from 'primevue/message'
 import Skeleton from 'primevue/skeleton'
 import Tag from 'primevue/tag'
 
-import {
-  getAdminDashboard,
-  type AdminDashboardStatistics,
-  type AdminLatestUser,
-} from '@/services/admin'
+import { getAdminDashboard } from '@/services/adminDashboard'
+import type { AdminDashboardStatistics, AdminLatestUser } from '@/types/user'
+import { formatNumericDate } from '@/utils/date'
 
 interface StatisticCard {
   label: string
@@ -173,12 +165,7 @@ const statisticCards = computed<StatisticCard[]>(() => {
 })
 
 const formatDate = (date: string) => {
-  return new Intl.DateTimeFormat('zh-TW', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    timeZone: 'Asia/Taipei',
-  }).format(new Date(date))
+  return formatNumericDate(date, 'Asia/Taipei')
 }
 
 const loadDashboard = async () => {

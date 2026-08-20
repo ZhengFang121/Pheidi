@@ -2,24 +2,14 @@ import { computed, ref } from 'vue'
 import { isAxiosError } from 'axios'
 import { defineStore } from 'pinia'
 
-import api, { setApiAuthToken } from '@/services/api'
-
-export interface AuthUser {
-  id: string
-  username: string
-  email: string
-  role: 'player' | 'admin'
-}
+import { setApiAuthToken } from '@/services/api'
+import { getCurrentUser } from '@/services/auth'
+import type { AuthUser } from '@/types/user'
 
 interface SetAuthPayload {
   token: string
   user: AuthUser
   keepSignedIn: boolean
-}
-
-interface CurrentUserResponse {
-  message: string
-  user: AuthUser
 }
 
 const authTokenKey = 'pheidi_auth_token'
@@ -104,10 +94,10 @@ export const useAuthStore = defineStore('auth', () => {
     if (!token.value) return
 
     try {
-      const response = await api.get<CurrentUserResponse>('/users/me')
+      const response = await getCurrentUser()
 
-      user.value = response.data.user
-      updateStoredUser(response.data.user)
+      user.value = response.user
+      updateStoredUser(response.user)
     } catch (error: unknown) {
       if (isAxiosError(error) && error.response?.status === 401) {
         logout()

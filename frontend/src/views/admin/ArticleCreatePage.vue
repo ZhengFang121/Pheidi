@@ -36,10 +36,8 @@ import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
 
 import ArticleForm from '@/components/admin/ArticleForm.vue'
-import {
-  createAdminArticle,
-  type AdminArticleFormPayload,
-} from '@/services/admin'
+import { createAdminArticle } from '@/services/adminArticles'
+import type { AdminArticleFormPayload } from '@/types/article'
 
 const router = useRouter()
 
@@ -52,9 +50,7 @@ const goBack = () => {
   })
 }
 
-const handleSubmit = async (
-  payload: AdminArticleFormPayload,
-) => {
+const handleSubmit = async (payload: AdminArticleFormPayload) => {
   isSubmitting.value = true
   errorMessage.value = ''
 

@@ -14,23 +14,9 @@ import Tabs from 'primevue/tabs'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import api from '@/services/api'
-import { useAuthStore, type AuthUser } from '@/stores/auth'
-
-interface RegisterResponse {
-  message: string
-  user: AuthUser
-}
-
-interface LoginResponse {
-  message: string
-  token: string
-  user: AuthUser
-}
-
-interface ApiErrorResponse {
-  message?: string
-}
+import { login, register } from '@/services/auth'
+import { useAuthStore } from '@/stores/auth'
+import type { ApiErrorResponse } from '@/types/api'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -168,7 +154,7 @@ const handleLogin = async (event: FormSubmitEvent) => {
   isLoggingIn.value = true
 
   try {
-    const response = await api.post<LoginResponse>('/users/login', {
+    const response = await login({
       email,
       password: String(values.password ?? ''),
     })
@@ -180,12 +166,12 @@ const handleLogin = async (event: FormSubmitEvent) => {
     }
 
     authStore.setAuth({
-      token: response.data.token,
-      user: response.data.user,
+      token: response.token,
+      user: response.user,
       keepSignedIn,
     })
 
-    loginSuccessMessage.value = response.data.message
+    loginSuccessMessage.value = response.message
 
     await router.push('/home')
   } catch (error: unknown) {
@@ -211,13 +197,13 @@ const handleRegister = async (event: FormSubmitEvent) => {
   isRegistering.value = true
 
   try {
-    const response = await api.post<RegisterResponse>('/users', {
+    const response = await register({
       username: String(values.username ?? '').trim(),
       email: registeredEmail,
       password: String(values.password ?? ''),
     })
 
-    registerSuccessMessage.value = response.data.message
+    registerSuccessMessage.value = response.message
     event.reset()
 
     loginInitialValues.value = {
@@ -226,7 +212,7 @@ const handleRegister = async (event: FormSubmitEvent) => {
       rememberEmail: false,
       keepSignedIn: false,
     }
-    loginSuccessMessage.value = `${response.data.message}，請登入帳號`
+    loginSuccessMessage.value = `${response.message}，請登入帳號`
     loginErrorMessage.value = ''
     loginFormKey.value += 1
     activeTab.value = 'login'

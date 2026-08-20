@@ -7,15 +7,8 @@ import Password from 'primevue/password'
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
-import api from '@/services/api'
-
-interface ResetPasswordResponse {
-  message: string
-}
-
-interface ApiErrorResponse {
-  message?: string
-}
+import { resetPassword } from '@/services/auth'
+import type { ApiErrorResponse } from '@/types/api'
 
 const route = useRoute()
 
@@ -86,10 +79,7 @@ const getPasswordStrength = (value: unknown) => {
 
 const getFormValues = (event: FormSubmitEvent) => {
   return Object.fromEntries(
-    Object.entries(event.states).map(([fieldName, fieldState]) => [
-      fieldName,
-      fieldState.value,
-    ]),
+    Object.entries(event.states).map(([fieldName, fieldState]) => [fieldName, fieldState.value]),
   )
 }
 
@@ -104,20 +94,16 @@ const handleSubmit = async (event: FormSubmitEvent) => {
   isSubmitting.value = true
 
   try {
-    const response = await api.post<ResetPasswordResponse>(
-      '/users/reset-password',
-      {
-        token: resetToken.value,
-        password: String(values.password ?? ''),
-      },
-    )
+    const response = await resetPassword({
+      token: resetToken.value,
+      password: String(values.password ?? ''),
+    })
 
-    successMessage.value = response.data.message
+    successMessage.value = response.message
     isSubmitted.value = true
   } catch (error: unknown) {
     if (isAxiosError<ApiErrorResponse>(error)) {
-      errorMessage.value =
-        error.response?.data.message ?? '無法重設密碼，請稍後再試'
+      errorMessage.value = error.response?.data.message ?? '無法重設密碼，請稍後再試'
     } else {
       errorMessage.value = '發生未預期的錯誤，請稍後再試'
     }

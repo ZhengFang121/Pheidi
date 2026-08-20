@@ -130,14 +130,12 @@ import Message from 'primevue/message'
 import Tag from 'primevue/tag'
 import { useConfirm } from 'primevue/useconfirm'
 
-import {
-  getAdminUsers,
-  updateAdminUserRole,
-  type AdminUser,
-  type AdminUserPagination,
-} from '@/services/admin'
+import { getAdminUsers, updateAdminUserRole } from '@/services/adminUsers'
 
 import { useAuthStore } from '@/stores/auth'
+import type { Pagination } from '@/types/api'
+import type { AdminUser } from '@/types/user'
+import { formatNumericDate } from '@/utils/date'
 
 interface PageEvent {
   first: number
@@ -156,7 +154,7 @@ const errorMessage = ref('')
 const successMessage = ref('')
 const updatingUserId = ref<string | null>(null)
 
-const pagination = reactive<AdminUserPagination>({
+const pagination = reactive<Pagination>({
   page: 1,
   limit: 10,
   total: 0,
@@ -166,11 +164,7 @@ const pagination = reactive<AdminUserPagination>({
 const first = computed(() => (pagination.page - 1) * pagination.limit)
 
 const formatDate = (date: string) => {
-  return new Intl.DateTimeFormat('zh-TW', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date(date))
+  return formatNumericDate(date)
 }
 
 const loadUsers = async (page = pagination.page, limit = pagination.limit) => {

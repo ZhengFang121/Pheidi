@@ -55,11 +55,8 @@ import Button from 'primevue/button'
 import Message from 'primevue/message'
 
 import ArticleForm from '@/components/admin/ArticleForm.vue'
-import {
-  getAdminArticle,
-  updateAdminArticle,
-  type AdminArticleFormPayload,
-} from '@/services/admin'
+import { getAdminArticle, updateAdminArticle } from '@/services/adminArticles'
+import type { AdminArticleFormPayload } from '@/types/article'
 
 const route = useRoute()
 const router = useRouter()
@@ -120,9 +117,7 @@ const loadArticle = async () => {
   }
 }
 
-const handleSubmit = async (
-  payload: AdminArticleFormPayload,
-) => {
+const handleSubmit = async (payload: AdminArticleFormPayload) => {
   const articleId = getArticleId()
 
   if (!articleId) {

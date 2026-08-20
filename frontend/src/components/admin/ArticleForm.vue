@@ -198,16 +198,9 @@ import Message from 'primevue/message'
 import Select from 'primevue/select'
 import Textarea from 'primevue/textarea'
 
-import {
-  uploadAdminArticleCover,
-  type AdminArticleCategory,
-  type AdminArticleFormPayload,
-} from '@/services/admin'
-
-interface CategoryOption {
-  label: string
-  value: AdminArticleCategory
-}
+import { articleCategoryOptions as categoryOptions } from '@/constants/article'
+import { uploadAdminArticleCover } from '@/services/uploads'
+import type { AdminArticleFormPayload } from '@/types/article'
 
 interface Props {
   initialValue?: AdminArticleFormPayload
@@ -245,25 +238,6 @@ const coverImageInput = ref<HTMLInputElement | null>(null)
 
 const isUploadingCover = ref(false)
 const coverUploadError = ref('')
-
-const categoryOptions: CategoryOption[] = [
-  {
-    label: '學習',
-    value: 'learning',
-  },
-  {
-    label: '裝備',
-    value: 'equipment',
-  },
-  {
-    label: '補給',
-    value: 'nutrition',
-  },
-  {
-    label: '賽事',
-    value: 'events',
-  },
-]
 
 const form = reactive<AdminArticleFormPayload>({
   title: '',
