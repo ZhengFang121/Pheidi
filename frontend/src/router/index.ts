@@ -17,6 +17,8 @@ import StationPage from '@/views/StationPage.vue'
 import TermsPage from '@/views/TermsPage.vue'
 
 import AdminDashboardPage from '@/views/admin/AdminDashboardPage.vue'
+import ArticleCreatePage from '@/views/admin/ArticleCreatePage.vue'
+import ArticleEditPage from '@/views/admin/ArticleEditPage.vue'
 import ArticleManagementPage from '@/views/admin/ArticleManagementPage.vue'
 import UserManagementPage from '@/views/admin/UserManagementPage.vue'
 
@@ -124,6 +126,16 @@ const router = createRouter({
           path: 'articles',
           name: 'admin-articles',
           component: ArticleManagementPage,
+        },
+        {
+          path: 'articles/new',
+          name: 'admin-article-create',
+          component: ArticleCreatePage,
+        },
+        {
+          path: 'articles/:articleId/edit',
+          name: 'admin-article-edit',
+          component: ArticleEditPage,
         },
       ],
     },

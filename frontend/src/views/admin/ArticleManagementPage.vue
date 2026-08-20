@@ -4,25 +4,26 @@
       <div>
         <p class="page-eyebrow">ARTICLE MANAGEMENT</p>
         <h2 class="page-title">文章管理</h2>
-        <p class="page-description">
-          管理跑者學院的文章、分類與發布狀態。
-        </p>
+        <p class="page-description">管理跑者學院的文章、分類與發布狀態。</p>
       </div>
 
-      <div class="article-total">
-        <span class="article-total-label">文章總數</span>
-        <strong class="article-total-value">
-          {{ pagination.total }}
-        </strong>
+      <div class="page-actions">
+        <div class="article-total">
+          <span class="article-total-label">文章總數</span>
+
+          <strong class="article-total-value">
+            {{ pagination.total }}
+          </strong>
+        </div>
+
+        <Button type="button" label="新增文章" @click="goToCreateArticle" />
       </div>
     </div>
 
     <div class="management-panel">
       <form class="filter-form" @submit.prevent="handleSearch">
         <div class="filter-field search-field">
-          <label for="article-search" class="filter-label">
-            搜尋文章
-          </label>
+          <label for="article-search" class="filter-label"> 搜尋文章 </label>
 
           <InputText
             id="article-search"
@@ -34,9 +35,7 @@
         </div>
 
         <div class="filter-field">
-          <label for="article-category" class="filter-label">
-            文章分類
-          </label>
+          <label for="article-category" class="filter-label"> 文章分類 </label>
 
           <Select
             id="article-category"
@@ -51,9 +50,7 @@
         </div>
 
         <div class="filter-field">
-          <label for="article-status" class="filter-label">
-            發布狀態
-          </label>
+          <label for="article-status" class="filter-label"> 發布狀態 </label>
 
           <Select
             id="article-status"
@@ -68,11 +65,7 @@
         </div>
 
         <div class="filter-actions">
-          <Button
-            type="submit"
-            label="搜尋"
-            :loading="isLoading"
-          />
+          <Button type="submit" label="搜尋" :loading="isLoading" />
 
           <Button
             v-if="hasActiveFilters"
@@ -85,11 +78,7 @@
         </div>
       </form>
 
-      <Message
-        v-if="errorMessage"
-        severity="error"
-        :closable="false"
-      >
+      <Message v-if="errorMessage" severity="error" :closable="false">
         {{ errorMessage }}
       </Message>
 
@@ -104,7 +93,7 @@
         paginator
         striped-rows
         scrollable
-        table-style="min-width: 960px"
+        table-style="min-width: 1040px"
         paginator-template="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
         current-page-report-template="第 {currentPage} 頁，共 {totalPages} 頁"
         class="article-table"
@@ -112,11 +101,7 @@
       >
         <template #empty>
           <div class="table-empty">
-            {{
-              hasActiveFilters
-                ? '找不到符合條件的文章'
-                : '目前還沒有文章資料'
-            }}
+            {{ hasActiveFilters ? '找不到符合條件的文章' : '目前還沒有文章資料' }}
           </div>
         </template>
 
@@ -127,9 +112,7 @@
                 {{ data.title }}
               </strong>
 
-              <span class="article-slug">
-                /{{ data.slug }}
-              </span>
+              <span class="article-slug"> /{{ data.slug }} </span>
             </div>
           </template>
         </Column>
@@ -144,11 +127,7 @@
           <template #body="{ data }">
             <Tag
               :value="getStatusLabel(data.status)"
-              :severity="
-                data.status === 'published'
-                  ? 'success'
-                  : 'secondary'
-              "
+              :severity="data.status === 'published' ? 'success' : 'secondary'"
             />
           </template>
         </Column>
@@ -173,6 +152,21 @@
             {{ formatDate(data.updatedAt) }}
           </template>
         </Column>
+
+        <Column header="操作" style="width: 96px">
+          <template #body="{ data }">
+            <Button
+              type="button"
+              label="編輯"
+              icon="pi pi-pencil"
+              severity="secondary"
+              outlined
+              size="small"
+              class="article-action-button"
+              @click="goToEditArticle(data.id)"
+            />
+          </template>
+        </Column>
       </DataTable>
     </div>
   </section>
@@ -181,6 +175,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { isAxiosError } from 'axios'
+import { useRouter } from 'vue-router'
 
 import Button from 'primevue/button'
 import Column from 'primevue/column'
@@ -212,6 +207,8 @@ interface StatusOption {
   label: string
   value: AdminArticleStatus
 }
+
+const router = useRouter()
 
 const categoryOptions: CategoryOption[] = [
   {
@@ -274,16 +271,10 @@ const pagination = reactive<AdminArticlePagination>({
   totalPages: 0,
 })
 
-const first = computed(
-  () => (pagination.page - 1) * pagination.limit,
-)
+const first = computed(() => (pagination.page - 1) * pagination.limit)
 
 const hasActiveFilters = computed(() =>
-  Boolean(
-    activeSearch.value ||
-      activeCategory.value ||
-      activeStatus.value,
-  ),
+  Boolean(activeSearch.value || activeCategory.value || activeStatus.value),
 )
 
 const getCategoryLabel = (category: AdminArticleCategory) => {
@@ -302,10 +293,22 @@ const formatDate = (date: string) => {
   }).format(new Date(date))
 }
 
-const loadArticles = async (
-  page = pagination.page,
-  limit = pagination.limit,
-) => {
+const goToCreateArticle = () => {
+  void router.push({
+    name: 'admin-article-create',
+  })
+}
+
+const goToEditArticle = (articleId: string) => {
+  void router.push({
+    name: 'admin-article-edit',
+    params: {
+      articleId,
+    },
+  })
+}
+
+const loadArticles = async (page = pagination.page, limit = pagination.limit) => {
   isLoading.value = true
   errorMessage.value = ''
 
@@ -375,6 +378,12 @@ onMounted(() => {
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-4);
+}
+
+.page-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
 }
 
 .page-eyebrow {
@@ -490,6 +499,10 @@ onMounted(() => {
   letter-spacing: var(--letter-spacing-tight);
 }
 
+.article-action-button {
+  white-space: nowrap;
+}
+
 .table-empty {
   padding: var(--space-4);
 
@@ -509,6 +522,11 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .page-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .page-actions {
     align-items: stretch;
     flex-direction: column;
   }

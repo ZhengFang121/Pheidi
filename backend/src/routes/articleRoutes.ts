@@ -12,6 +12,7 @@ import Article, {
 const router = Router()
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const mongoObjectIdPattern = /^[a-f\d]{24}$/i
 const defaultPage = 1
 const defaultLimit = 10
 const maximumLimit = 50
@@ -30,6 +31,25 @@ type ArticleListFilter = {
   category?: ArticleCategory
   status?: ArticleStatus
 }
+
+interface ArticleFormData {
+  title: string
+  slug: string
+  summary: string
+  content: string
+  category: ArticleCategory
+  coverImageUrl?: string
+}
+
+type ArticleValidationResult =
+  | {
+      isValid: true
+      data: ArticleFormData
+    }
+  | {
+      isValid: false
+      message: string
+    }
 
 const parsePositiveInteger = (value: unknown, fallback: number) => {
   if (typeof value !== 'string') return fallback
@@ -93,6 +113,111 @@ const sanitizeArticleContent = (content: string) => {
       }),
     },
   })
+}
+
+const validateArticleFormData = (body: unknown): ArticleValidationResult => {
+  if (typeof body !== 'object' || body === null) {
+    return {
+      isValid: false,
+      message: '文章資料格式不正確',
+    }
+  }
+
+  const { title, slug, summary, content, category, coverImageUrl } = body as Record<string, unknown>
+
+  if (typeof title !== 'string' || title.trim().length < 2) {
+    return {
+      isValid: false,
+      message: '文章標題至少需要 2 個字元',
+    }
+  }
+
+  if (title.trim().length > 100) {
+    return {
+      isValid: false,
+      message: '文章標題不能超過 100 個字元',
+    }
+  }
+
+  if (typeof slug !== 'string' || !slugPattern.test(slug.trim().toLowerCase())) {
+    return {
+      isValid: false,
+      message: '網址識別只能包含小寫英文字母、數字與連字號',
+    }
+  }
+
+  if (slug.trim().length > 120) {
+    return {
+      isValid: false,
+      message: '網址識別不能超過 120 個字元',
+    }
+  }
+
+  if (typeof summary !== 'string' || !summary.trim()) {
+    return {
+      isValid: false,
+      message: '請填寫文章摘要',
+    }
+  }
+
+  if (summary.trim().length > 300) {
+    return {
+      isValid: false,
+      message: '文章摘要不能超過 300 個字元',
+    }
+  }
+
+  if (typeof content !== 'string' || !content.trim()) {
+    return {
+      isValid: false,
+      message: '請填寫文章內容',
+    }
+  }
+
+  if (!isArticleCategory(category)) {
+    return {
+      isValid: false,
+      message: '文章分類不正確',
+    }
+  }
+
+  const normalizedCoverImageUrl = typeof coverImageUrl === 'string' ? coverImageUrl.trim() : ''
+
+  if (normalizedCoverImageUrl && !isValidImageUrl(normalizedCoverImageUrl)) {
+    return {
+      isValid: false,
+      message: '封面圖片網址格式不正確',
+    }
+  }
+
+  const sanitizedContent = sanitizeArticleContent(content)
+
+  if (
+    !sanitizeHtml(sanitizedContent, {
+      allowedTags: [],
+    }).trim()
+  ) {
+    return {
+      isValid: false,
+      message: '文章內容不能只有空白或 HTML 標籤',
+    }
+  }
+
+  return {
+    isValid: true,
+    data: {
+      title: title.trim(),
+      slug: slug.trim().toLowerCase(),
+      summary: summary.trim(),
+      content: sanitizedContent,
+      category,
+      ...(normalizedCoverImageUrl
+        ? {
+            coverImageUrl: normalizedCoverImageUrl,
+          }
+        : {}),
+    },
+  }
 }
 
 const hasDuplicateKeyError = (error: unknown) => {
@@ -210,6 +335,125 @@ router.get('/', async (req, res) => {
   }
 })
 
+router.get('/:articleId', async (req, res) => {
+  try {
+    const { articleId } = req.params
+
+    if (!articleId || !mongoObjectIdPattern.test(articleId)) {
+      res.status(400).json({
+        message: '文章 ID 格式不正確',
+      })
+      return
+    }
+
+    const article = await Article.findById(articleId).populate('author', 'username email').lean()
+
+    if (!article) {
+      res.status(404).json({
+        message: '找不到指定的文章',
+      })
+      return
+    }
+
+    res.status(200).json({
+      message: '取得文章資料成功',
+      article: {
+        id: article._id,
+        title: article.title,
+        slug: article.slug,
+        summary: article.summary,
+        content: article.content,
+        category: article.category,
+        coverImageUrl: article.coverImageUrl,
+        status: article.status,
+        author: article.author,
+        publishedAt: article.publishedAt,
+        createdAt: article.createdAt,
+        updatedAt: article.updatedAt,
+      },
+    })
+  } catch (error: unknown) {
+    console.error('Failed to get article:', error)
+
+    res.status(500).json({
+      message: '取得文章資料失敗',
+    })
+  }
+})
+
+router.patch('/:articleId', async (req, res) => {
+  try {
+    const { articleId } = req.params
+
+    if (!articleId || !mongoObjectIdPattern.test(articleId)) {
+      res.status(400).json({
+        message: '文章 ID 格式不正確',
+      })
+      return
+    }
+
+    const validationResult = validateArticleFormData(req.body)
+
+    if (!validationResult.isValid) {
+      res.status(400).json({
+        message: validationResult.message,
+      })
+      return
+    }
+
+    const article = await Article.findById(articleId)
+
+    if (!article) {
+      res.status(404).json({
+        message: '找不到指定的文章',
+      })
+      return
+    }
+
+    article.title = validationResult.data.title
+    article.slug = validationResult.data.slug
+    article.summary = validationResult.data.summary
+    article.content = validationResult.data.content
+    article.category = validationResult.data.category
+    article.coverImageUrl = validationResult.data.coverImageUrl
+
+    await article.save()
+
+    await article.populate('author', 'username email')
+
+    res.status(200).json({
+      message: '文章更新成功',
+      article: {
+        id: article._id,
+        title: article.title,
+        slug: article.slug,
+        summary: article.summary,
+        content: article.content,
+        category: article.category,
+        coverImageUrl: article.coverImageUrl,
+        status: article.status,
+        author: article.author,
+        publishedAt: article.publishedAt,
+        createdAt: article.createdAt,
+        updatedAt: article.updatedAt,
+      },
+    })
+  } catch (error: unknown) {
+    if (hasDuplicateKeyError(error)) {
+      res.status(409).json({
+        message: '這個網址識別已經被其他文章使用',
+      })
+      return
+    }
+
+    console.error('Failed to update article:', error)
+
+    res.status(500).json({
+      message: '更新文章失敗',
+    })
+  }
+})
+
 router.post('/', async (req, res) => {
   try {
     if (!req.user) {
@@ -219,96 +463,22 @@ router.post('/', async (req, res) => {
       return
     }
 
-    const { title, slug, summary, content, category, coverImageUrl } = req.body ?? {}
+    const validationResult = validateArticleFormData(req.body)
 
-    if (typeof title !== 'string' || title.trim().length < 2) {
+    if (!validationResult.isValid) {
       res.status(400).json({
-        message: '文章標題至少需要 2 個字元',
-      })
-      return
-    }
-
-    if (title.trim().length > 100) {
-      res.status(400).json({
-        message: '文章標題不能超過 100 個字元',
-      })
-      return
-    }
-
-    if (typeof slug !== 'string' || !slugPattern.test(slug.trim().toLowerCase())) {
-      res.status(400).json({
-        message: '網址識別只能包含小寫英文字母、數字與連字號',
-      })
-      return
-    }
-
-    if (slug.trim().length > 120) {
-      res.status(400).json({
-        message: '網址識別不能超過 120 個字元',
-      })
-      return
-    }
-
-    if (typeof summary !== 'string' || !summary.trim()) {
-      res.status(400).json({
-        message: '請填寫文章摘要',
-      })
-      return
-    }
-
-    if (summary.trim().length > 300) {
-      res.status(400).json({
-        message: '文章摘要不能超過 300 個字元',
-      })
-      return
-    }
-
-    if (typeof content !== 'string' || !content.trim()) {
-      res.status(400).json({
-        message: '請填寫文章內容',
-      })
-      return
-    }
-
-    if (!isArticleCategory(category)) {
-      res.status(400).json({
-        message: '文章分類不正確',
-      })
-      return
-    }
-
-    const normalizedCoverImageUrl = typeof coverImageUrl === 'string' ? coverImageUrl.trim() : ''
-
-    if (normalizedCoverImageUrl && !isValidImageUrl(normalizedCoverImageUrl)) {
-      res.status(400).json({
-        message: '封面圖片網址格式不正確',
-      })
-      return
-    }
-
-    const sanitizedContent = sanitizeArticleContent(content)
-
-    if (!sanitizeHtml(sanitizedContent, { allowedTags: [] }).trim()) {
-      res.status(400).json({
-        message: '文章內容不能只有空白或 HTML 標籤',
+        message: validationResult.message,
       })
       return
     }
 
     const article = await Article.create({
-      title: title.trim(),
-      slug: slug.trim().toLowerCase(),
-      summary: summary.trim(),
-      content: sanitizedContent,
-      category,
-      ...(normalizedCoverImageUrl
-        ? {
-            coverImageUrl: normalizedCoverImageUrl,
-          }
-        : {}),
+      ...validationResult.data,
       status: 'draft',
       author: req.user.userId,
     })
+
+    await article.populate('author', 'username email')
 
     res.status(201).json({
       message: '文章草稿建立成功',

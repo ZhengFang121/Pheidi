@@ -37,6 +37,24 @@ export interface AdminArticle {
   updatedAt: string
 }
 
+export interface AdminArticleDetail extends AdminArticle {
+  content: string
+}
+
+export interface AdminArticleFormPayload {
+  title: string
+  slug: string
+  summary: string
+  content: string
+  category: AdminArticleCategory
+  coverImageUrl: string
+}
+
+export interface AdminArticleResponse {
+  message: string
+  article: AdminArticleDetail
+}
+
 export interface AdminArticlePagination {
   page: number
   limit: number
@@ -138,6 +156,37 @@ export const getAdminArticles = async (
     {
       params,
     },
+  )
+
+  return response.data
+}
+
+export const getAdminArticle = async (articleId: string) => {
+  const response = await api.get<AdminArticleResponse>(
+    `/admin/articles/${articleId}`,
+  )
+
+  return response.data
+}
+
+export const createAdminArticle = async (
+  payload: AdminArticleFormPayload,
+) => {
+  const response = await api.post<AdminArticleResponse>(
+    '/admin/articles',
+    payload,
+  )
+
+  return response.data
+}
+
+export const updateAdminArticle = async (
+  articleId: string,
+  payload: AdminArticleFormPayload,
+) => {
+  const response = await api.patch<AdminArticleResponse>(
+    `/admin/articles/${articleId}`,
+    payload,
   )
 
   return response.data
