@@ -172,7 +172,7 @@ async function handleLogout() {
 const accountItems = computed<AccountMenuItem[]>(() => {
   const items: AccountMenuItem[] = [
     {
-      label: '帳號管理',
+      label: '帳號設定',
       lucideIcon: Settings,
       command: () => {
         router.push('/account')

@@ -37,3 +37,19 @@ export interface CurrentUserResponse {
   message: string
   user: AuthUser
 }
+
+export interface UpdateProfilePayload {
+  username: string
+  email: string
+}
+
+export type UpdateProfileResponse = CurrentUserResponse
+
+export interface UpdatePasswordPayload {
+  currentPassword: string
+  newPassword: string
+}
+
+export interface UpdatePasswordResponse {
+  message: string
+}

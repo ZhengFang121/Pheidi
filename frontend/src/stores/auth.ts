@@ -90,6 +90,11 @@ export const useAuthStore = defineStore('auth', () => {
     setApiAuthToken(null)
   }
 
+  const updateUser = (updatedUser: AuthUser) => {
+    user.value = updatedUser
+    updateStoredUser(updatedUser)
+  }
+
   const validateSession = async () => {
     if (!token.value) return
 
@@ -112,6 +117,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAdmin,
     setAuth,
     logout,
+    updateUser,
     validateSession,
   }
 })

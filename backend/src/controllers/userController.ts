@@ -220,6 +220,122 @@ router.get('/me', authenticateToken, async (req, res) => {
   }
 })
 
+router.patch('/me', authenticateToken, async (req, res) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ message: '請先登入' })
+      return
+    }
+
+    const { username, email } = req.body ?? {}
+
+    if (typeof username !== 'string' || typeof email !== 'string') {
+      res.status(400).json({ message: '跑者名稱和電子信箱都是必填欄位' })
+      return
+    }
+
+    const normalizedUsername = username.trim()
+    const normalizedEmail = email.trim().toLowerCase()
+
+    if (normalizedUsername.length < 2 || normalizedUsername.length > 20) {
+      res.status(400).json({ message: '跑者名稱需要 2 到 20 個字元' })
+      return
+    }
+
+    if (!emailPattern.test(normalizedEmail)) {
+      res.status(400).json({ message: '請輸入正確的電子信箱格式' })
+      return
+    }
+
+    const emailOwner = await User.findOne({
+      email: normalizedEmail,
+      _id: { $ne: req.user.userId },
+    })
+
+    if (emailOwner) {
+      res.status(409).json({ message: '這個 Email 已經被使用' })
+      return
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { username: normalizedUsername, email: normalizedEmail },
+      { new: true, runValidators: true },
+    )
+
+    if (!user) {
+      res.status(404).json({ message: '找不到使用者' })
+      return
+    }
+
+    res.status(200).json({
+      message: '基本資料更新成功',
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+    })
+  } catch (error) {
+    if (isDuplicateKeyError(error)) {
+      res.status(409).json({ message: '這個 Email 已經被使用' })
+      return
+    }
+
+    console.error('Failed to update profile:', error)
+    res.status(500).json({ message: '更新基本資料失敗，請稍後再試' })
+  }
+})
+
+router.patch('/me/password', authenticateToken, async (req, res) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ message: '請先登入' })
+      return
+    }
+
+    const { currentPassword, newPassword } = req.body ?? {}
+
+    if (typeof currentPassword !== 'string' || typeof newPassword !== 'string') {
+      res.status(400).json({ message: '目前密碼和新密碼都是必填欄位' })
+      return
+    }
+
+    if (newPassword.length < 8) {
+      res.status(400).json({ message: '新密碼至少需要 8 個字元' })
+      return
+    }
+
+    if (currentPassword === newPassword) {
+      res.status(400).json({ message: '新密碼不可與目前密碼相同' })
+      return
+    }
+
+    const user = await User.findById(req.user.userId).select('+password')
+
+    if (!user) {
+      res.status(404).json({ message: '找不到使用者' })
+      return
+    }
+
+    if (!(await user.comparePassword(currentPassword))) {
+      res.status(400).json({ message: '目前密碼不正確' })
+      return
+    }
+
+    user.password = newPassword
+    user.passwordResetTokenHash = undefined
+    user.passwordResetExpiresAt = undefined
+    await user.save()
+
+    res.status(200).json({ message: '密碼更新成功' })
+  } catch (error) {
+    console.error('Failed to update password:', error)
+    res.status(500).json({ message: '更新密碼失敗，請稍後再試' })
+  }
+})
+
 router.post('/', async (req, res) => {
   try {
     const { username, email, password } = req.body ?? {}
@@ -301,5 +417,4 @@ router.post('/', async (req, res) => {
     })
   }
 })
-
 }
