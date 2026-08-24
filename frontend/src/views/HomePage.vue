@@ -1,7 +1,155 @@
 <script setup lang="ts">
 import Carousel from 'primevue/carousel'
-import { ArrowRight, CloudSun, Footprints, MapPin, Sparkles, Sun, Wind } from '@lucide/vue'
+import {
+  ArrowRight,
+  CloudRainWind,
+  CloudSun,
+  CloudSunRain,
+  Cloudy,
+  Footprints,
+  MapPin,
+  Snowflake,
+  Sparkles,
+  Sun,
+  SunMedium,
+  ThermometerSnowflake,
+  ThermometerSun,
+  Wind,
+} from '@lucide/vue'
 import PlayerOverview from '@/components/home/PlayerOverview.vue'
+import { computed, onMounted, ref } from 'vue'
+import {
+  getCurrentWeather,
+  type CurrentWeather,
+} from '@/services/weather'
+import { getLocationLabel } from '@/services/geocoding'
+import { getCurrentCoordinates } from '@/utils/geolocation'
+
+const weather = ref<CurrentWeather | null>(null)
+const isWeatherLoading = ref(true)
+const weatherError = ref('')
+const locationLabel = ref('位置解析中...')
+
+const weatherPresentation = computed(() => {
+  if (isWeatherLoading.value) {
+    return {
+      title: '正在確認今天的跑步天氣',
+      mainIcon: CloudSun,
+      accentIcon: Sun,
+      tone: 'mild',
+    }
+  }
+
+  if (!weather.value) {
+    return {
+      title: '今天的跑步天氣',
+      mainIcon: Cloudy,
+      accentIcon: Wind,
+      tone: 'mild',
+    }
+  }
+
+  const { temperature, precipitationProbability } = weather.value
+
+  if (precipitationProbability >= 70) {
+    return {
+      title: '降雨偏高，今天改做室內訓練',
+      mainIcon: CloudRainWind,
+      accentIcon: Cloudy,
+      tone: 'rain',
+    }
+  }
+
+  if (precipitationProbability >= 40) {
+    return {
+      title: '可能下雨，今天適合短程慢跑',
+      mainIcon: CloudSunRain,
+      accentIcon: Cloudy,
+      tone: 'rain',
+    }
+  }
+
+  if (temperature >= 35) {
+    return {
+      title: '天氣炎熱，今天先別急著出發',
+      mainIcon: ThermometerSun,
+      accentIcon: SunMedium,
+      tone: 'hot',
+    }
+  }
+
+  if (temperature >= 30) {
+    return {
+      title: '氣溫偏高，今天適合晚點再跑',
+      mainIcon: SunMedium,
+      accentIcon: ThermometerSun,
+      tone: 'hot',
+    }
+  }
+
+  if (temperature <= 10) {
+    return {
+      title: '氣溫偏低，暖身後再出發',
+      mainIcon: ThermometerSnowflake,
+      accentIcon: Snowflake,
+      tone: 'cold',
+    }
+  }
+
+  if (precipitationProbability >= 20) {
+    return {
+      title: '偶有短暫雨，今天適合輕鬆短跑',
+      mainIcon: CloudSunRain,
+      accentIcon: Sun,
+      tone: 'mild',
+    }
+  }
+
+  if (temperature >= 18 && temperature <= 27) {
+    return {
+      title: '天氣舒適，今天適合自在開跑',
+      mainIcon: CloudSun,
+      accentIcon: Sun,
+      tone: 'mild',
+    }
+  }
+
+  return {
+    title: '今天適合輕鬆跑',
+    mainIcon: CloudSun,
+    accentIcon: Wind,
+    tone: 'mild',
+  }
+})
+
+async function loadWeather() {
+  isWeatherLoading.value = true
+  weatherError.value = ''
+
+  try {
+    const coordinates = await getCurrentCoordinates()
+
+    const [currentWeather, currentLocationLabel] = await Promise.all([
+      getCurrentWeather(coordinates.latitude, coordinates.longitude),
+      getLocationLabel(coordinates.latitude, coordinates.longitude).catch((error: unknown) => {
+        console.error('取得所在地區失敗：', error)
+        return '位置無法辨識'
+      }),
+    ])
+
+    weather.value = currentWeather
+    locationLabel.value = currentLocationLabel
+  } catch (error) {
+    console.error('取得天氣資料失敗：', error)
+    weatherError.value = '目前無法取得天氣資料'
+  } finally {
+    isWeatherLoading.value = false
+  }
+}
+
+onMounted(() => {
+  void loadWeather()
+})
 
 interface HeroSlide {
   id: number
@@ -25,8 +173,7 @@ const heroSlides: HeroSlide[] = [
     type: 'weather',
     eyebrow: 'TODAY’S WEATHER',
     title: '今天適合輕鬆跑',
-    description: '午後天氣舒適，但陽光仍然明顯。出門前記得補充水分，也可以選擇傍晚再出發。',
-    buttonLabel: '查看詳細天氣',
+    description: '',
   },
   {
     id: 3,
@@ -71,40 +218,50 @@ function handleSlideAction(slide: HeroSlide) {
               </p>
 
               <h1 class="hero-slide__title">
-                {{ data.title }}
+                {{ data.type === 'weather' ? weatherPresentation.title : data.title }}
               </h1>
 
-              <p class="hero-slide__description">
+              <p v-if="data.description" class="hero-slide__description">
                 {{ data.description }}
               </p>
 
               <!-- 今日天氣資訊 -->
               <div v-if="data.type === 'weather'" class="weather-summary">
-                <div class="weather-summary__temperature">
-                  <CloudSun :size="36" :stroke-width="1.8" />
+                <span v-if="isWeatherLoading" class="weather-summary__status" role="status">
+                  天氣資料載入中...
+                </span>
 
-                  <div>
-                    <strong>26°C</strong>
-                    <span>體感 27°C</span>
+                <span v-else-if="weatherError" class="weather-summary__status" role="alert">
+                  {{ weatherError }}
+                </span>
+
+                <template v-else-if="weather">
+                  <div class="weather-summary__temperature">
+                    <CloudSun :size="36" :stroke-width="1.8" />
+
+                    <div>
+                      <strong>{{ Math.round(weather.temperature) }}°C</strong>
+                      <span>體感 {{ Math.round(weather.apparentTemperature) }}°C</span>
+                    </div>
                   </div>
-                </div>
 
-                <div class="weather-summary__details">
-                  <span>
-                    <Sun :size="17" />
-                    降雨 20%
-                  </span>
+                  <div class="weather-summary__details">
+                    <span>
+                      <Sun :size="17" />
+                      降雨 {{ weather.precipitationProbability }}%
+                    </span>
 
-                  <span>
-                    <Wind :size="17" />
-                    微風 2 級
-                  </span>
+                    <span>
+                      <Wind :size="17" />
+                      風速 {{ Math.round(weather.windSpeed) }} km/h
+                    </span>
 
-                  <span>
-                    <MapPin :size="17" />
-                    台北市
-                  </span>
-                </div>
+                    <span>
+                      <MapPin :size="17" />
+                      {{ locationLabel }}
+                    </span>
+                  </div>
+                </template>
               </div>
 
               <!-- 今日任務資訊 -->
@@ -146,13 +303,25 @@ function handleSlideAction(slide: HeroSlide) {
               </div>
 
               <!-- 天氣 -->
-              <div v-else-if="data.type === 'weather'" class="weather-illustration">
+              <div
+                v-else-if="data.type === 'weather'"
+                class="weather-illustration"
+                :class="`weather-illustration--${weatherPresentation.tone}`"
+              >
                 <span class="weather-illustration__sun">
-                  <Sun :size="112" :stroke-width="1.2" />
+                  <component
+                    :is="weatherPresentation.accentIcon"
+                    :size="112"
+                    :stroke-width="1.2"
+                  />
                 </span>
 
                 <span class="weather-illustration__cloud">
-                  <CloudSun :size="150" :stroke-width="1.2" />
+                  <component
+                    :is="weatherPresentation.mainIcon"
+                    :size="150"
+                    :stroke-width="1.2"
+                  />
                 </span>
               </div>
 
@@ -253,6 +422,10 @@ function handleSlideAction(slide: HeroSlide) {
   letter-spacing: var(--letter-spacing-tight, 0.05em);
 }
 
+.hero-slide--weather .hero-slide__title {
+  font-size: var(--font-size-xl, 2.5rem);
+}
+
 .hero-slide__description {
   max-width: 570px;
   margin: var(--space-3, 24px) 0 0;
@@ -304,6 +477,11 @@ function handleSlideAction(slide: HeroSlide) {
   align-items: center;
   gap: var(--space-3, 24px);
   margin-top: var(--space-4, 32px);
+}
+
+.weather-summary__status {
+  color: var(--color-text-secondary, #6f7185);
+  font-size: var(--font-size-sm, 0.875rem);
 }
 
 .weather-summary__temperature {
@@ -441,6 +619,19 @@ function handleSlideAction(slide: HeroSlide) {
   right: 90px;
   bottom: 35px;
   color: var(--color-primary, #5bd0d4);
+}
+
+.weather-illustration--rain .weather-illustration__sun {
+  color: var(--color-dark-pale, #9bc3c9);
+}
+
+.weather-illustration--hot .weather-illustration__sun,
+.weather-illustration--hot .weather-illustration__cloud {
+  color: var(--color-accent, #ff9c46);
+}
+
+.weather-illustration--cold .weather-illustration__sun {
+  color: var(--color-dark-pale, #9bc3c9);
 }
 
 /* 任務示意圖 */
@@ -587,6 +778,10 @@ function handleSlideAction(slide: HeroSlide) {
 
   .hero-slide__title {
     font-size: 34px;
+  }
+
+  .hero-slide--weather .hero-slide__title {
+    font-size: var(--font-size-lg, 2rem);
   }
 
   .hero-slide__description {
