@@ -75,7 +75,12 @@
                   </span>
                 </div>
 
-                <Button type="submit" label="發布貼文" :disabled="!canSubmitPost">
+                <Button
+                  type="submit"
+                  label="發布貼文"
+                  :loading="isSubmittingPost"
+                  :disabled="!canSubmitPost || isSubmittingPost"
+                >
                   <template #icon>
                     <Send aria-hidden="true" />
                   </template>
@@ -90,8 +95,12 @@
                   <h2 id="feed-heading" class="feed-heading">最新跑友動態</h2>
                 </div>
 
-                <span class="post-count">共 {{ posts.length }} 則</span>
+                <span class="post-count">共 {{ totalPosts }} 則</span>
               </div>
+
+              <Message v-if="postActionErrorMessage" severity="error" :closable="false">
+                {{ postActionErrorMessage }}
+              </Message>
 
               <Message v-if="feedErrorMessage" severity="error" :closable="false">
                 <div class="state-message">
@@ -130,7 +139,7 @@
 
                     <div class="post-author-area">
                       <div class="post-author-row">
-                        <h3 class="post-author">{{ post.author }}</h3>
+                        <h3 class="post-author">{{ post.author.username }}</h3>
                         <Tag :value="post.runnerLevel" severity="secondary" />
                       </div>
 
@@ -149,7 +158,9 @@
                       :class="{ 'post-action--liked': post.isLiked }"
                       :aria-pressed="post.isLiked"
                       :aria-label="post.isLiked ? '取消按讚' : '按讚'"
-                      @click="togglePostLike(post)"
+                      :aria-busy="isPostLikePending(post.id)"
+                      :disabled="isPostLikePending(post.id)"
+                      @click="handleTogglePostLike(post)"
                     >
                       <Heart :fill="post.isLiked ? 'currentColor' : 'none'" aria-hidden="true" />
 
@@ -182,7 +193,7 @@
                         maxlength="200"
                         auto-resize
                         placeholder="寫下你的留言……"
-                        :aria-label="`留言給 ${post.author}`"
+                        :aria-label="`留言給 ${post.author.username}`"
                         class="comment-textarea"
                       />
 
@@ -341,6 +352,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { isAxiosError } from 'axios'
 import {
   ArrowRight,
   CalendarDays,
@@ -366,7 +378,9 @@ import Tabs from 'primevue/tabs'
 import Tag from 'primevue/tag'
 import Textarea from 'primevue/textarea'
 
+import { createPost, getPosts, togglePostLike } from '@/services/posts'
 import { useAuthStore } from '@/stores/auth'
+import type { PlazaPost as ApiPlazaPost } from '@/types/post'
 
 type PlazaTab = 'feed' | 'events'
 
@@ -377,16 +391,9 @@ interface PlazaComment {
   createdAtLabel: string
 }
 
-interface PlazaPost {
-  id: number
-  author: string
+interface PlazaPostView extends ApiPlazaPost {
   runnerLevel: string
-  createdAt: string
   createdAtLabel: string
-  content: string
-  isLiked: boolean
-  likeCount: number
-  commentCount: number
   comments: PlazaComment[]
 }
 
@@ -410,39 +417,18 @@ const authStore = useAuthStore()
 const activeTab = ref<PlazaTab>('feed')
 const maximumPostLength = 500
 const postContent = ref('')
-const activeCommentPostId = ref<number | null>(null)
+const activeCommentPostId = ref<string | null>(null)
 const commentContent = ref('')
 const maximumCommentLength = 200
 const isFeedLoading = ref(false)
+const isSubmittingPost = ref(false)
 const feedErrorMessage = ref('')
+const postActionErrorMessage = ref('')
+const pendingPostLikeIds = ref(new Set<string>())
 const isEventLoading = ref(false)
 const eventErrorMessage = ref('')
-const posts = ref<PlazaPost[]>([
-  {
-    id: 2,
-    author: '晨光跑者',
-    runnerLevel: '冒險者',
-    createdAt: '2026-08-25T07:30:00+08:00',
-    createdAtLabel: '今天 07:30',
-    content: '今天第一次不看配速，只跟著呼吸跑完河濱。原來放慢一點，也能看見沿途更多風景。',
-    isLiked: false,
-    likeCount: 18,
-    commentCount: 4,
-    comments: [],
-  },
-  {
-    id: 1,
-    author: '小步向前',
-    runnerLevel: '習跑者',
-    createdAt: '2026-08-24T18:45:00+08:00',
-    createdAtLabel: '昨天 18:45',
-    content: '下班後完成 3 公里！雖然速度不快，但今天也有好好替自己留下足跡。',
-    isLiked: false,
-    likeCount: 12,
-    commentCount: 2,
-    comments: [],
-  },
-])
+const posts = ref<PlazaPostView[]>([])
+const totalPosts = ref(0)
 
 const events = ref<PlazaEvent[]>([
   {
@@ -493,19 +479,52 @@ const remainingCommentCharacters = computed(
 
 const canSubmitComment = computed(() => commentContent.value.trim().length > 0)
 
-let feedLoadingTimer: ReturnType<typeof setTimeout> | null = null
 let eventLoadingTimer: ReturnType<typeof setTimeout> | null = null
 
-function loadFeed() {
+const postDateFormatter = new Intl.DateTimeFormat('zh-TW', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+})
+
+function formatPostDate(date: string) {
+  const parsedDate = new Date(date)
+
+  return Number.isNaN(parsedDate.getTime()) ? date : postDateFormatter.format(parsedDate)
+}
+
+function toPostView(post: ApiPlazaPost): PlazaPostView {
+  return {
+    ...post,
+    runnerLevel: '啟程者',
+    createdAtLabel: formatPostDate(post.createdAt),
+    comments: [],
+  }
+}
+
+function getApiErrorMessage(error: unknown, fallbackMessage: string) {
+  if (!isAxiosError<{ message?: string }>(error)) return fallbackMessage
+
+  return error.response?.data?.message ?? fallbackMessage
+}
+
+async function loadFeed() {
   feedErrorMessage.value = ''
   isFeedLoading.value = true
 
-  if (feedLoadingTimer) clearTimeout(feedLoadingTimer)
+  try {
+    const response = await getPosts({ page: 1, limit: 10 })
 
-  feedLoadingTimer = setTimeout(() => {
+    posts.value = response.posts.map(toPostView)
+    totalPosts.value = response.pagination.total
+  } catch (error: unknown) {
+    feedErrorMessage.value = getApiErrorMessage(error, '載入跑友動態失敗，請稍後再試。')
+  } finally {
     isFeedLoading.value = false
-    feedLoadingTimer = null
-  }, 700)
+  }
 }
 
 function loadEvents() {
@@ -520,33 +539,50 @@ function loadEvents() {
   }, 900)
 }
 
-function handleSubmitPost() {
+async function handleSubmitPost() {
   const content = postContent.value.trim()
 
-  if (!content) return
+  if (!content || isSubmittingPost.value) return
 
-  posts.value.unshift({
-    id: Date.now(),
-    author: authStore.user?.username ?? '跑者',
-    runnerLevel: '啟程者',
-    createdAt: new Date().toISOString(),
-    createdAtLabel: '剛剛',
-    content,
-    isLiked: false,
-    likeCount: 0,
-    commentCount: 0,
-    comments: [],
-  })
+  feedErrorMessage.value = ''
+  isSubmittingPost.value = true
 
-  postContent.value = ''
+  try {
+    const response = await createPost({ content })
+
+    posts.value.unshift(toPostView(response.post))
+    totalPosts.value += 1
+    postContent.value = ''
+  } catch (error: unknown) {
+    feedErrorMessage.value = getApiErrorMessage(error, '發布貼文失敗，請稍後再試。')
+  } finally {
+    isSubmittingPost.value = false
+  }
 }
 
-function togglePostLike(post: PlazaPost) {
-  post.isLiked = !post.isLiked
-  post.likeCount += post.isLiked ? 1 : -1
+function isPostLikePending(postId: string) {
+  return pendingPostLikeIds.value.has(postId)
 }
 
-function toggleCommentSection(postId: number) {
+async function handleTogglePostLike(post: PlazaPostView) {
+  if (isPostLikePending(post.id)) return
+
+  postActionErrorMessage.value = ''
+  pendingPostLikeIds.value.add(post.id)
+
+  try {
+    const response = await togglePostLike(post.id)
+
+    post.isLiked = response.isLiked
+    post.likeCount = response.likeCount
+  } catch (error: unknown) {
+    postActionErrorMessage.value = getApiErrorMessage(error, '更新按讚狀態失敗，請稍後再試。')
+  } finally {
+    pendingPostLikeIds.value.delete(post.id)
+  }
+}
+
+function toggleCommentSection(postId: string) {
   if (activeCommentPostId.value === postId) {
     activeCommentPostId.value = null
     commentContent.value = ''
@@ -557,7 +593,7 @@ function toggleCommentSection(postId: number) {
   commentContent.value = ''
 }
 
-function handleSubmitComment(post: PlazaPost) {
+function handleSubmitComment(post: PlazaPostView) {
   const content = commentContent.value.trim()
 
   if (!content) return
@@ -574,12 +610,11 @@ function handleSubmitComment(post: PlazaPost) {
 }
 
 onMounted(() => {
-  loadFeed()
+  void loadFeed()
   loadEvents()
 })
 
 onBeforeUnmount(() => {
-  if (feedLoadingTimer) clearTimeout(feedLoadingTimer)
   if (eventLoadingTimer) clearTimeout(eventLoadingTimer)
 })
 </script>
@@ -913,6 +948,16 @@ onBeforeUnmount(() => {
 .post-action:hover {
   color: var(--color-accent);
   background: var(--color-accent-pale);
+}
+
+.post-action:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.post-action:disabled:hover {
+  color: inherit;
+  background: transparent;
 }
 
 .post-action:active {
