@@ -9,6 +9,7 @@ import articleRoutes from './routes/articleRoutes.js'
 import postRoutes from './routes/postRoutes.js'
 import postUploadRoutes from './routes/postUploadRoutes.js'
 import publicArticleRoutes from './routes/publicArticleRoutes.js'
+import runRecordRoutes from './routes/runRecordRoutes.js'
 import uploadRoutes from './routes/uploadRoutes.js'
 import userRoutes from './routes/userRoutes.js'
 
@@ -40,6 +41,7 @@ app.use('/api/admin/uploads', uploadRoutes)
 app.use('/api/uploads', postUploadRoutes)
 app.use('/api/articles', publicArticleRoutes)
 app.use('/api/posts', postRoutes)
+app.use('/api/run-records', runRecordRoutes)
 app.use('/api/admin/plaza', adminPlazaRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/users', userRoutes)
