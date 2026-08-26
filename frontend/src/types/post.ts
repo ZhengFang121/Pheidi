@@ -43,3 +43,54 @@ export interface TogglePostLikeResponse {
   likeCount: number
   isLiked: boolean
 }
+
+export interface PostComment {
+  id: string
+  content: string
+  author: PostAuthor
+  likeCount: number
+  isLiked: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface GetPostCommentsParams {
+  page?: number
+  limit?: number
+}
+
+export interface PostCommentListResponse {
+  message: string
+  comments: PostComment[]
+  pagination: Pagination
+}
+
+export interface CreatePostCommentPayload {
+  content: string
+}
+
+export interface CreatePostCommentResponse {
+  message: string
+  comment: PostComment
+  commentCount: number
+}
+
+export interface TogglePostCommentLikeResponse {
+  message: string
+  likeCount: number
+  isLiked: boolean
+}
+
+export interface UpdatePostCommentPayload {
+  content: string
+}
+
+export interface UpdatePostCommentResponse {
+  message: string
+  comment: PostComment
+}
+
+export interface DeletePostCommentResponse {
+  message: string
+  commentCount: number
+}

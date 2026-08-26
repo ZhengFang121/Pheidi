@@ -1,5 +1,7 @@
 <template>
   <section class="layout-container plaza-page">
+    <ConfirmDialog />
+
     <header class="plaza-heading">
       <p class="plaza-eyebrow">PHEIDI PLAZA</p>
 
@@ -173,7 +175,7 @@
                       :class="{ 'post-action--active': activeCommentPostId === post.id }"
                       :aria-expanded="activeCommentPostId === post.id"
                       :aria-controls="`comment-section-${post.id}`"
-                      @click="toggleCommentSection(post.id)"
+                      @click="toggleCommentSection(post)"
                     >
                       <MessageCircle aria-hidden="true" />
 
@@ -186,6 +188,15 @@
                     :id="`comment-section-${post.id}`"
                     class="comment-section"
                   >
+                    <Message
+                      v-if="commentErrorMessage"
+                      severity="error"
+                      :closable="false"
+                      class="comment-message"
+                    >
+                      {{ commentErrorMessage }}
+                    </Message>
+
                     <form class="comment-form" @submit.prevent="handleSubmitComment(post)">
                       <Textarea
                         v-model="commentContent"
@@ -209,12 +220,20 @@
                           type="submit"
                           label="送出留言"
                           size="small"
-                          :disabled="!canSubmitComment"
+                          :loading="isCommentSubmitting(post.id)"
+                          :disabled="!canSubmitComment || isCommentSubmitting(post.id)"
                         />
                       </div>
                     </form>
 
-                    <div v-if="post.comments.length > 0" class="comment-list">
+                    <Skeleton
+                      v-if="isCommentLoading(post.id)"
+                      height="6rem"
+                      border-radius="var(--radius-md)"
+                      class="comment-skeleton"
+                    />
+
+                    <div v-else-if="post.comments.length > 0" class="comment-list">
                       <article
                         v-for="comment in post.comments"
                         :key="comment.id"
@@ -224,19 +243,127 @@
 
                         <div class="comment-body">
                           <div class="comment-meta">
-                            <h4 class="comment-author">{{ comment.author }}</h4>
+                            <h4 class="comment-author">{{ comment.author.username }}</h4>
 
-                            <span class="comment-time">
-                              {{ comment.createdAtLabel }}
-                            </span>
+                            <div class="comment-meta-actions">
+                              <span class="comment-time">
+                                {{ comment.createdAtLabel }}
+                                <span v-if="comment.updatedAt !== comment.createdAt"
+                                  >（已編輯）</span
+                                >
+                              </span>
+
+                              <div
+                                v-if="canEditComment(comment) || canDeleteComment(comment)"
+                                class="comment-management-actions"
+                              >
+                                <Button
+                                  v-if="canEditComment(comment)"
+                                  type="button"
+                                  severity="secondary"
+                                  text
+                                  rounded
+                                  size="small"
+                                  :aria-label="`編輯 ${comment.author.username} 的留言`"
+                                  :disabled="
+                                    updatingCommentId !== null || deletingCommentId === comment.id
+                                  "
+                                  @click="startEditingComment(comment)"
+                                >
+                                  <template #icon>
+                                    <Pencil aria-hidden="true" />
+                                  </template>
+                                </Button>
+
+                                <Button
+                                  v-if="canDeleteComment(comment)"
+                                  type="button"
+                                  severity="danger"
+                                  text
+                                  rounded
+                                  size="small"
+                                  :aria-label="`刪除 ${comment.author.username} 的留言`"
+                                  :loading="deletingCommentId === comment.id"
+                                  :disabled="
+                                    updatingCommentId !== null ||
+                                    (deletingCommentId !== null && deletingCommentId !== comment.id)
+                                  "
+                                  @click="confirmDeleteComment(post, comment)"
+                                >
+                                  <template #icon>
+                                    <Trash2 aria-hidden="true" />
+                                  </template>
+                                </Button>
+                              </div>
+                            </div>
                           </div>
 
-                          <p class="comment-content">
+                          <div v-if="editingCommentId === comment.id" class="comment-edit-form">
+                            <Textarea
+                              v-model="editingCommentContent"
+                              rows="3"
+                              maxlength="200"
+                              auto-resize
+                              aria-label="編輯留言內容"
+                              class="comment-textarea"
+                            />
+
+                            <div class="comment-edit-footer">
+                              <span class="character-count">
+                                還可以輸入 {{ remainingEditCommentCharacters }} 個字
+                              </span>
+
+                              <div class="comment-edit-actions">
+                                <Button
+                                  type="button"
+                                  label="取消"
+                                  severity="secondary"
+                                  text
+                                  size="small"
+                                  :disabled="updatingCommentId === comment.id"
+                                  @click="cancelEditingComment"
+                                />
+
+                                <Button
+                                  type="button"
+                                  label="儲存"
+                                  size="small"
+                                  :loading="updatingCommentId === comment.id"
+                                  :disabled="!canSaveEditedComment"
+                                  @click="handleUpdateComment(post, comment)"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          <p v-else class="comment-content">
                             {{ comment.content }}
                           </p>
+
+                          <button
+                            type="button"
+                            class="comment-like-button"
+                            :class="{ 'comment-like-button--liked': comment.isLiked }"
+                            :aria-pressed="comment.isLiked"
+                            :aria-label="comment.isLiked ? '取消留言按讚' : '按讚留言'"
+                            :disabled="
+                              isCommentLikePending(comment.id) ||
+                              deletingCommentId === comment.id ||
+                              updatingCommentId === comment.id
+                            "
+                            @click="handleToggleCommentLike(post, comment)"
+                          >
+                            <Heart
+                              :fill="comment.isLiked ? 'currentColor' : 'none'"
+                              aria-hidden="true"
+                            />
+                            {{ comment.likeCount }}
+                          </button>
                         </div>
                       </article>
                     </div>
+
+                    <p v-else class="comment-empty">目前還沒有留言，成為第一位留言的跑友吧！</p>
                   </div>
                 </article>
               </div>
@@ -362,12 +489,15 @@ import {
   ImagePlus,
   MapPin,
   MessageCircle,
+  Pencil,
   Route,
   Send,
+  Trash2,
   UsersRound,
 } from '@lucide/vue'
 
 import Button from 'primevue/button'
+import ConfirmDialog from 'primevue/confirmdialog'
 import Message from 'primevue/message'
 import Skeleton from 'primevue/skeleton'
 import Tab from 'primevue/tab'
@@ -377,24 +507,31 @@ import TabPanels from 'primevue/tabpanels'
 import Tabs from 'primevue/tabs'
 import Tag from 'primevue/tag'
 import Textarea from 'primevue/textarea'
+import { useConfirm } from 'primevue/useconfirm'
 
-import { createPost, getPosts, togglePostLike } from '@/services/posts'
+import {
+  createPost,
+  createPostComment,
+  deletePostComment,
+  getPostComments,
+  getPosts,
+  togglePostCommentLike,
+  togglePostLike,
+  updatePostComment,
+} from '@/services/posts'
 import { useAuthStore } from '@/stores/auth'
-import type { PlazaPost as ApiPlazaPost } from '@/types/post'
+import type { PlazaPost as ApiPlazaPost, PostComment as ApiPostComment } from '@/types/post'
 
 type PlazaTab = 'feed' | 'events'
 
-interface PlazaComment {
-  id: number
-  author: string
-  content: string
+interface PlazaCommentView extends ApiPostComment {
   createdAtLabel: string
 }
 
 interface PlazaPostView extends ApiPlazaPost {
   runnerLevel: string
   createdAtLabel: string
-  comments: PlazaComment[]
+  comments: PlazaCommentView[]
 }
 
 type EventStatusSeverity = 'success' | 'warn' | 'secondary'
@@ -413,6 +550,7 @@ interface PlazaEvent {
 }
 
 const authStore = useAuthStore()
+const confirm = useConfirm()
 
 const activeTab = ref<PlazaTab>('feed')
 const maximumPostLength = 500
@@ -420,6 +558,15 @@ const postContent = ref('')
 const activeCommentPostId = ref<string | null>(null)
 const commentContent = ref('')
 const maximumCommentLength = 200
+const commentErrorMessage = ref('')
+const loadedCommentPostIds = ref(new Set<string>())
+const loadingCommentPostIds = ref(new Set<string>())
+const submittingCommentPostIds = ref(new Set<string>())
+const pendingCommentLikeIds = ref(new Set<string>())
+const editingCommentId = ref<string | null>(null)
+const editingCommentContent = ref('')
+const updatingCommentId = ref<string | null>(null)
+const deletingCommentId = ref<string | null>(null)
 const isFeedLoading = ref(false)
 const isSubmittingPost = ref(false)
 const feedErrorMessage = ref('')
@@ -479,6 +626,14 @@ const remainingCommentCharacters = computed(
 
 const canSubmitComment = computed(() => commentContent.value.trim().length > 0)
 
+const remainingEditCommentCharacters = computed(
+  () => maximumCommentLength - editingCommentContent.value.length,
+)
+
+const canSaveEditedComment = computed(
+  () => editingCommentContent.value.trim().length > 0 && updatingCommentId.value === null,
+)
+
 let eventLoadingTimer: ReturnType<typeof setTimeout> | null = null
 
 const postDateFormatter = new Intl.DateTimeFormat('zh-TW', {
@@ -505,6 +660,13 @@ function toPostView(post: ApiPlazaPost): PlazaPostView {
   }
 }
 
+function toCommentView(comment: ApiPostComment): PlazaCommentView {
+  return {
+    ...comment,
+    createdAtLabel: formatPostDate(comment.createdAt),
+  }
+}
+
 function getApiErrorMessage(error: unknown, fallbackMessage: string) {
   if (!isAxiosError<{ message?: string }>(error)) return fallbackMessage
 
@@ -520,6 +682,8 @@ async function loadFeed() {
 
     posts.value = response.posts.map(toPostView)
     totalPosts.value = response.pagination.total
+    loadedCommentPostIds.value.clear()
+    activeCommentPostId.value = null
   } catch (error: unknown) {
     feedErrorMessage.value = getApiErrorMessage(error, '載入跑友動態失敗，請稍後再試。')
   } finally {
@@ -582,31 +746,166 @@ async function handleTogglePostLike(post: PlazaPostView) {
   }
 }
 
-function toggleCommentSection(postId: string) {
-  if (activeCommentPostId.value === postId) {
+function isCommentLoading(postId: string) {
+  return loadingCommentPostIds.value.has(postId)
+}
+
+function isCommentSubmitting(postId: string) {
+  return submittingCommentPostIds.value.has(postId)
+}
+
+async function toggleCommentSection(post: PlazaPostView) {
+  if (activeCommentPostId.value === post.id) {
     activeCommentPostId.value = null
     commentContent.value = ''
+    commentErrorMessage.value = ''
+    cancelEditingComment()
     return
   }
 
-  activeCommentPostId.value = postId
+  cancelEditingComment()
+  activeCommentPostId.value = post.id
   commentContent.value = ''
+  commentErrorMessage.value = ''
+
+  if (loadedCommentPostIds.value.has(post.id)) return
+
+  loadingCommentPostIds.value.add(post.id)
+
+  try {
+    const response = await getPostComments(post.id, { page: 1, limit: 50 })
+
+    post.comments = response.comments.map(toCommentView)
+    post.commentCount = response.pagination.total
+    loadedCommentPostIds.value.add(post.id)
+  } catch (error: unknown) {
+    commentErrorMessage.value = getApiErrorMessage(error, '載入留言失敗，請稍後再試。')
+  } finally {
+    loadingCommentPostIds.value.delete(post.id)
+  }
 }
 
-function handleSubmitComment(post: PlazaPostView) {
+async function handleSubmitComment(post: PlazaPostView) {
   const content = commentContent.value.trim()
 
-  if (!content) return
+  if (!content || isCommentSubmitting(post.id)) return
 
-  post.comments.push({
-    id: Date.now(),
-    author: authStore.user?.username ?? '跑者',
-    content,
-    createdAtLabel: '剛剛',
+  commentErrorMessage.value = ''
+  submittingCommentPostIds.value.add(post.id)
+
+  try {
+    const response = await createPostComment(post.id, { content })
+
+    post.comments.unshift(toCommentView(response.comment))
+    post.commentCount = response.commentCount
+    loadedCommentPostIds.value.add(post.id)
+    commentContent.value = ''
+  } catch (error: unknown) {
+    commentErrorMessage.value = getApiErrorMessage(error, '發布留言失敗，請稍後再試。')
+  } finally {
+    submittingCommentPostIds.value.delete(post.id)
+  }
+}
+
+function canEditComment(comment: PlazaCommentView) {
+  return comment.author._id === authStore.user?.id
+}
+
+function canDeleteComment(comment: PlazaCommentView) {
+  return canEditComment(comment) || authStore.isAdmin
+}
+
+function isCommentLikePending(commentId: string) {
+  return pendingCommentLikeIds.value.has(commentId)
+}
+
+async function handleToggleCommentLike(post: PlazaPostView, comment: PlazaCommentView) {
+  if (isCommentLikePending(comment.id)) return
+
+  commentErrorMessage.value = ''
+  pendingCommentLikeIds.value.add(comment.id)
+
+  try {
+    const response = await togglePostCommentLike(post.id, comment.id)
+
+    comment.isLiked = response.isLiked
+    comment.likeCount = response.likeCount
+  } catch (error: unknown) {
+    commentErrorMessage.value = getApiErrorMessage(error, '更新留言按讚狀態失敗，請稍後再試。')
+  } finally {
+    pendingCommentLikeIds.value.delete(comment.id)
+  }
+}
+
+function startEditingComment(comment: PlazaCommentView) {
+  if (updatingCommentId.value || deletingCommentId.value) return
+
+  editingCommentId.value = comment.id
+  editingCommentContent.value = comment.content
+  commentErrorMessage.value = ''
+}
+
+function cancelEditingComment() {
+  editingCommentId.value = null
+  editingCommentContent.value = ''
+}
+
+async function handleUpdateComment(post: PlazaPostView, comment: PlazaCommentView) {
+  const content = editingCommentContent.value.trim()
+
+  if (!content || updatingCommentId.value) return
+
+  commentErrorMessage.value = ''
+  updatingCommentId.value = comment.id
+
+  try {
+    const response = await updatePostComment(post.id, comment.id, { content })
+    const commentIndex = post.comments.findIndex(
+      (currentComment) => currentComment.id === comment.id,
+    )
+
+    if (commentIndex !== -1) {
+      post.comments[commentIndex] = toCommentView(response.comment)
+    }
+
+    cancelEditingComment()
+  } catch (error: unknown) {
+    commentErrorMessage.value = getApiErrorMessage(error, '更新留言失敗，請稍後再試。')
+  } finally {
+    updatingCommentId.value = null
+  }
+}
+
+async function handleDeleteComment(post: PlazaPostView, comment: PlazaCommentView) {
+  deletingCommentId.value = comment.id
+  commentErrorMessage.value = ''
+
+  try {
+    const response = await deletePostComment(post.id, comment.id)
+
+    post.comments = post.comments.filter((currentComment) => currentComment.id !== comment.id)
+    post.commentCount = response.commentCount
+
+    if (editingCommentId.value === comment.id) cancelEditingComment()
+  } catch (error: unknown) {
+    commentErrorMessage.value = getApiErrorMessage(error, '刪除留言失敗，請稍後再試。')
+  } finally {
+    deletingCommentId.value = null
+  }
+}
+
+function confirmDeleteComment(post: PlazaPostView, comment: PlazaCommentView) {
+  confirm.require({
+    header: '確認刪除留言',
+    message: `確定要刪除「${comment.content}」嗎？此操作無法復原。`,
+    icon: 'pi pi-exclamation-triangle',
+    acceptLabel: '確認刪除',
+    rejectLabel: '取消',
+    acceptClass: 'p-button-danger',
+    accept: () => {
+      void handleDeleteComment(post, comment)
+    },
   })
-
-  post.commentCount += 1
-  commentContent.value = ''
 }
 
 onMounted(() => {
@@ -1012,6 +1311,21 @@ onBeforeUnmount(() => {
   gap: var(--space-4);
 }
 
+.comment-message {
+  margin-bottom: var(--space-4);
+}
+
+.comment-skeleton,
+.comment-empty {
+  margin-top: var(--space-5);
+}
+
+.comment-empty {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+
 .comment-list {
   display: flex;
   flex-direction: column;
@@ -1048,9 +1362,36 @@ onBeforeUnmount(() => {
 
 .comment-meta {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-3);
+}
+
+.comment-meta-actions,
+.comment-management-actions,
+.comment-edit-actions {
+  display: flex;
+  align-items: center;
+}
+
+.comment-meta-actions {
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.comment-management-actions {
+  gap: var(--space-1);
+}
+
+.comment-management-actions :deep(.p-button) {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+}
+
+.comment-management-actions :deep(svg) {
+  width: 15px;
+  height: 15px;
 }
 
 .comment-author {
@@ -1076,6 +1417,72 @@ onBeforeUnmount(() => {
   line-height: var(--line-height-base);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+.comment-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+
+  margin-top: var(--space-3);
+}
+
+.comment-edit-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.comment-edit-actions {
+  gap: var(--space-2);
+}
+
+.comment-like-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+
+  margin-top: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-xs);
+
+  cursor: pointer;
+
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.comment-like-button:hover,
+.comment-like-button--liked {
+  color: var(--color-accent);
+}
+
+.comment-like-button:hover {
+  background: var(--color-accent-pale);
+}
+
+.comment-like-button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.comment-like-button:focus-visible {
+  outline: 3px solid var(--color-accent-soft);
+  outline-offset: 2px;
+}
+
+.comment-like-button svg {
+  width: 15px;
+  height: 15px;
 }
 
 .event-section {
@@ -1348,6 +1755,19 @@ onBeforeUnmount(() => {
   .post-stats {
     justify-content: space-between;
     gap: var(--space-3);
+  }
+
+  .comment-meta-actions {
+    flex-wrap: wrap;
+  }
+
+  .comment-edit-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .comment-edit-actions {
+    justify-content: flex-end;
   }
 
   .event-card {
