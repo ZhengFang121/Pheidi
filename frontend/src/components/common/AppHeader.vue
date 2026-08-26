@@ -1,5 +1,7 @@
 <template>
   <header class="app-header">
+    <Toast position="top-right" />
+
     <div class="layout-container">
       <Menubar :model="navigationItems" aria-label="主要導覽列" class="main-menu">
         <!-- Logo -->
@@ -93,28 +95,25 @@
     </div>
 
     <!-- 打卡彈出視窗 -->
+    <!-- 打卡彈出視窗 -->
     <Dialog
       id="check-in-dialog"
       v-model:visible="isCheckInDialogVisible"
       modal
       header="今日跑步打卡"
       :draggable="false"
-      :style="{ width: '32rem' }"
-      :breakpoints="{ '640px': 'calc(100vw - 32px)' }"
+      :style="{ width: '44rem' }"
+      :breakpoints="{ '768px': 'calc(100vw - 32px)' }"
+      :content-style="{
+        maxHeight: 'calc(100vh - 10rem)',
+        overflowY: 'auto',
+      }"
     >
-      <div class="check-in-dialog-content">
-        <div class="check-in-dialog-icon">
-          <Check class="check-in-dialog-check" aria-hidden="true" />
-        </div>
-
-        <div>
-          <h2 class="check-in-dialog-title">今天也留下你的足跡吧！</h2>
-
-          <p class="check-in-dialog-description">
-            打卡表單之後可以放在這個區域，例如跑步距離、時間、天氣和今天的心情。
-          </p>
-        </div>
-      </div>
+      <RunRecordForm
+        v-if="isCheckInDialogVisible"
+        @submitted="handleRunRecordSubmitted"
+        @cancel="isCheckInDialogVisible = false"
+      />
     </Dialog>
   </header>
 </template>
@@ -127,8 +126,9 @@ import type { MenuItem } from 'primevue/menuitem'
 import Dialog from 'primevue/dialog'
 import Menu from 'primevue/menu'
 import Menubar from 'primevue/menubar'
+import Toast from 'primevue/toast'
+import { useToast } from 'primevue/usetoast'
 import {
-  Check,
   CircleUserRound,
   LayoutDashboard,
   LibraryBig,
@@ -140,6 +140,7 @@ import {
 } from '@lucide/vue'
 
 import { useAuthStore } from '@/stores/auth'
+import RunRecordForm from '@/components/run/RunRecordForm.vue'
 
 interface NavigationItem extends MenuItem {
   labelEn?: string
@@ -153,6 +154,7 @@ interface AccountMenuItem extends MenuItem {
 
 const router = useRouter()
 const authStore = useAuthStore()
+const toast = useToast()
 
 const accountMenu = ref<InstanceType<typeof Menu> | null>(null)
 
@@ -161,6 +163,17 @@ const isCheckInDialogVisible = ref(false)
 
 function toggleAccountMenu(event: MouseEvent) {
   accountMenu.value?.toggle(event)
+}
+
+function handleRunRecordSubmitted() {
+  isCheckInDialogVisible.value = false
+
+  toast.add({
+    severity: 'success',
+    summary: '打卡成功',
+    detail: '跑步紀錄已成功儲存。',
+    life: 3000,
+  })
 }
 
 async function handleLogout() {
@@ -472,50 +485,6 @@ const navigationItems = ref<NavigationItem[]>([
 }
 
 /* 打卡視窗 */
-.check-in-dialog-content {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-}
-
-.check-in-dialog-icon {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-
-  width: 48px;
-  height: 48px;
-
-  color: white;
-  background: var(--color-primary);
-  border-radius: 50%;
-}
-
-.check-in-dialog-check {
-  width: 24px;
-  height: 24px;
-  stroke-width: 2.5;
-}
-
-.check-in-dialog-title {
-  margin: 0 0 8px;
-
-  color: var(--color-text);
-  font-family: var(--font-family-base);
-  font-size: 24px;
-  font-weight: var(--font-weight-bold);
-  line-height: 1.4;
-}
-
-.check-in-dialog-description {
-  margin: 0;
-
-  color: var(--color-text-secondary);
-  font-family: var(--font-family-base);
-  font-size: var(--font-size-base);
-  line-height: 1.7;
-}
 
 /* 平板尺寸 */
 @media (max-width: 1100px) {

@@ -3,6 +3,7 @@ import { isAxiosError } from 'axios'
 
 import PrimeVue from 'primevue/config'
 import ConfirmationService from 'primevue/confirmationservice'
+import ToastService from 'primevue/toastservice'
 import PheidiPreset from './theme/pheidiPreset'
 
 import 'primeicons/primeicons.css'
@@ -48,6 +49,7 @@ const bootstrap = async () => {
   })
 
   app.use(ConfirmationService)
+  app.use(ToastService)
 
   app.mount('#app')
 }

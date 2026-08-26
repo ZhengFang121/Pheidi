@@ -168,3 +168,40 @@ export const registerPostUploadHandlers = (router: Router) => {
     }
   })
 }
+
+export const registerRunRecordUploadHandlers = (router: Router) => {
+  router.post('/image', uploadSingleImage, async (req, res) => {
+    try {
+      if (!req.file) {
+        res.status(400).json({
+          message: '請選擇要上傳的跑步照片',
+        })
+        return
+      }
+
+      if (!isAllowedImage(req.file.mimetype)) {
+        res.status(400).json({
+          message: '跑步照片只支援 JPG、PNG、WebP 或 GIF',
+        })
+        return
+      }
+
+      const result = await uploadImage(req.file.buffer, {
+        folder: 'pheidi/run-records',
+        width: 1600,
+        height: 1600,
+      })
+
+      res.status(201).json({
+        message: '跑步照片上傳成功',
+        image: toImageResponse(result),
+      })
+    } catch (error: unknown) {
+      console.error('Failed to upload run record image:', error)
+
+      res.status(500).json({
+        message: '跑步照片上傳失敗',
+      })
+    }
+  })
+}

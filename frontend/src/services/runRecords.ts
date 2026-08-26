@@ -1,0 +1,45 @@
+import api from '@/services/api'
+import type {
+  CreateRunRecordPayload,
+  CreateRunRecordResponse,
+  GetRunRecordsParams,
+  GetRunRecordsResponse,
+  UploadRunRecordImageResponse,
+} from '@/types/runRecord'
+
+export const createRunRecord = async (
+  payload: CreateRunRecordPayload,
+) => {
+  const response = await api.post<CreateRunRecordResponse>(
+    '/run-records',
+    payload,
+  )
+
+  return response.data
+}
+
+export const getRunRecords = async (
+  params: GetRunRecordsParams,
+) => {
+  const response = await api.get<GetRunRecordsResponse>(
+    '/run-records',
+    {
+      params,
+    },
+  )
+
+  return response.data
+}
+
+export const uploadRunRecordImage = async (file: File) => {
+  const formData = new FormData()
+
+  formData.append('image', file)
+
+  const response = await api.post<UploadRunRecordImageResponse>(
+    '/run-record-uploads/image',
+    formData,
+  )
+
+  return response.data
+}
