@@ -4,6 +4,7 @@ import express from 'express'
 import { connectDatabase } from './configs/database.js'
 
 import adminRoutes from './routes/adminRoutes.js'
+import adminPlazaRoutes from './routes/adminPlazaRoutes.js'
 import articleRoutes from './routes/articleRoutes.js'
 import postRoutes from './routes/postRoutes.js'
 import postUploadRoutes from './routes/postUploadRoutes.js'
@@ -39,6 +40,7 @@ app.use('/api/admin/uploads', uploadRoutes)
 app.use('/api/uploads', postUploadRoutes)
 app.use('/api/articles', publicArticleRoutes)
 app.use('/api/posts', postRoutes)
+app.use('/api/admin/plaza', adminPlazaRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/users', userRoutes)
 

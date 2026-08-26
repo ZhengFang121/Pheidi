@@ -16,6 +16,7 @@ const maximumCommentLimit = 50
 interface PostFormData {
   content: string
   imageUrl?: string
+  imagePublicId?: string
 }
 
 type PostValidationResult =
@@ -56,7 +57,7 @@ const validatePostFormData = (body: unknown): PostValidationResult => {
     }
   }
 
-  const { content, imageUrl } = body as Record<string, unknown>
+  const { content, imageUrl, imagePublicId } = body as Record<string, unknown>
 
   if (typeof content !== 'string' || !content.trim()) {
     return {
@@ -85,11 +86,24 @@ const validatePostFormData = (body: unknown): PostValidationResult => {
   }
 
   const normalizedImageUrl = typeof imageUrl === 'string' ? imageUrl.trim() : ''
+  const normalizedImagePublicId = typeof imagePublicId === 'string' ? imagePublicId.trim() : ''
 
   if (normalizedImageUrl && !isValidImageUrl(normalizedImageUrl)) {
     return {
       isValid: false,
       message: '貼文圖片網址格式不正確',
+    }
+  }
+
+  if (
+    normalizedImagePublicId &&
+    (!normalizedImageUrl ||
+      normalizedImagePublicId.length > 255 ||
+      !normalizedImagePublicId.startsWith('pheidi/posts/'))
+  ) {
+    return {
+      isValid: false,
+      message: '貼文圖片識別碼格式不正確',
     }
   }
 
@@ -100,6 +114,11 @@ const validatePostFormData = (body: unknown): PostValidationResult => {
       ...(normalizedImageUrl
         ? {
             imageUrl: normalizedImageUrl,
+            ...(normalizedImagePublicId
+              ? {
+                  imagePublicId: normalizedImagePublicId,
+                }
+              : {}),
           }
         : {}),
     },
@@ -186,6 +205,11 @@ export const registerPostHandlers = (router: Router) => {
         ...(validationResult.data.imageUrl
           ? {
               imageUrl: validationResult.data.imageUrl,
+              ...(validationResult.data.imagePublicId
+                ? {
+                    imagePublicId: validationResult.data.imagePublicId,
+                  }
+                : {}),
             }
           : {}),
       })

@@ -3,6 +3,7 @@ import { Schema, model, type Types } from 'mongoose'
 export interface IPost {
   content: string
   imageUrl?: string | undefined
+  imagePublicId?: string | undefined
   author: Types.ObjectId
   likedBy: Types.ObjectId[]
   createdAt?: Date
@@ -19,6 +20,10 @@ const postSchema = new Schema<IPost>(
       maxlength: 500,
     },
     imageUrl: {
+      type: String,
+      trim: true,
+    },
+    imagePublicId: {
       type: String,
       trim: true,
     },

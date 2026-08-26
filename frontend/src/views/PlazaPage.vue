@@ -603,6 +603,7 @@ const postImageInput = ref<HTMLInputElement | null>(null)
 const selectedPostImage = ref<File | null>(null)
 const postImagePreviewUrl = ref('')
 const uploadedPostImageUrl = ref('')
+const uploadedPostImagePublicId = ref('')
 const postImageErrorMessage = ref('')
 const isUploadingPostImage = ref(false)
 const activeCommentPostId = ref<string | null>(null)
@@ -768,6 +769,7 @@ function clearPostImage() {
   revokePostImagePreviewUrl()
   selectedPostImage.value = null
   uploadedPostImageUrl.value = ''
+  uploadedPostImagePublicId.value = ''
   postImageErrorMessage.value = ''
 
   if (postImageInput.value) postImageInput.value.value = ''
@@ -795,6 +797,7 @@ function handlePostImageChange(event: Event) {
   revokePostImagePreviewUrl()
   selectedPostImage.value = file
   uploadedPostImageUrl.value = ''
+  uploadedPostImagePublicId.value = ''
   postImagePreviewUrl.value = URL.createObjectURL(file)
 }
 
@@ -814,6 +817,7 @@ async function handleSubmitPost() {
       const uploadResponse = await uploadPostImage(selectedPostImage.value)
 
       uploadedPostImageUrl.value = uploadResponse.image.url
+      uploadedPostImagePublicId.value = uploadResponse.image.publicId
     } catch (error: unknown) {
       postImageErrorMessage.value = getApiErrorMessage(error, '貼文圖片上傳失敗，請稍後再試。')
       isSubmittingPost.value = false
@@ -830,6 +834,7 @@ async function handleSubmitPost() {
       ...(uploadedPostImageUrl.value
         ? {
             imageUrl: uploadedPostImageUrl.value,
+            imagePublicId: uploadedPostImagePublicId.value,
           }
         : {}),
     })

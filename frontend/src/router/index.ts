@@ -21,6 +21,7 @@ import AdminDashboardPage from '@/views/admin/AdminDashboardPage.vue'
 import ArticleCreatePage from '@/views/admin/ArticleCreatePage.vue'
 import ArticleEditPage from '@/views/admin/ArticleEditPage.vue'
 import ArticleManagementPage from '@/views/admin/ArticleManagementPage.vue'
+import PlazaManagementPage from '@/views/admin/PlazaManagementPage.vue'
 import UserManagementPage from '@/views/admin/UserManagementPage.vue'
 
 const router = createRouter({
@@ -133,6 +134,11 @@ const router = createRouter({
           path: 'articles',
           name: 'admin-articles',
           component: ArticleManagementPage,
+        },
+        {
+          path: 'plaza',
+          name: 'admin-plaza',
+          component: PlazaManagementPage,
         },
         {
           path: 'articles/new',

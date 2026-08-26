@@ -31,6 +31,7 @@ export interface PostListResponse {
 export interface CreatePostPayload {
   content: string
   imageUrl?: string
+  imagePublicId?: string
 }
 
 export interface CreatePostResponse {

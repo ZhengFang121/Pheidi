@@ -161,6 +161,7 @@ import {
   Files,
   LayoutDashboard,
   Menu,
+  MessageSquareText,
   PanelLeftClose,
   PanelLeftOpen,
   UsersRound,
@@ -187,10 +188,15 @@ const navigationItems: AdminNavigationItem[] = [
     icon: UsersRound,
   },
   {
-  label: '文章管理',
-  route: '/admin/articles',
-  icon: Files,
-},
+    label: '文章管理',
+    route: '/admin/articles',
+    icon: Files,
+  },
+  {
+    label: '廣場管理',
+    route: '/admin/plaza',
+    icon: MessageSquareText,
+  },
 ]
 
 const isSidebarCollapsed = ref(
