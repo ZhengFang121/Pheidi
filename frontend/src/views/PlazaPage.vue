@@ -55,14 +55,47 @@
                 class="composer-textarea"
               />
 
+              <input
+                ref="postImageInput"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                class="post-image-input"
+                @change="handlePostImageChange"
+              />
+
+              <Message v-if="postImageErrorMessage" severity="error" :closable="false">
+                {{ postImageErrorMessage }}
+              </Message>
+
+              <div v-if="postImagePreviewUrl" class="composer-image-preview">
+                <img
+                  :src="postImagePreviewUrl"
+                  alt="準備發布的貼文圖片預覽"
+                  class="composer-preview-image"
+                />
+
+                <Button
+                  type="button"
+                  label="移除照片"
+                  severity="danger"
+                  text
+                  size="small"
+                  class="remove-photo-button"
+                  :disabled="isSubmittingPost"
+                  @click="clearPostImage"
+                />
+              </div>
+
               <div class="composer-footer">
                 <div class="composer-tools">
                   <Button
                     type="button"
-                    label="加入照片"
+                    :label="postImagePreviewUrl ? '更換照片' : '加入照片'"
                     severity="secondary"
                     text
                     class="photo-button"
+                    :disabled="isSubmittingPost"
+                    @click="openPostImagePicker"
                   >
                     <template #icon>
                       <ImagePlus aria-hidden="true" />
@@ -80,7 +113,7 @@
                 <Button
                   type="submit"
                   label="發布貼文"
-                  :loading="isSubmittingPost"
+                  :loading="isSubmittingPost || isUploadingPostImage"
                   :disabled="!canSubmitPost || isSubmittingPost"
                 >
                   <template #icon>
@@ -152,6 +185,14 @@
                   </header>
 
                   <p class="post-content">{{ post.content }}</p>
+
+                  <img
+                    v-if="post.imageUrl"
+                    :src="post.imageUrl"
+                    :alt="`${post.author.username} 的貼文圖片`"
+                    class="post-image"
+                    loading="lazy"
+                  />
 
                   <footer class="post-stats" aria-label="貼文互動統計">
                     <button
@@ -519,6 +560,7 @@ import {
   togglePostLike,
   updatePostComment,
 } from '@/services/posts'
+import { uploadPostImage } from '@/services/uploads'
 import { useAuthStore } from '@/stores/auth'
 import type { PlazaPost as ApiPlazaPost, PostComment as ApiPostComment } from '@/types/post'
 
@@ -554,7 +596,15 @@ const confirm = useConfirm()
 
 const activeTab = ref<PlazaTab>('feed')
 const maximumPostLength = 500
+const maximumPostImageSize = 5 * 1024 * 1024
+const allowedPostImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
 const postContent = ref('')
+const postImageInput = ref<HTMLInputElement | null>(null)
+const selectedPostImage = ref<File | null>(null)
+const postImagePreviewUrl = ref('')
+const uploadedPostImageUrl = ref('')
+const postImageErrorMessage = ref('')
+const isUploadingPostImage = ref(false)
 const activeCommentPostId = ref<string | null>(null)
 const commentContent = ref('')
 const maximumCommentLength = 200
@@ -703,20 +753,91 @@ function loadEvents() {
   }, 900)
 }
 
+function openPostImagePicker() {
+  postImageInput.value?.click()
+}
+
+function revokePostImagePreviewUrl() {
+  if (!postImagePreviewUrl.value) return
+
+  URL.revokeObjectURL(postImagePreviewUrl.value)
+  postImagePreviewUrl.value = ''
+}
+
+function clearPostImage() {
+  revokePostImagePreviewUrl()
+  selectedPostImage.value = null
+  uploadedPostImageUrl.value = ''
+  postImageErrorMessage.value = ''
+
+  if (postImageInput.value) postImageInput.value.value = ''
+}
+
+function handlePostImageChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+
+  input.value = ''
+  postImageErrorMessage.value = ''
+
+  if (!file) return
+
+  if (!allowedPostImageTypes.has(file.type)) {
+    postImageErrorMessage.value = '貼文圖片只支援 JPG、PNG、WebP 或 GIF'
+    return
+  }
+
+  if (file.size > maximumPostImageSize) {
+    postImageErrorMessage.value = '貼文圖片不能超過 5 MB'
+    return
+  }
+
+  revokePostImagePreviewUrl()
+  selectedPostImage.value = file
+  uploadedPostImageUrl.value = ''
+  postImagePreviewUrl.value = URL.createObjectURL(file)
+}
+
 async function handleSubmitPost() {
   const content = postContent.value.trim()
 
   if (!content || isSubmittingPost.value) return
 
   feedErrorMessage.value = ''
+  postImageErrorMessage.value = ''
   isSubmittingPost.value = true
 
+  if (selectedPostImage.value && !uploadedPostImageUrl.value) {
+    isUploadingPostImage.value = true
+
+    try {
+      const uploadResponse = await uploadPostImage(selectedPostImage.value)
+
+      uploadedPostImageUrl.value = uploadResponse.image.url
+    } catch (error: unknown) {
+      postImageErrorMessage.value = getApiErrorMessage(error, '貼文圖片上傳失敗，請稍後再試。')
+      isSubmittingPost.value = false
+      isUploadingPostImage.value = false
+      return
+    } finally {
+      isUploadingPostImage.value = false
+    }
+  }
+
   try {
-    const response = await createPost({ content })
+    const response = await createPost({
+      content,
+      ...(uploadedPostImageUrl.value
+        ? {
+            imageUrl: uploadedPostImageUrl.value,
+          }
+        : {}),
+    })
 
     posts.value.unshift(toPostView(response.post))
     totalPosts.value += 1
     postContent.value = ''
+    clearPostImage()
   } catch (error: unknown) {
     feedErrorMessage.value = getApiErrorMessage(error, '發布貼文失敗，請稍後再試。')
   } finally {
@@ -914,6 +1035,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  revokePostImagePreviewUrl()
   if (eventLoadingTimer) clearTimeout(eventLoadingTimer)
 })
 </script>
@@ -1072,6 +1194,48 @@ onBeforeUnmount(() => {
   resize: vertical;
 }
 
+.post-image-input {
+  position: absolute;
+
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+
+  white-space: nowrap;
+
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.composer-image-preview {
+  position: relative;
+
+  width: min(100%, 640px);
+  overflow: hidden;
+
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.composer-preview-image {
+  display: block;
+  width: 100%;
+  max-height: 480px;
+
+  object-fit: contain;
+}
+
+.remove-photo-button {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  backdrop-filter: blur(8px);
+}
+
 .composer-footer,
 .composer-tools {
   display: flex;
@@ -1209,6 +1373,19 @@ onBeforeUnmount(() => {
   line-height: var(--line-height-base);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+.post-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 640px;
+
+  object-fit: contain;
+
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
 .post-stats {

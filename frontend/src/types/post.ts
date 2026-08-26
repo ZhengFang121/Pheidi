@@ -38,6 +38,20 @@ export interface CreatePostResponse {
   post: PlazaPost
 }
 
+export interface UploadedPostImage {
+  url: string
+  publicId: string
+  width: number
+  height: number
+  format: string
+  bytes: number
+}
+
+export interface UploadPostImageResponse {
+  message: string
+  image: UploadedPostImage
+}
+
 export interface TogglePostLikeResponse {
   message: string
   likeCount: number

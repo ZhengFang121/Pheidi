@@ -6,6 +6,7 @@ import { connectDatabase } from './configs/database.js'
 import adminRoutes from './routes/adminRoutes.js'
 import articleRoutes from './routes/articleRoutes.js'
 import postRoutes from './routes/postRoutes.js'
+import postUploadRoutes from './routes/postUploadRoutes.js'
 import publicArticleRoutes from './routes/publicArticleRoutes.js'
 import uploadRoutes from './routes/uploadRoutes.js'
 import userRoutes from './routes/userRoutes.js'
@@ -35,6 +36,7 @@ app.get('/', (_req, res) => {
 
 app.use('/api/admin/articles', articleRoutes)
 app.use('/api/admin/uploads', uploadRoutes)
+app.use('/api/uploads', postUploadRoutes)
 app.use('/api/articles', publicArticleRoutes)
 app.use('/api/posts', postRoutes)
 app.use('/api/admin', adminRoutes)
