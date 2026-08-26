@@ -319,6 +319,55 @@ router.get('/', async (req, res) => {
   }
 })
 
+router.get('/statistics', async (_req, res) => {
+  try {
+    const [statistics] = await Article.aggregate<{
+      totalArticles: number
+      publishedArticles: number
+      draftArticles: number
+      articlesWithCover: number
+    }>([
+      {
+        $group: {
+          _id: null,
+          totalArticles: { $sum: 1 },
+          publishedArticles: {
+            $sum: { $cond: [{ $eq: ['$status', 'published'] }, 1, 0] },
+          },
+          draftArticles: {
+            $sum: { $cond: [{ $eq: ['$status', 'draft'] }, 1, 0] },
+          },
+          articlesWithCover: {
+            $sum: {
+              $cond: [
+                { $gt: [{ $strLenCP: { $ifNull: ['$coverImageUrl', ''] } }, 0] },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ])
+
+    res.status(200).json({
+      message: '取得文章統計成功',
+      statistics: {
+        totalArticles: statistics?.totalArticles ?? 0,
+        publishedArticles: statistics?.publishedArticles ?? 0,
+        draftArticles: statistics?.draftArticles ?? 0,
+        articlesWithCover: statistics?.articlesWithCover ?? 0,
+      },
+    })
+  } catch (error: unknown) {
+    console.error('Failed to get admin article statistics:', error)
+
+    res.status(500).json({
+      message: '取得文章統計失敗',
+    })
+  }
+})
+
 router.get('/:articleId', async (req, res) => {
   try {
     const { articleId } = req.params

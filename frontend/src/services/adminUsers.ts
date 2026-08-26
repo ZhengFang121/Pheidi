@@ -2,9 +2,16 @@ import api from '@/services/api'
 import type {
   AdminUser,
   AdminUserListResponse,
+  AdminUserStatisticsResponse,
   GetAdminUsersParams,
   UpdateAdminUserRoleResponse,
 } from '@/types/user'
+
+export const getAdminUserStatistics = async () => {
+  const response = await api.get<AdminUserStatisticsResponse>('/admin/users/statistics')
+
+  return response.data
+}
 
 export const getAdminUsers = async (params: GetAdminUsersParams = {}) => {
   const response = await api.get<AdminUserListResponse>('/admin/users', {

@@ -5,7 +5,7 @@
         <p class="dashboard-eyebrow">HOME</p>
         <h2 class="dashboard-title">首頁</h2>
         <p class="dashboard-description">
-          查看跑者菲迪目前的使用者統計與最新註冊狀態。
+          掌握玩家、文章與廣場三個管理模組的即時概況。
         </p>
       </div>
     </div>
@@ -24,32 +24,49 @@
       </div>
     </Message>
 
-    <div v-if="isLoading" class="statistics-grid">
+    <div v-if="isLoading" class="management-overview-grid">
       <Skeleton
-        v-for="index in 4"
+        v-for="index in 3"
         :key="index"
         width="100%"
-        height="9rem"
+        height="12rem"
         border-radius="var(--radius-lg)"
       />
     </div>
 
-    <div v-else-if="statistics" class="statistics-grid">
-      <article
-        v-for="card in statisticCards"
-        :key="card.label"
-        class="statistic-card"
+    <div v-else-if="statistics" class="management-overview-grid">
+      <RouterLink
+        v-for="module in managementModules"
+        :key="module.route"
+        :to="module.route"
+        :class="['management-card', `management-card--${module.tone}`]"
       >
-        <div :class="['statistic-icon', `statistic-icon--${card.tone}`]">
-          <component :is="card.icon" aria-hidden="true" />
+        <header class="management-card-header">
+          <div class="management-card-identity">
+            <div class="management-card-icon">
+              <component :is="module.icon" aria-hidden="true" />
+            </div>
+            <div>
+              <p class="management-card-eyebrow">{{ module.eyebrow }}</p>
+              <h3 class="management-card-title">{{ module.title }}</h3>
+            </div>
+          </div>
+
+          <ArrowRight class="management-card-arrow" aria-hidden="true" />
+        </header>
+
+        <div class="management-card-total">
+          <span>{{ module.totalLabel }}</span>
+          <strong>{{ module.totalValue.toLocaleString('zh-TW') }}</strong>
         </div>
 
-        <div>
-          <p class="statistic-label">{{ card.label }}</p>
-          <strong class="statistic-value">{{ card.value }}</strong>
-          <p class="statistic-description">{{ card.description }}</p>
-        </div>
-      </article>
+        <dl class="management-card-details">
+          <div v-for="detail in module.details" :key="detail.label">
+            <dt>{{ detail.label }}</dt>
+            <dd>{{ detail.value.toLocaleString('zh-TW') }}</dd>
+          </div>
+        </dl>
+      </RouterLink>
     </div>
 
     <section class="latest-users-panel">
@@ -104,7 +121,7 @@
 import { computed, onMounted, ref } from 'vue'
 import type { Component } from 'vue'
 import { isAxiosError } from 'axios'
-import { ArrowRight, ShieldCheck, UserPlus, UserRound, UsersRound } from '@lucide/vue'
+import { ArrowRight, Files, MessageSquareText, UsersRound } from '@lucide/vue'
 import Button from 'primevue/button'
 import Column from 'primevue/column'
 import DataTable from 'primevue/datatable'
@@ -116,11 +133,17 @@ import { getAdminDashboard } from '@/services/adminDashboard'
 import type { AdminDashboardStatistics, AdminLatestUser } from '@/types/user'
 import { formatNumericDate } from '@/utils/date'
 
-interface StatisticCard {
-  label: string
-  value: number
-  description: string
-  tone: 'primary' | 'secondary' | 'accent' | 'dark'
+interface ManagementModule {
+  eyebrow: string
+  title: string
+  route: string
+  totalLabel: string
+  totalValue: number
+  details: Array<{
+    label: string
+    value: number
+  }>
+  tone: 'primary' | 'secondary' | 'accent'
   icon: Component
 }
 
@@ -129,37 +152,46 @@ const latestUsers = ref<AdminLatestUser[]>([])
 const isLoading = ref(false)
 const errorMessage = ref('')
 
-const statisticCards = computed<StatisticCard[]>(() => {
+const managementModules = computed<ManagementModule[]>(() => {
   if (!statistics.value) return []
 
   return [
     {
-      label: '使用者總數',
-      value: statistics.value.totalUsers,
-      description: '包含玩家與管理員',
+      eyebrow: 'USER MANAGEMENT',
+      title: '玩家管理',
+      route: '/admin/users',
+      totalLabel: '使用者總數',
+      totalValue: statistics.value.totalUsers,
+      details: [
+        { label: '玩家', value: statistics.value.totalPlayers },
+        { label: '管理員', value: statistics.value.totalAdmins },
+        { label: '近 7 天新增', value: statistics.value.newUsersLastSevenDays },
+      ],
       tone: 'primary',
       icon: UsersRound,
     },
     {
-      label: '玩家數量',
-      value: statistics.value.totalPlayers,
-      description: '目前的一般玩家',
+      eyebrow: 'ARTICLE MANAGEMENT',
+      title: '文章管理',
+      route: '/admin/articles',
+      totalLabel: '文章總數',
+      totalValue: statistics.value.totalArticles,
+      details: [
+        { label: '已發布', value: statistics.value.publishedArticles },
+        { label: '草稿', value: statistics.value.draftArticles },
+      ],
       tone: 'secondary',
-      icon: UserRound,
+      icon: Files,
     },
     {
-      label: '管理員數量',
-      value: statistics.value.totalAdmins,
-      description: '具備後台權限',
+      eyebrow: 'PLAZA MANAGEMENT',
+      title: '廣場管理',
+      route: '/admin/plaza',
+      totalLabel: '貼文總數',
+      totalValue: statistics.value.totalPosts,
+      details: [{ label: '留言', value: statistics.value.totalComments }],
       tone: 'accent',
-      icon: ShieldCheck,
-    },
-    {
-      label: '近 7 天新增',
-      value: statistics.value.newUsersLastSevenDays,
-      description: '最近加入的使用者',
-      tone: 'dark',
-      icon: UserPlus,
+      icon: MessageSquareText,
     },
   ]
 })
@@ -238,27 +270,61 @@ onMounted(() => {
   width: 100%;
 }
 
-.statistics-grid {
+.management-overview-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-3);
 }
 
-.statistic-card {
+.management-card {
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-
   min-width: 0;
-  padding: var(--space-3);
+  flex-direction: column;
+  gap: var(--space-4);
 
+  padding: var(--space-4);
+
+  color: var(--color-text);
+  text-decoration: none;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
-.statistic-icon {
+.management-card:hover {
+  border-color: var(--color-primary-soft);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.management-card:focus-visible {
+  outline: 3px solid var(--color-primary-soft);
+  outline-offset: 2px;
+}
+
+.management-card-header,
+.management-card-identity {
+  display: flex;
+  align-items: center;
+}
+
+.management-card-header {
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.management-card-identity {
+  min-width: 0;
+  gap: var(--space-3);
+}
+
+.management-card-icon {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
@@ -270,53 +336,92 @@ onMounted(() => {
   border-radius: var(--radius-md);
 }
 
-.statistic-icon :deep(svg) {
+.management-card-icon :deep(svg),
+.management-card-arrow {
   width: 24px;
   height: 24px;
 }
 
-.statistic-icon--primary {
+.management-card--primary .management-card-icon {
   color: var(--color-primary);
   background: var(--color-primary-pale);
 }
 
-.statistic-icon--secondary {
+.management-card--secondary .management-card-icon {
   color: var(--color-secondary);
   background: var(--color-secondary-pale);
 }
 
-.statistic-icon--accent {
+.management-card--accent .management-card-icon {
   color: var(--color-accent);
   background: var(--color-accent-pale);
 }
 
-.statistic-icon--dark {
-  color: white;
-  background: var(--color-dark);
+.management-card-arrow {
+  flex: 0 0 auto;
+  color: var(--color-text-secondary);
+  transition: transform 0.2s ease;
 }
 
-.statistic-label {
+.management-card:hover .management-card-arrow {
+  transform: translateX(var(--space-1));
+}
+
+.management-card-eyebrow {
   margin: 0 0 var(--space-1);
 
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-body-small);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-wide);
 }
 
-.statistic-value {
-  display: block;
-
-  margin-bottom: var(--space-1);
-
-  color: var(--color-text);
-  font-size: var(--font-size-h2);
-  line-height: 1;
-}
-
-.statistic-description {
+.management-card-title {
   margin: 0;
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-heading);
+}
+
+.management-card-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+
+  padding-bottom: var(--space-3);
 
   color: var(--color-text-secondary);
-  font-size: var(--font-size-caption);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.management-card-total strong {
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-tight);
+}
+
+.management-card-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+
+  margin: 0;
+}
+
+.management-card-details div {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.management-card-details dt {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.management-card-details dd {
+  margin: 0;
+  font-weight: var(--font-weight-bold);
 }
 
 .latest-users-panel {
@@ -374,16 +479,12 @@ onMounted(() => {
 }
 
 @media (max-width: 1200px) {
-  .statistics-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .management-overview-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
 @media (max-width: 640px) {
-  .statistics-grid {
-    grid-template-columns: 1fr;
-  }
-
   .panel-heading,
   .error-content {
     align-items: flex-start;
@@ -392,6 +493,13 @@ onMounted(() => {
 
   .latest-users-panel {
     padding: var(--space-3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .management-card,
+  .management-card-arrow {
+    transition: none;
   }
 }
 </style>

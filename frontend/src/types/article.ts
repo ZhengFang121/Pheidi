@@ -102,6 +102,18 @@ export interface AdminArticleListResponse {
   pagination: Pagination
 }
 
+export interface AdminArticleStatistics {
+  totalArticles: number
+  publishedArticles: number
+  draftArticles: number
+  articlesWithCover: number
+}
+
+export interface AdminArticleStatisticsResponse {
+  message: string
+  statistics: AdminArticleStatistics
+}
+
 export interface GetAdminArticlesParams {
   page?: number
   limit?: number

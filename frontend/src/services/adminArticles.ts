@@ -3,10 +3,17 @@ import type {
   AdminArticleFormPayload,
   AdminArticleListResponse,
   AdminArticleResponse,
+  AdminArticleStatisticsResponse,
   DeleteAdminArticleResponse,
   GetAdminArticlesParams,
   ArticleStatus,
 } from '@/types/article'
+
+export const getAdminArticleStatistics = async () => {
+  const response = await api.get<AdminArticleStatisticsResponse>('/admin/articles/statistics')
+
+  return response.data
+}
 
 export const getAdminArticles = async (params: GetAdminArticlesParams = {}) => {
   const response = await api.get<AdminArticleListResponse>('/admin/articles', {

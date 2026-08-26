@@ -19,6 +19,23 @@ export interface AdminDashboardStatistics {
   totalPlayers: number
   totalAdmins: number
   newUsersLastSevenDays: number
+  totalArticles: number
+  publishedArticles: number
+  draftArticles: number
+  totalPosts: number
+  totalComments: number
+}
+
+export interface AdminUserStatistics {
+  totalUsers: number
+  totalPlayers: number
+  totalAdmins: number
+  newUsersLastSevenDays: number
+}
+
+export interface AdminUserStatisticsResponse {
+  message: string
+  statistics: AdminUserStatistics
 }
 
 export interface AdminLatestUser extends AuthUser {

@@ -9,11 +9,17 @@
         <p class="page-description">查看跑者菲迪的玩家帳號、角色與註冊時間。</p>
       </div>
 
-      <div class="user-total">
-        <span class="user-total-label">使用者總數</span>
-        <strong class="user-total-value">{{ pagination.total }}</strong>
-      </div>
     </div>
+
+    <AdminStatisticsStrip
+      :items="statisticItems"
+      label="玩家統計"
+      :loading="isStatisticsLoading"
+    />
+
+    <Message v-if="statisticsErrorMessage" severity="error" :closable="false">
+      {{ statisticsErrorMessage }}
+    </Message>
 
     <div class="management-panel">
       <form class="search-form" @submit.prevent="handleSearch">
@@ -130,11 +136,17 @@ import Message from 'primevue/message'
 import Tag from 'primevue/tag'
 import { useConfirm } from 'primevue/useconfirm'
 
-import { getAdminUsers, updateAdminUserRole } from '@/services/adminUsers'
+import AdminStatisticsStrip from '@/components/admin/AdminStatisticsStrip.vue'
+import {
+  getAdminUsers,
+  getAdminUserStatistics,
+  updateAdminUserRole,
+} from '@/services/adminUsers'
 
 import { useAuthStore } from '@/stores/auth'
 import type { Pagination } from '@/types/api'
-import type { AdminUser } from '@/types/user'
+import type { AdminUser, AdminUserStatistics } from '@/types/user'
+import { getApiErrorMessage } from '@/utils/apiError'
 import { formatNumericDate } from '@/utils/date'
 
 interface PageEvent {
@@ -153,6 +165,14 @@ const isLoading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 const updatingUserId = ref<string | null>(null)
+const isStatisticsLoading = ref(false)
+const statisticsErrorMessage = ref('')
+const statistics = reactive<AdminUserStatistics>({
+  totalUsers: 0,
+  totalPlayers: 0,
+  totalAdmins: 0,
+  newUsersLastSevenDays: 0,
+})
 
 const pagination = reactive<Pagination>({
   page: 1,
@@ -162,9 +182,29 @@ const pagination = reactive<Pagination>({
 })
 
 const first = computed(() => (pagination.page - 1) * pagination.limit)
+const statisticItems = computed(() => [
+  { label: '使用者總數', value: statistics.totalUsers, icon: 'pi pi-users' },
+  { label: '玩家數量', value: statistics.totalPlayers, icon: 'pi pi-user' },
+  { label: '管理員數量', value: statistics.totalAdmins, icon: 'pi pi-shield' },
+  { label: '近 7 天新增', value: statistics.newUsersLastSevenDays, icon: 'pi pi-user-plus' },
+])
 
 const formatDate = (date: string) => {
   return formatNumericDate(date)
+}
+
+const loadUserStatistics = async () => {
+  isStatisticsLoading.value = true
+  statisticsErrorMessage.value = ''
+
+  try {
+    const response = await getAdminUserStatistics()
+    Object.assign(statistics, response.statistics)
+  } catch (error: unknown) {
+    statisticsErrorMessage.value = getApiErrorMessage(error, '無法取得玩家統計，請稍後再試')
+  } finally {
+    isStatisticsLoading.value = false
+  }
 }
 
 const loadUsers = async (page = pagination.page, limit = pagination.limit) => {
@@ -226,6 +266,7 @@ const updateUserRole = async (user: AdminUser) => {
       currentUser.id === response.user.id ? response.user : currentUser,
     )
 
+    await loadUserStatistics()
     successMessage.value = response.message
   } catch (error: unknown) {
     if (isAxiosError(error)) {
@@ -257,7 +298,7 @@ const confirmRoleChange = (user: AdminUser) => {
 }
 
 onMounted(() => {
-  void loadUsers()
+  void Promise.all([loadUserStatistics(), loadUsers()])
 })
 </script>
 
@@ -298,30 +339,6 @@ onMounted(() => {
 
   color: var(--color-text-secondary);
   line-height: var(--line-height-base);
-}
-
-.user-total {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--space-1);
-
-  min-width: 120px;
-  padding: var(--space-2) var(--space-3);
-
-  background: var(--color-primary-pale);
-  border-radius: var(--radius-lg);
-}
-
-.user-total-label {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-xs);
-}
-
-.user-total-value {
-  color: var(--color-primary);
-  font-size: var(--font-size-lg);
-  line-height: 1;
 }
 
 .management-panel {
@@ -369,10 +386,6 @@ onMounted(() => {
   .page-heading {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .user-total {
-    align-items: flex-start;
   }
 
   .management-panel {

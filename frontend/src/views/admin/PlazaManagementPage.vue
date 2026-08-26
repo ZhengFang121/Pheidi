@@ -10,15 +10,11 @@
       </div>
     </div>
 
-    <div class="statistics-grid" aria-label="廣場統計">
-      <article v-for="item in statisticItems" :key="item.label" class="statistic-card">
-        <div class="statistic-heading">
-          <i :class="item.icon" aria-hidden="true" />
-          <span>{{ item.label }}</span>
-        </div>
-        <strong class="statistic-value">{{ item.value.toLocaleString('zh-TW') }}</strong>
-      </article>
-    </div>
+    <AdminStatisticsStrip
+      :items="statisticItems"
+      label="廣場統計"
+      :loading="isStatisticsLoading"
+    />
 
     <Message v-if="statisticsErrorMessage" severity="error" :closable="false">
       {{ statisticsErrorMessage }}
@@ -301,6 +297,7 @@ import Tabs from 'primevue/tabs'
 import Tag from 'primevue/tag'
 import { useConfirm } from 'primevue/useconfirm'
 
+import AdminStatisticsStrip from '@/components/admin/AdminStatisticsStrip.vue'
 import {
   deleteAdminPlazaComment,
   deleteAdminPlazaPost,
@@ -336,6 +333,7 @@ const statistics = reactive<AdminPlazaStatistics>({
   totalCommentLikes: 0,
 })
 const statisticsErrorMessage = ref('')
+const isStatisticsLoading = ref(false)
 
 const posts = ref<AdminPlazaPost[]>([])
 const postSearchInput = ref('')
@@ -386,6 +384,7 @@ const hasActiveCommentSearch = computed(() => Boolean(activeCommentSearch.value)
 const formatDate = (date: string) => formatNumericDate(date, 'Asia/Taipei')
 
 const loadStatistics = async () => {
+  isStatisticsLoading.value = true
   statisticsErrorMessage.value = ''
 
   try {
@@ -393,6 +392,8 @@ const loadStatistics = async () => {
     Object.assign(statistics, response.statistics)
   } catch (error: unknown) {
     statisticsErrorMessage.value = getApiErrorMessage(error, '無法取得廣場統計，請稍後再試。')
+  } finally {
+    isStatisticsLoading.value = false
   }
 }
 
@@ -604,46 +605,6 @@ onMounted(() => {
   color: var(--color-text-secondary);
 }
 
-.statistics-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  overflow: hidden;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-}
-
-.statistic-card {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border-left: 1px solid var(--color-border);
-}
-
-.statistic-card:first-child {
-  border-left: 4px solid var(--color-primary);
-}
-
-.statistic-heading {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-}
-
-.statistic-heading i {
-  color: var(--color-primary);
-}
-
-.statistic-value {
-  font-size: var(--font-size-md);
-  line-height: var(--line-height-tight);
-}
-
 .management-panel {
   padding: var(--space-4);
   overflow: hidden;
@@ -731,19 +692,6 @@ onMounted(() => {
 }
 
 @media (max-width: 1100px) {
-  .statistics-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .statistic-card:nth-child(4) {
-    border-top: 1px solid var(--color-border);
-    border-left: 4px solid var(--color-secondary);
-  }
-
-  .statistic-card:nth-child(5) {
-    border-top: 1px solid var(--color-border);
-  }
-
   .filter-form {
     flex-wrap: wrap;
   }
@@ -752,26 +700,6 @@ onMounted(() => {
 @media (max-width: 640px) {
   .page-title {
     font-size: var(--font-size-md);
-  }
-
-  .statistics-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .statistic-card,
-  .statistic-card:nth-child(4),
-  .statistic-card:nth-child(5) {
-    border-top: 1px solid var(--color-border);
-    border-left: 1px solid var(--color-border);
-  }
-
-  .statistic-card:first-child {
-    border-top: 0;
-    border-left: 4px solid var(--color-primary);
-  }
-
-  .statistic-card:nth-child(2) {
-    border-top: 0;
   }
 
   .management-panel {

@@ -1,5 +1,8 @@
 import type { Router } from 'express'
 
+import Article from '../models/Article.js'
+import Comment from '../models/Comment.js'
+import Post from '../models/Post.js'
 import User from '../models/User.js'
 import { parsePositiveInteger } from '../utils/query.js'
 import { escapeRegularExpression } from '../utils/regex.js'
@@ -9,6 +12,27 @@ const defaultPage = 1
 const defaultLimit = 10
 const maximumLimit = 50
 const mongoObjectIdPattern = /^[a-f\d]{24}$/i
+
+const getUserStatistics = async () => {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  const [totalUsers, totalPlayers, totalAdmins, newUsersLastSevenDays] = await Promise.all([
+    User.countDocuments(),
+    User.countDocuments({ role: 'player' }),
+    User.countDocuments({ role: 'admin' }),
+    User.countDocuments({
+      createdAt: {
+        $gte: sevenDaysAgo,
+      },
+    }),
+  ])
+
+  return {
+    totalUsers,
+    totalPlayers,
+    totalAdmins,
+    newUsersLastSevenDays,
+  }
+}
 
 /*
  * 所有 /api/admin 路由都必須先通過登入與管理員驗證。
@@ -23,37 +47,37 @@ router.get('/check', (_req, res) => {
 
 router.get('/dashboard', async (_req, res) => {
   try {
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-
     const [
-      totalUsers,
-      totalPlayers,
-      totalAdmins,
-      newUsersLastSevenDays,
+      userStatistics,
       latestUsers,
+      totalArticles,
+      publishedArticles,
+      draftArticles,
+      totalPosts,
+      totalComments,
     ] = await Promise.all([
-      User.countDocuments(),
-      User.countDocuments({ role: 'player' }),
-      User.countDocuments({ role: 'admin' }),
-      User.countDocuments({
-        createdAt: {
-          $gte: sevenDaysAgo,
-        },
-      }),
+      getUserStatistics(),
       User.find()
         .select('_id username email role createdAt')
         .sort({ createdAt: -1 })
         .limit(5)
         .lean(),
+      Article.countDocuments(),
+      Article.countDocuments({ status: 'published' }),
+      Article.countDocuments({ status: 'draft' }),
+      Post.countDocuments(),
+      Comment.countDocuments(),
     ])
 
     res.status(200).json({
       message: '取得管理員儀表板資料成功',
       statistics: {
-        totalUsers,
-        totalPlayers,
-        totalAdmins,
-        newUsersLastSevenDays,
+        ...userStatistics,
+        totalArticles,
+        publishedArticles,
+        draftArticles,
+        totalPosts,
+        totalComments,
       },
       latestUsers: latestUsers.map((user) => ({
         id: user._id,
@@ -68,6 +92,23 @@ router.get('/dashboard', async (_req, res) => {
 
     res.status(500).json({
       message: '取得管理員儀表板資料失敗',
+    })
+  }
+})
+
+router.get('/users/statistics', async (_req, res) => {
+  try {
+    const statistics = await getUserStatistics()
+
+    res.status(200).json({
+      message: '取得玩家統計成功',
+      statistics,
+    })
+  } catch (error: unknown) {
+    console.error('Failed to get admin user statistics:', error)
+
+    res.status(500).json({
+      message: '取得玩家統計失敗',
     })
   }
 })

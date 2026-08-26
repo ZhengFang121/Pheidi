@@ -10,17 +10,19 @@
       </div>
 
       <div class="page-actions">
-        <div class="article-total">
-          <span class="article-total-label">文章總數</span>
-
-          <strong class="article-total-value">
-            {{ pagination.total }}
-          </strong>
-        </div>
-
         <Button type="button" label="新增文章" @click="goToCreateArticle" />
       </div>
     </div>
+
+    <AdminStatisticsStrip
+      :items="statisticItems"
+      label="文章統計"
+      :loading="isStatisticsLoading"
+    />
+
+    <Message v-if="statisticsErrorMessage" severity="error" :closable="false">
+      {{ statisticsErrorMessage }}
+    </Message>
 
     <div class="management-panel">
       <form class="filter-form" @submit.prevent="handleSearch">
@@ -207,7 +209,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import Button from 'primevue/button'
@@ -220,6 +222,7 @@ import Select from 'primevue/select'
 import Tag from 'primevue/tag'
 import { useConfirm } from 'primevue/useconfirm'
 
+import AdminStatisticsStrip from '@/components/admin/AdminStatisticsStrip.vue'
 import {
   articleCategoryOptions as categoryOptions,
   articleStatusOptions as statusOptions,
@@ -227,8 +230,12 @@ import {
   getArticleStatusLabel,
 } from '@/constants/article'
 import { useAdminArticleList } from '@/composables/useAdminArticleList'
-import { deleteAdminArticle, updateAdminArticleStatus } from '@/services/adminArticles'
-import type { AdminArticle, ArticleStatus } from '@/types/article'
+import {
+  deleteAdminArticle,
+  getAdminArticleStatistics,
+  updateAdminArticleStatus,
+} from '@/services/adminArticles'
+import type { AdminArticle, AdminArticleStatistics, ArticleStatus } from '@/types/article'
 import { getApiErrorMessage } from '@/utils/apiError'
 import { formatNumericDate } from '@/utils/date'
 
@@ -239,6 +246,14 @@ const confirm = useConfirm()
 const deletingArticleId = ref<string | null>(null)
 const updatingArticleStatusId = ref<string | null>(null)
 const successMessage = ref('')
+const isStatisticsLoading = ref(false)
+const statisticsErrorMessage = ref('')
+const statistics = reactive<AdminArticleStatistics>({
+  totalArticles: 0,
+  publishedArticles: 0,
+  draftArticles: 0,
+  articlesWithCover: 0,
+})
 
 const {
   articles,
@@ -259,6 +274,26 @@ const {
 const getCategoryLabel = getArticleCategoryLabel
 const getStatusLabel = getArticleStatusLabel
 const formatDate = formatNumericDate
+const statisticItems = computed(() => [
+  { label: '文章總數', value: statistics.totalArticles, icon: 'pi pi-file' },
+  { label: '已發布文章', value: statistics.publishedArticles, icon: 'pi pi-send' },
+  { label: '草稿文章', value: statistics.draftArticles, icon: 'pi pi-pencil' },
+  { label: '含封面文章', value: statistics.articlesWithCover, icon: 'pi pi-image' },
+])
+
+const loadArticleStatistics = async () => {
+  isStatisticsLoading.value = true
+  statisticsErrorMessage.value = ''
+
+  try {
+    const response = await getAdminArticleStatistics()
+    Object.assign(statistics, response.statistics)
+  } catch (error: unknown) {
+    statisticsErrorMessage.value = getApiErrorMessage(error, '無法取得文章統計，請稍後再試')
+  } finally {
+    isStatisticsLoading.value = false
+  }
+}
 
 const goToCreateArticle = () => {
   void router.push({
@@ -289,6 +324,7 @@ const updateArticleStatus = async (article: AdminArticle) => {
       currentArticle.id === response.article.id ? response.article : currentArticle,
     )
 
+    await loadArticleStatistics()
     successMessage.value = response.message
   } catch (error: unknown) {
     errorMessage.value = getApiErrorMessage(error, '無法更新文章發布狀態，請稍後再試')
@@ -328,7 +364,10 @@ const deleteArticle = async (article: AdminArticle) => {
     const targetPage =
       articles.value.length === 1 && pagination.page > 1 ? pagination.page - 1 : pagination.page
 
-    await loadArticles(targetPage, pagination.limit)
+    await Promise.all([
+      loadArticles(targetPage, pagination.limit),
+      loadArticleStatistics(),
+    ])
   } catch (error: unknown) {
     errorMessage.value = getApiErrorMessage(error, '無法刪除文章，請稍後再試')
   } finally {
@@ -351,7 +390,7 @@ const confirmDeleteArticle = (article: AdminArticle) => {
 }
 
 onMounted(() => {
-  void loadArticles()
+  void Promise.all([loadArticleStatistics(), loadArticles()])
 })
 </script>
 
@@ -398,30 +437,6 @@ onMounted(() => {
 
   color: var(--color-text-secondary);
   line-height: var(--line-height-base);
-}
-
-.article-total {
-  display: flex;
-  min-width: 120px;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--space-1);
-
-  padding: var(--space-2) var(--space-3);
-
-  background: var(--color-primary-pale);
-  border-radius: var(--radius-lg);
-}
-
-.article-total-label {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-xs);
-}
-
-.article-total-value {
-  color: var(--color-primary);
-  font-size: var(--font-size-lg);
-  line-height: 1;
 }
 
 .management-panel {
@@ -524,10 +539,6 @@ onMounted(() => {
   .page-actions {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .article-total {
-    align-items: flex-start;
   }
 
   .management-panel {
