@@ -1,6 +1,8 @@
 import type { Router } from 'express'
 import { isValidObjectId } from 'mongoose'
 
+import { BADGE_DEFINITION_BY_KEY } from '../constants/badges.js'
+import { getRunnerLevelDefinition } from '../constants/runnerLevels.js'
 import RunRecord, {
   RUN_LOCATION_TYPES,
   RUN_MOODS,
@@ -11,6 +13,12 @@ import RunRecord, {
   type RunRecordWeather,
 } from '../models/RunRecord.js'
 import User from '../models/User.js'
+import { unlockEligibleBadges } from '../services/badgeService.js'
+import { refreshRunnerProgress } from '../services/runnerProgressService.js'
+import type {
+  RunnerProgressRefreshResult,
+  UnlockedBadgeResult,
+} from '../types/runnerProgress.js'
 
 const maximumQueryRangeInMilliseconds = 32 * 24 * 60 * 60 * 1000
 
@@ -34,6 +42,34 @@ type RunRecordValidationResult =
       isValid: false
       message: string
     }
+
+const createProgressionResponse = (
+  newBadges: UnlockedBadgeResult[],
+  progression: RunnerProgressRefreshResult,
+) => {
+  return {
+    newBadges: newBadges.map(({ badgeKey, unlockedAt }) => {
+      const definition = BADGE_DEFINITION_BY_KEY.get(badgeKey)
+
+      return {
+        key: badgeKey,
+        name: definition?.name ?? badgeKey,
+        description: definition?.description ?? '',
+        category: definition?.category ?? 'milestone',
+        unlockedAt,
+      }
+    }),
+    levelUp: progression.levelUp
+      ? {
+          from: progression.levelUp.from,
+          to: progression.levelUp.to,
+          name: getRunnerLevelDefinition(progression.levelUp.to).name,
+        }
+      : null,
+    currentLevel: progression.currentLevel,
+    pheidiMissionEligible: progression.pheidiMissionEligible,
+  }
+}
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -260,6 +296,8 @@ export const registerRunRecordHandlers = (router: Router) => {
             }
           : {}),
       })
+      const newBadges = await unlockEligibleBadges(req.user.userId)
+      const progression = await refreshRunnerProgress(req.user.userId)
 
       res.status(201).json({
         message: '跑步紀錄建立成功',
@@ -276,6 +314,7 @@ export const registerRunRecordHandlers = (router: Router) => {
           createdAt: runRecord.createdAt,
           updatedAt: runRecord.updatedAt,
         },
+        progression: createProgressionResponse(newBadges, progression),
       })
     } catch (error: unknown) {
       console.error('Failed to create run record:', error)
@@ -350,6 +389,9 @@ export const registerRunRecordHandlers = (router: Router) => {
         return
       }
 
+      const newBadges = await unlockEligibleBadges(req.user.userId)
+      const progression = await refreshRunnerProgress(req.user.userId)
+
       res.status(200).json({
         message: '跑步紀錄更新成功',
         runRecord: {
@@ -365,6 +407,7 @@ export const registerRunRecordHandlers = (router: Router) => {
           createdAt: runRecord.createdAt,
           updatedAt: runRecord.updatedAt,
         },
+        progression: createProgressionResponse(newBadges, progression),
       })
     } catch (error: unknown) {
       console.error('Failed to update run record:', error)
