@@ -40,6 +40,14 @@ export interface CreateRunRecordResponse {
   runRecord: RunRecord
 }
 
+export type UpdateRunRecordPayload =
+  CreateRunRecordPayload
+
+export interface UpdateRunRecordResponse {
+  message: string
+  runRecord: RunRecord
+}
+
 export interface GetRunRecordsParams {
   start: string
   end: string

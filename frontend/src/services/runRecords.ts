@@ -4,6 +4,8 @@ import type {
   CreateRunRecordResponse,
   GetRunRecordsParams,
   GetRunRecordsResponse,
+  UpdateRunRecordPayload,
+  UpdateRunRecordResponse,
   UploadRunRecordImageResponse,
 } from '@/types/runRecord'
 
@@ -14,6 +16,19 @@ export const createRunRecord = async (
     '/run-records',
     payload,
   )
+
+  return response.data
+}
+
+export const updateRunRecord = async (
+  runRecordId: string,
+  payload: UpdateRunRecordPayload,
+) => {
+  const response =
+    await api.patch<UpdateRunRecordResponse>(
+      `/run-records/${runRecordId}`,
+      payload,
+    )
 
   return response.data
 }
