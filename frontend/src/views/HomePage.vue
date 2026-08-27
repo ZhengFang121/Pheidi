@@ -16,8 +16,9 @@ import {
   ThermometerSun,
   Wind,
 } from '@lucide/vue'
-import PlayerOverview from '@/components/home/PlayerOverview.vue'
+import RunnerProgressCard from '@/components/progress/RunnerProgressCard.vue'
 import { computed, onMounted, ref } from 'vue'
+import { useRunnerProgress } from '@/composables/useRunnerProgress'
 import {
   getCurrentWeather,
   type CurrentWeather,
@@ -29,6 +30,12 @@ const weather = ref<CurrentWeather | null>(null)
 const isWeatherLoading = ref(true)
 const weatherError = ref('')
 const locationLabel = ref('位置解析中...')
+const {
+  runnerProgress,
+  isRunnerProgressLoading,
+  runnerProgressError,
+  loadRunnerProgress,
+} = useRunnerProgress()
 
 const weatherPresentation = computed(() => {
   if (isWeatherLoading.value) {
@@ -149,6 +156,7 @@ async function loadWeather() {
 
 onMounted(() => {
   void loadWeather()
+  void loadRunnerProgress()
 })
 
 interface HeroSlide {
@@ -345,8 +353,14 @@ function handleSlideAction(slide: HeroSlide) {
       </Carousel>
     </section>
 
-    <PlayerOverview class="layout-container" />
-
+    <div class="layout-container">
+      <RunnerProgressCard
+        :progress="runnerProgress"
+        :loading="isRunnerProgressLoading"
+        :error="runnerProgressError"
+        @retry="loadRunnerProgress"
+      />
+    </div>
   </main>
 </template>
 

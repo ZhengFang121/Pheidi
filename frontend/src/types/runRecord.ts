@@ -4,6 +4,7 @@ import type {
   WeatherCondition,
   WeatherSource,
 } from '@/constants/runRecord'
+import type { RunRecordProgression } from '@/types/runnerProgress'
 
 export interface RunRecordWeather {
   condition: WeatherCondition
@@ -38,6 +39,7 @@ export interface CreateRunRecordPayload {
 export interface CreateRunRecordResponse {
   message: string
   runRecord: RunRecord
+  progression: RunRecordProgression
 }
 
 export type UpdateRunRecordPayload =
@@ -46,6 +48,7 @@ export type UpdateRunRecordPayload =
 export interface UpdateRunRecordResponse {
   message: string
   runRecord: RunRecord
+  progression: RunRecordProgression
 }
 
 export interface DeleteRunRecordResponse {

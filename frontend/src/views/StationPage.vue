@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { isAxiosError } from 'axios'
 import { ChevronLeft, ChevronRight } from '@lucide/vue'
 import Button from 'primevue/button'
@@ -9,7 +9,10 @@ import Message from 'primevue/message'
 import Skeleton from 'primevue/skeleton'
 import { useConfirm } from 'primevue/useconfirm'
 
+import BadgeCollection from '@/components/badges/BadgeCollection.vue'
+import PheidiJourneySection from '@/components/journey/PheidiJourneySection.vue'
 import RunRecordForm from '@/components/run/RunRecordForm.vue'
+import { useRunnerProgress } from '@/composables/useRunnerProgress'
 import {
   RUN_LOCATION_OPTIONS,
   RUN_MOOD_OPTIONS,
@@ -39,6 +42,12 @@ const weatherLabels = new Map(
 )
 
 const confirm = useConfirm()
+const {
+  runnerProgress,
+  isRunnerProgressLoading,
+  runnerProgressError,
+  loadRunnerProgress,
+} = useRunnerProgress()
 
 const now = new Date()
 
@@ -265,6 +274,7 @@ const handleRunRecordUpdated = (updatedRunRecord: RunRecord) => {
   }
 
   closeEditDialog()
+  void loadRunnerProgress()
 }
 
 const deleteSelectedRunRecord = async (runRecord: RunRecord) => {
@@ -282,6 +292,7 @@ const deleteSelectedRunRecord = async (runRecord: RunRecord) => {
       (currentRunRecord) => currentRunRecord.id !== runRecord.id,
     )
     clearSelectedDateIfEmpty()
+    void loadRunnerProgress()
   } catch (error: unknown) {
     actionErrorMessage.value = getApiErrorMessage(
       error,
@@ -350,6 +361,10 @@ onBeforeUnmount(() => {
   if (loadingStateTimer) {
     clearTimeout(loadingStateTimer)
   }
+})
+
+onMounted(() => {
+  void loadRunnerProgress()
 })
 
 watch(
@@ -625,6 +640,36 @@ watch(
         </article>
       </div>
     </section>
+
+    <div class="station-progression-sections">
+      <div v-if="runnerProgressError" class="station-progress-error">
+        <Message severity="error" :closable="false">
+          {{ runnerProgressError }}
+        </Message>
+
+        <Button
+          type="button"
+          label="重新載入成長資訊"
+          severity="secondary"
+          outlined
+          @click="loadRunnerProgress"
+        />
+      </div>
+
+      <template v-else>
+        <BadgeCollection
+          :definitions="runnerProgress?.badgeDefinitions ?? []"
+          :unlocked-badges="runnerProgress?.badges ?? []"
+          :loading="isRunnerProgressLoading"
+        />
+
+        <PheidiJourneySection
+          :stats="runnerProgress?.stats ?? null"
+          :eligible="runnerProgress?.pheidiMissionEligible ?? false"
+          :loading="isRunnerProgressLoading"
+        />
+      </template>
+    </div>
   </section>
 </template>
 
@@ -663,6 +708,26 @@ watch(
 
   color: var(--color-text-secondary);
   line-height: var(--line-height-base);
+}
+
+.station-progression-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.station-progress-error {
+  display: flex;
+  min-height: 180px;
+  padding: var(--space-6);
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+  gap: var(--space-4);
+
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
 .station-day-section {
@@ -1009,6 +1074,10 @@ watch(
 
   .station-title {
     font-size: var(--font-size-lg);
+  }
+
+  .station-progression-sections {
+    gap: var(--space-7);
   }
 
   .station-calendar-card {
