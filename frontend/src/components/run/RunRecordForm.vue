@@ -18,10 +18,14 @@ import {
   type WeatherCondition,
   type WeatherSource,
 } from '@/constants/runRecord'
-import { createRunRecord, uploadRunRecordImage } from '@/services/runRecords'
+import { createRunRecord, updateRunRecord, uploadRunRecordImage } from '@/services/runRecords'
 import { getWeatherConditionForDate } from '@/services/weather'
 import type { RunRecord } from '@/types/runRecord'
 import { getRunRecordCoordinates, type RunRecordCoordinates } from '@/utils/geolocation'
+
+const props = defineProps<{
+  runRecord?: RunRecord
+}>()
 
 const emit = defineEmits<{
   submitted: [runRecord: RunRecord]
@@ -53,17 +57,20 @@ const getWeatherIcon = (value: WeatherCondition) => weatherIcons[value]
 const getMoodLabel = (value: RunMood) =>
   runMoodOptions.find((option) => option.value === value)?.label ?? ''
 
-const runDate = ref<Date | null>(new Date())
-const maxRunDate = ref(new Date())
-const locationType = ref<RunLocationType>('city')
-const distance = ref<number | null>(null)
-const durationHours = ref(0)
-const durationMinutes = ref(30)
-const durationSeconds = ref(0)
-const mood = ref<RunMood>('good')
+const isEditMode = computed(() => Boolean(props.runRecord))
+const initialDuration = props.runRecord?.duration ?? 1800
 
-const weatherCondition = ref<WeatherCondition>('sunny')
-const weatherSource = ref<WeatherSource>('manual')
+const runDate = ref<Date | null>(props.runRecord ? new Date(props.runRecord.runDate) : new Date())
+const maxRunDate = ref(new Date())
+const locationType = ref<RunLocationType>(props.runRecord?.locationType ?? 'city')
+const distance = ref<number | null>(props.runRecord?.distance ?? null)
+const durationHours = ref(Math.floor(initialDuration / 3600))
+const durationMinutes = ref(Math.floor((initialDuration % 3600) / 60))
+const durationSeconds = ref(initialDuration % 60)
+const mood = ref<RunMood>(props.runRecord?.mood ?? 'good')
+
+const weatherCondition = ref<WeatherCondition>(props.runRecord?.weather.condition ?? 'sunny')
+const weatherSource = ref<WeatherSource>(props.runRecord?.weather.source ?? 'manual')
 const coordinates = ref<RunRecordCoordinates | null>(null)
 
 const weatherLoading = ref(false)
@@ -72,8 +79,8 @@ const submitting = ref(false)
 
 const imageInput = ref<HTMLInputElement | null>(null)
 const imageFile = ref<File | null>(null)
-const imagePreviewUrl = ref<string | null>(null)
-const uploadedImageUrl = ref<string | null>(null)
+const imagePreviewUrl = ref<string | null>(props.runRecord?.images[0] ?? null)
+const uploadedImageUrl = ref<string | null>(props.runRecord?.images[0] ?? null)
 const imageErrorMessage = ref('')
 
 const maximumImageSize = 5 * 1024 * 1024
@@ -136,12 +143,11 @@ const handleWeatherChange = (condition: WeatherCondition) => {
 }
 
 const revokeImagePreviewUrl = () => {
-  if (!imagePreviewUrl.value) {
+  if (!imagePreviewUrl.value?.startsWith('blob:')) {
     return
   }
 
   URL.revokeObjectURL(imagePreviewUrl.value)
-  imagePreviewUrl.value = null
 }
 
 const openImagePicker = () => {
@@ -152,6 +158,7 @@ const clearImage = () => {
   revokeImagePreviewUrl()
 
   imageFile.value = null
+  imagePreviewUrl.value = null
   uploadedImageUrl.value = null
   imageErrorMessage.value = ''
 
@@ -262,7 +269,7 @@ const handleSubmit = async () => {
       uploadedImageUrl.value = imageUrl
     }
 
-    const response = await createRunRecord({
+    const payload = {
       runDate: runDate.value.toISOString(),
       distance: distance.value,
       duration: totalDurationSeconds.value,
@@ -273,7 +280,11 @@ const handleSubmit = async () => {
         source: weatherSource.value,
       },
       images: imageUrl ? [imageUrl] : [],
-    })
+    }
+
+    const response = props.runRecord
+      ? await updateRunRecord(props.runRecord.id, payload)
+      : await createRunRecord(payload)
 
     emit('submitted', response.runRecord)
   } catch (error: unknown) {
@@ -285,11 +296,12 @@ const handleSubmit = async () => {
 
 watch(runDate, scheduleWeatherUpdate)
 
-watch(runDate, scheduleWeatherUpdate)
-
 onMounted(() => {
   maxRunDate.value = new Date()
-  void loadWeather()
+
+  if (!isEditMode.value) {
+    void loadWeather()
+  }
 })
 
 onBeforeUnmount(() => {
@@ -491,7 +503,12 @@ onBeforeUnmount(() => {
         @click="emit('cancel')"
       />
 
-      <Button type="submit" label="儲存跑步紀錄" icon="pi pi-check" :loading="submitting" />
+      <Button
+        type="submit"
+        :label="isEditMode ? '儲存修改' : '儲存跑步紀錄'"
+        icon="pi pi-check"
+        :loading="submitting"
+      />
     </div>
   </form>
 </template>

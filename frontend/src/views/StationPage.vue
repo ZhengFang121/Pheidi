@@ -3,15 +3,19 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { isAxiosError } from 'axios'
 import { ChevronLeft, ChevronRight } from '@lucide/vue'
 import Button from 'primevue/button'
+import ConfirmDialog from 'primevue/confirmdialog'
+import Dialog from 'primevue/dialog'
 import Message from 'primevue/message'
 import Skeleton from 'primevue/skeleton'
+import { useConfirm } from 'primevue/useconfirm'
 
+import RunRecordForm from '@/components/run/RunRecordForm.vue'
 import {
   RUN_LOCATION_OPTIONS,
   RUN_MOOD_OPTIONS,
   WEATHER_CONDITION_OPTIONS,
 } from '@/constants/runRecord'
-import { getRunRecords } from '@/services/runRecords'
+import { deleteRunRecord, getRunRecords } from '@/services/runRecords'
 import type { RunRecord } from '@/types/runRecord'
 import {
   getLocalDateKey,
@@ -34,6 +38,8 @@ const weatherLabels = new Map(
   WEATHER_CONDITION_OPTIONS.map((option) => [option.value, option.label]),
 )
 
+const confirm = useConfirm()
+
 const now = new Date()
 
 const currentMonth = ref(new Date(now.getFullYear(), now.getMonth(), 1))
@@ -42,6 +48,10 @@ const selectedDateKey = ref<string | null>(null)
 const isLoading = ref(false)
 const showLoadingState = ref(false)
 const errorMessage = ref('')
+const actionErrorMessage = ref('')
+const editingRunRecord = ref<RunRecord | null>(null)
+const isEditDialogVisible = ref(false)
+const deletingRunRecordId = ref<string | null>(null)
 
 let latestRequestId = 0
 let loadingStateTimer: ReturnType<typeof setTimeout> | undefined
@@ -130,18 +140,24 @@ const formatDistance = (distance: number) =>
   })} 公里`
 
 const formatDuration = (duration: number) => {
-  const hours = Math.floor(duration / 60)
-  const minutes = duration % 60
+  const hours = Math.floor(duration / 3600)
+  const minutes = Math.floor((duration % 3600) / 60)
+  const seconds = duration % 60
+  const durationParts: string[] = []
 
-  if (hours === 0) {
-    return `${minutes} 分鐘`
+  if (hours > 0) {
+    durationParts.push(`${hours} 小時`)
   }
 
-  if (minutes === 0) {
-    return `${hours} 小時`
+  if (minutes > 0) {
+    durationParts.push(`${minutes} 分鐘`)
   }
 
-  return `${hours} 小時 ${minutes} 分鐘`
+  if (seconds > 0 || durationParts.length === 0) {
+    durationParts.push(`${seconds} 秒`)
+  }
+
+  return durationParts.join(' ')
 }
 
 const getApiErrorMessage = (error: unknown, fallbackMessage: string) => {
@@ -165,6 +181,7 @@ const loadMonthRecords = async () => {
   isLoading.value = true
   showLoadingState.value = false
   errorMessage.value = ''
+  actionErrorMessage.value = ''
 
   loadingStateTimer = setTimeout(() => {
     if (requestId === latestRequestId && isLoading.value) {
@@ -200,6 +217,99 @@ const loadMonthRecords = async () => {
   }
 }
 
+const isInCurrentMonth = (runDate: string) => {
+  const date = new Date(runDate)
+
+  return (
+    date.getFullYear() === currentMonth.value.getFullYear() &&
+    date.getMonth() === currentMonth.value.getMonth()
+  )
+}
+
+const clearSelectedDateIfEmpty = () => {
+  if (
+    selectedDateKey.value &&
+    !runRecords.value.some(
+      (runRecord) => getLocalDateKey(runRecord.runDate) === selectedDateKey.value,
+    )
+  ) {
+    selectedDateKey.value = null
+  }
+}
+
+const openEditDialog = (runRecord: RunRecord) => {
+  if (deletingRunRecordId.value) {
+    return
+  }
+
+  actionErrorMessage.value = ''
+  editingRunRecord.value = runRecord
+  isEditDialogVisible.value = true
+}
+
+const closeEditDialog = () => {
+  isEditDialogVisible.value = false
+}
+
+const handleRunRecordUpdated = (updatedRunRecord: RunRecord) => {
+  if (isInCurrentMonth(updatedRunRecord.runDate)) {
+    runRecords.value = runRecords.value.map((runRecord) =>
+      runRecord.id === updatedRunRecord.id ? updatedRunRecord : runRecord,
+    )
+    selectedDateKey.value = getLocalDateKey(updatedRunRecord.runDate)
+  } else {
+    runRecords.value = runRecords.value.filter(
+      (runRecord) => runRecord.id !== updatedRunRecord.id,
+    )
+    clearSelectedDateIfEmpty()
+  }
+
+  closeEditDialog()
+}
+
+const deleteSelectedRunRecord = async (runRecord: RunRecord) => {
+  if (deletingRunRecordId.value) {
+    return
+  }
+
+  deletingRunRecordId.value = runRecord.id
+  actionErrorMessage.value = ''
+
+  try {
+    await deleteRunRecord(runRecord.id)
+
+    runRecords.value = runRecords.value.filter(
+      (currentRunRecord) => currentRunRecord.id !== runRecord.id,
+    )
+    clearSelectedDateIfEmpty()
+  } catch (error: unknown) {
+    actionErrorMessage.value = getApiErrorMessage(
+      error,
+      '刪除跑步紀錄失敗，請稍後再試。',
+    )
+  } finally {
+    deletingRunRecordId.value = null
+  }
+}
+
+const confirmDeleteRunRecord = (runRecord: RunRecord) => {
+  if (deletingRunRecordId.value) {
+    return
+  }
+
+  confirm.require({
+    header: '確認刪除跑步紀錄',
+    message: `確定要刪除 ${formatRunTime(runRecord.runDate)}、${formatDistance(runRecord.distance)} 的跑步紀錄嗎？刪除後將無法復原。`,
+    icon: 'pi pi-exclamation-triangle',
+    acceptLabel: '確認刪除',
+    rejectLabel: '取消',
+    acceptClass: 'p-button-danger',
+    accept: () => {
+      void deleteSelectedRunRecord(runRecord)
+    },
+  })
+}
+
 const selectCalendarDate = (dateKey: string, isCurrentMonth: boolean, recordCount: number) => {
   if (!isCurrentMonth || recordCount === 0) {
     return
@@ -211,6 +321,7 @@ const selectCalendarDate = (dateKey: string, isCurrentMonth: boolean, recordCoun
 const goToPreviousMonth = () => {
   runRecords.value = []
   selectedDateKey.value = null
+  actionErrorMessage.value = ''
 
   currentMonth.value = new Date(
     currentMonth.value.getFullYear(),
@@ -226,6 +337,7 @@ const goToNextMonth = () => {
 
   runRecords.value = []
   selectedDateKey.value = null
+  actionErrorMessage.value = ''
 
   currentMonth.value = new Date(
     currentMonth.value.getFullYear(),
@@ -253,6 +365,30 @@ watch(
 
 <template>
   <section class="layout-container station-page">
+    <ConfirmDialog />
+
+    <Dialog
+      v-model:visible="isEditDialogVisible"
+      modal
+      header="編輯跑步紀錄"
+      :draggable="false"
+      :style="{ width: '44rem' }"
+      :breakpoints="{ '768px': 'calc(100vw - 32px)' }"
+      :content-style="{
+        maxHeight: 'calc(100vh - 10rem)',
+        overflowY: 'auto',
+      }"
+      @hide="editingRunRecord = null"
+    >
+      <RunRecordForm
+        v-if="editingRunRecord"
+        :key="editingRunRecord.id"
+        :run-record="editingRunRecord"
+        @submitted="handleRunRecordUpdated"
+        @cancel="closeEditDialog"
+      />
+    </Dialog>
+
     <header class="station-heading">
       <p class="station-eyebrow">TRAIL STATION</p>
 
@@ -389,14 +525,26 @@ watch(
         <span> 共 {{ selectedDateRecords.length }} 筆紀錄 </span>
       </header>
 
+      <Message v-if="actionErrorMessage" severity="error" :closable="false">
+        {{ actionErrorMessage }}
+      </Message>
+
       <div class="station-record-list">
         <article
           v-for="runRecord in selectedDateRecords"
           :key="runRecord.id"
           class="station-record-card"
         >
-          <div v-if="runRecord.images.length > 0" class="station-record-image-wrapper">
-            <img :src="runRecord.images[0]" alt="" class="station-record-image" loading="lazy" />
+          <div class="station-record-image-wrapper">
+            <img
+              v-if="runRecord.images.length > 0"
+              :src="runRecord.images[0]"
+              alt=""
+              class="station-record-image"
+              loading="lazy"
+            />
+
+            <span v-else class="station-record-image-placeholder">尚無照片</span>
 
             <span v-if="runRecord.images.length > 1" class="station-record-image-count">
               +{{ runRecord.images.length - 1 }}
@@ -446,6 +594,33 @@ watch(
                 </dd>
               </div>
             </dl>
+
+            <div class="station-record-actions">
+              <Button
+                type="button"
+                label="編輯"
+                icon="pi pi-pencil"
+                severity="secondary"
+                outlined
+                size="small"
+                :disabled="deletingRunRecordId !== null"
+                @click="openEditDialog(runRecord)"
+              />
+
+              <Button
+                type="button"
+                label="刪除"
+                icon="pi pi-trash"
+                severity="danger"
+                text
+                size="small"
+                :loading="deletingRunRecordId === runRecord.id"
+                :disabled="
+                  deletingRunRecordId !== null && deletingRunRecordId !== runRecord.id
+                "
+                @click="confirmDeleteRunRecord(runRecord)"
+              />
+            </div>
           </div>
         </article>
       </div>
@@ -610,6 +785,16 @@ watch(
   color: var(--color-primary);
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-medium);
+}
+
+.station-record-actions {
+  display: flex;
+  margin-top: auto;
+  padding-top: var(--space-2);
+  flex-wrap: wrap;
+  gap: var(--space-2);
+
+  border-top: 1px solid var(--color-border);
 }
 
 .station-record-details {
@@ -895,6 +1080,11 @@ watch(
 
   .station-record-details {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .station-record-actions > :deep(.p-button) {
+    flex: 1 1 0;
+    justify-content: center;
   }
 }
 </style>

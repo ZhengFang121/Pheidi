@@ -293,99 +293,137 @@ export const registerRunRecordHandlers = (router: Router) => {
     }
   })
 
-// 更新目前玩家自己的跑步紀錄
-router.patch('/:id', async (req, res) => {
-  try {
-    if (!req.user) {
-      res.status(401).json({
-        message: '請先登入',
+  // 更新目前玩家自己的跑步紀錄
+  router.patch('/:id', async (req, res) => {
+    try {
+      if (!req.user) {
+        res.status(401).json({
+          message: '請先登入',
+        })
+        return
+      }
+
+      const { id } = req.params
+
+      if (!isValidObjectId(id)) {
+        res.status(400).json({
+          message: '跑步紀錄 ID 格式不正確',
+        })
+        return
+      }
+
+      const validationResult = validateRunRecordFormData(req.body)
+
+      if (!validationResult.isValid) {
+        res.status(400).json({
+          message: validationResult.message,
+        })
+        return
+      }
+
+      const runRecord = await RunRecord.findOneAndUpdate(
+        {
+          _id: id,
+          user: req.user.userId,
+        },
+        {
+          $set: {
+            runDate: validationResult.data.runDate,
+            distance: validationResult.data.distance,
+            duration: validationResult.data.duration,
+            locationType: validationResult.data.locationType,
+            mood: validationResult.data.mood,
+            weather: validationResult.data.weather,
+            images: validationResult.data.images,
+          },
+        },
+        {
+          new: true,
+          runValidators: true,
+        },
+      )
+
+      if (!runRecord) {
+        res.status(404).json({
+          message: '找不到跑步紀錄',
+        })
+        return
+      }
+
+      res.status(200).json({
+        message: '跑步紀錄更新成功',
+        runRecord: {
+          id: runRecord._id,
+          runDate: runRecord.runDate,
+          distance: runRecord.distance,
+          duration: runRecord.duration,
+          locationType: runRecord.locationType,
+          mood: runRecord.mood,
+          weather: runRecord.weather,
+          images: runRecord.images,
+          missionId: runRecord.missionId,
+          createdAt: runRecord.createdAt,
+          updatedAt: runRecord.updatedAt,
+        },
       })
-      return
-    }
+    } catch (error: unknown) {
+      console.error('Failed to update run record:', error)
 
-    const { id } = req.params
+      if (error instanceof Error && error.name === 'ValidationError') {
+        res.status(400).json({
+          message: '跑步紀錄資料驗證失敗',
+        })
+        return
+      }
 
-    if (!isValidObjectId(id)) {
-      res.status(400).json({
-        message: '跑步紀錄 ID 格式不正確',
+      res.status(500).json({
+        message: '更新跑步紀錄失敗',
       })
-      return
     }
+  })
 
-    const validationResult =
-      validateRunRecordFormData(req.body)
+  // 刪除目前玩家自己的跑步紀錄
+  router.delete('/:id', async (req, res) => {
+    try {
+      if (!req.user) {
+        res.status(401).json({
+          message: '請先登入',
+        })
+        return
+      }
 
-    if (!validationResult.isValid) {
-      res.status(400).json({
-        message: validationResult.message,
-      })
-      return
-    }
+      const { id } = req.params
 
-    const runRecord = await RunRecord.findOneAndUpdate(
-      {
+      if (!isValidObjectId(id)) {
+        res.status(400).json({
+          message: '跑步紀錄 ID 格式不正確',
+        })
+        return
+      }
+
+      const runRecord = await RunRecord.findOneAndDelete({
         _id: id,
         user: req.user.userId,
-      },
-      {
-        $set: {
-          runDate: validationResult.data.runDate,
-          distance: validationResult.data.distance,
-          duration: validationResult.data.duration,
-          locationType:
-            validationResult.data.locationType,
-          mood: validationResult.data.mood,
-          weather: validationResult.data.weather,
-          images: validationResult.data.images,
-        },
-      },
-      {
-        new: true,
-        runValidators: true,
-      },
-    )
-
-    if (!runRecord) {
-      res.status(404).json({
-        message: '找不到跑步紀錄',
       })
-      return
-    }
 
-    res.status(200).json({
-      message: '跑步紀錄更新成功',
-      runRecord: {
-        id: runRecord._id,
-        runDate: runRecord.runDate,
-        distance: runRecord.distance,
-        duration: runRecord.duration,
-        locationType: runRecord.locationType,
-        mood: runRecord.mood,
-        weather: runRecord.weather,
-        images: runRecord.images,
-        missionId: runRecord.missionId,
-        createdAt: runRecord.createdAt,
-        updatedAt: runRecord.updatedAt,
-      },
-    })
-  } catch (error: unknown) {
-    console.error('Failed to update run record:', error)
+      if (!runRecord) {
+        res.status(404).json({
+          message: '找不到跑步紀錄',
+        })
+        return
+      }
 
-    if (
-      error instanceof Error &&
-      error.name === 'ValidationError'
-    ) {
-      res.status(400).json({
-        message: '跑步紀錄資料驗證失敗',
+      res.status(200).json({
+        message: '跑步紀錄刪除成功',
       })
-      return
-    }
+    } catch (error: unknown) {
+      console.error('Failed to delete run record:', error)
 
-    res.status(500).json({
-      message: '更新跑步紀錄失敗',
-    })
-  }
-})
+      res.status(500).json({
+        message: '刪除跑步紀錄失敗',
+      })
+    }
+  })
 
   // 取得目前玩家指定日期範圍內的紀錄
   router.get('/', async (req, res) => {

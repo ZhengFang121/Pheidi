@@ -48,6 +48,10 @@ export interface UpdateRunRecordResponse {
   runRecord: RunRecord
 }
 
+export interface DeleteRunRecordResponse {
+  message: string
+}
+
 export interface GetRunRecordsParams {
   start: string
   end: string

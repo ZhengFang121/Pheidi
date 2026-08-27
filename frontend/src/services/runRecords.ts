@@ -2,6 +2,7 @@ import api from '@/services/api'
 import type {
   CreateRunRecordPayload,
   CreateRunRecordResponse,
+  DeleteRunRecordResponse,
   GetRunRecordsParams,
   GetRunRecordsResponse,
   UpdateRunRecordPayload,
@@ -29,6 +30,14 @@ export const updateRunRecord = async (
       `/run-records/${runRecordId}`,
       payload,
     )
+
+  return response.data
+}
+
+export const deleteRunRecord = async (runRecordId: string) => {
+  const response = await api.delete<DeleteRunRecordResponse>(
+    `/run-records/${runRecordId}`,
+  )
 
   return response.data
 }
