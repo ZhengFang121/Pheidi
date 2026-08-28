@@ -1,9 +1,9 @@
-/* GenSenRounded 源泉圓體 */
+/* Swei Gothic CJK TC 獅尾圓體 */
 
 /* Regular */
 @font-face {
-  font-family: "GenSenRounded";
-  src: url("../assets/fonts/gensen/GenSenRounded2TW-R.otf") format("opentype");
+  font-family: 'SweiGothicCJKtc';
+  src: url('../assets/fonts/swei-gothic/SweiGothicCJKtc-Regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -11,8 +11,8 @@
 
 /* Medium */
 @font-face {
-  font-family: "GenSenRounded";
-  src: url("../assets/fonts/gensen/GenSenRounded2TW-M.otf") format("opentype");
+  font-family: 'SweiGothicCJKtc';
+  src: url('../assets/fonts/swei-gothic/SweiGothicCJKtc-Medium.woff2') format('woff2');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -20,8 +20,8 @@
 
 /* Bold */
 @font-face {
-  font-family: "GenSenRounded";
-  src: url("../assets/fonts/gensen/GenSenRounded2TW-B.otf") format("opentype");
+  font-family: 'SweiGothicCJKtc';
+  src: url('../assets/fonts/swei-gothic/SweiGothicCJKtc-Bold.woff2') format('woff2');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
