@@ -81,6 +81,48 @@ const visibleRequirements = computed<VisibleRequirement[]>(() => {
 
 const latestBadge = computed(() => props.progress?.badges.at(-1) ?? null)
 
+const joinRequirementPhrases = (phrases: string[]) => {
+  if (phrases.length <= 1) return phrases[0] ?? ''
+
+  return `${phrases.slice(0, -1).join('、')}與${phrases.at(-1)}`
+}
+
+const remainingProgressMessage = computed(() => {
+  if (!props.progress?.nextLevel) return ''
+
+  if (props.progress.currentLevel.level === 4 && props.progress.pheidiMissionEligible) {
+    return '你已符合菲迪限定任務解鎖資格。'
+  }
+
+  const remainingPhrases = visibleRequirements.value.flatMap((requirement) => {
+    if (requirement.progress.isMet) return []
+
+    const rawRemaining = Math.max(requirement.progress.required - requirement.progress.current, 0)
+    const remaining =
+      requirement.key === 'totalDistance'
+        ? Math.round(rawRemaining * 100) / 100
+        : Math.ceil(rawRemaining)
+
+    if (requirement.key === 'runCount') return [`${formatValue(remaining, requirement.key)} 次跑步`]
+    if (requirement.key === 'totalDistance')
+      return [`${formatValue(remaining, requirement.key)} km`]
+    if (requirement.key === 'distinctLocationCount') {
+      return [`${formatValue(remaining, requirement.key)} 種地點`]
+    }
+
+    return [`${formatValue(remaining, requirement.key)} 枚徽章`]
+  })
+
+  if (!remainingPhrases.length) return ''
+
+  const destination =
+    props.progress.currentLevel.level === 4
+      ? '就能收到菲迪的邀請函。'
+      : `就能成為「${props.progress.nextLevel.name}」。`
+
+  return `再完成 ${joinRequirementPhrases(remainingPhrases)}，${destination}`
+})
+
 const calculatePercentage = ({ current, required }: NumericRequirementProgress) => {
   if (required <= 0) return 0
 
@@ -157,7 +199,10 @@ const formatValue = (value: number, key: VisibleRequirement['key']) => {
           v-for="requirement in visibleRequirements"
           :key="requirement.key"
           class="journey-requirement"
-          :class="`journey-requirement--${requirement.tone}`"
+          :class="[
+            `journey-requirement--${requirement.tone}`,
+            { 'journey-requirement--complete': requirement.progress.isMet },
+          ]"
         >
           <div class="journey-requirement__heading">
             <span class="journey-requirement__icon" aria-hidden="true">
@@ -190,13 +235,12 @@ const formatValue = (value: number, key: VisibleRequirement['key']) => {
       </div>
 
       <div
-        v-if="progress.currentLevel.level === 4"
-        class="journey-invitation-status"
-        :class="{ 'journey-invitation-status--eligible': progress.pheidiMissionEligible }"
+        v-if="remainingProgressMessage"
+        class="journey-next-step"
+        :class="{ 'journey-next-step--eligible': progress.pheidiMissionEligible }"
       >
         <Sparkles :size="20" aria-hidden="true" />
-        <p v-if="progress.pheidiMissionEligible">已符合菲迪限定任務解鎖資格。</p>
-        <p v-else>達成 50 次跑步與 250 km 後，將解鎖「菲迪的邀請函」。</p>
+        <p>{{ remainingProgressMessage }}</p>
       </div>
 
       <aside v-if="latestBadge" class="journey-latest-badge">
@@ -218,9 +262,8 @@ const formatValue = (value: number, key: VisibleRequirement['key']) => {
 <style scoped>
 .journey-overview {
   width: 100%;
-  min-height: 420px;
   margin-top: var(--space-6);
-  padding: var(--space-6);
+  padding: var(--space-5) var(--space-6);
   overflow: hidden;
 
   background:
@@ -232,7 +275,6 @@ const formatValue = (value: number, key: VisibleRequirement['key']) => {
     var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
 }
 
 .journey-overview__header {
@@ -297,7 +339,7 @@ const formatValue = (value: number, key: VisibleRequirement['key']) => {
 
 .journey-route {
   display: grid;
-  margin-top: var(--space-6);
+  margin-top: var(--space-5);
   grid-template-columns: minmax(0, 1fr) minmax(80px, 0.36fr) minmax(0, 1fr);
   align-items: center;
 }
@@ -375,9 +417,11 @@ const formatValue = (value: number, key: VisibleRequirement['key']) => {
 
 .journey-requirements {
   display: grid;
-  margin-top: var(--space-6);
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-3);
+  margin-top: var(--space-5);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+
+  background: color-mix(in srgb, var(--color-background) 76%, var(--color-surface));
+  border-block: 1px solid var(--color-border);
 }
 
 .journey-requirement {
@@ -385,11 +429,13 @@ const formatValue = (value: number, key: VisibleRequirement['key']) => {
   --requirement-background: var(--color-primary-pale);
 
   min-width: 0;
-  padding: var(--space-4);
+  padding: var(--space-3) var(--space-4);
 
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-right: 1px solid var(--color-border);
+}
+
+.journey-requirement:last-child {
+  border-right: 0;
 }
 
 .journey-requirement--secondary {
@@ -411,7 +457,7 @@ const formatValue = (value: number, key: VisibleRequirement['key']) => {
 
 .journey-requirement__icon {
   display: grid;
-  width: 40px;
+  width: 36px;
   aspect-ratio: 1;
   place-items: center;
 
@@ -439,8 +485,14 @@ const formatValue = (value: number, key: VisibleRequirement['key']) => {
 }
 
 .journey-requirement__complete {
-  color: var(--color-success) !important;
-  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary) !important;
+}
+
+.journey-requirement--complete {
+  --requirement-color: var(--color-text-secondary);
+  --requirement-background: var(--color-surface);
+
+  opacity: 0.72;
 }
 
 .journey-requirement__heading p {
@@ -457,8 +509,8 @@ const formatValue = (value: number, key: VisibleRequirement['key']) => {
 }
 
 .journey-requirement__progress {
-  height: 8px;
-  margin-top: var(--space-3);
+  height: 6px;
+  margin-top: var(--space-2);
   overflow: hidden;
 
   background: var(--color-border);
@@ -470,41 +522,51 @@ const formatValue = (value: number, key: VisibleRequirement['key']) => {
   border-radius: var(--radius-full);
 }
 
-.journey-invitation-status,
+.journey-next-step,
 .journey-latest-badge {
   display: flex;
-  margin-top: var(--space-4);
-  padding: var(--space-3) var(--space-4);
+  margin-top: var(--space-3);
   align-items: center;
   gap: var(--space-3);
 
   color: var(--color-text-secondary);
-
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
 }
 
-.journey-invitation-status--eligible {
+.journey-next-step {
+  padding: var(--space-2) var(--space-3);
+
+  background: var(--color-primary-pale);
+  border-radius: var(--radius-md);
+}
+
+.journey-next-step--eligible {
   color: var(--color-text);
 
   background: var(--color-accent-pale);
-  border-color: var(--color-accent-soft);
 }
 
-.journey-invitation-status p {
+.journey-next-step p {
   margin: 0;
+
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.journey-latest-badge {
+  padding: var(--space-3) 0 0;
+
+  border-top: 1px dashed var(--color-border);
 }
 
 .journey-latest-badge__icon {
   display: grid;
-  width: 40px;
+  width: 32px;
   aspect-ratio: 1;
   place-items: center;
 
   color: var(--color-accent);
 
-  background: var(--color-accent-pale);
+  background: var(--color-background);
   border-radius: 50%;
 }
 
@@ -551,13 +613,16 @@ const formatValue = (value: number, key: VisibleRequirement['key']) => {
   }
 
   .journey-requirements {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .journey-requirement:nth-child(even) {
+    border-right: 0;
   }
 }
 
 @media (max-width: 600px) {
   .journey-overview {
-    min-height: 520px;
     margin-top: var(--space-4);
     padding: var(--space-4);
 
@@ -593,6 +658,20 @@ const formatValue = (value: number, key: VisibleRequirement['key']) => {
 
   .journey-requirement__heading {
     grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .journey-requirements {
+    grid-template-columns: 1fr;
+  }
+
+  .journey-requirement,
+  .journey-requirement:nth-child(even) {
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .journey-requirement:last-child {
+    border-bottom: 0;
   }
 
   .journey-requirement__heading p {

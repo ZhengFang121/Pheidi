@@ -2,18 +2,24 @@
 import { Check, LockKeyhole, Medal } from '@lucide/vue'
 
 import type { BadgeDefinition } from '@/types/runnerProgress'
-import { formatNumericDate } from '@/utils/date'
 
 defineProps<{
   badge: BadgeDefinition
   unlockedAt: string | null
 }>()
+
+const emit = defineEmits<{
+  select: []
+}>()
 </script>
 
 <template>
-  <article
+  <button
+    type="button"
     class="badge-card"
     :class="[`badge-card--${badge.category}`, { 'badge-card--locked': !unlockedAt }]"
+    :aria-label="`查看${badge.name}徽章詳情，${unlockedAt ? '已解鎖' : '尚未解鎖'}`"
+    @click="emit('select')"
   >
     <div class="badge-card__seal" aria-hidden="true">
       <span class="badge-card__seal-ring" />
@@ -21,21 +27,14 @@ defineProps<{
       <LockKeyhole v-else :size="27" :stroke-width="1.7" />
     </div>
 
-    <div class="badge-card__content">
-      <span class="badge-card__status">
-        <Check v-if="unlockedAt" :size="14" aria-hidden="true" />
-        {{ unlockedAt ? '已解鎖' : '尚未解鎖' }}
-      </span>
+    <span class="badge-card__name">{{ badge.name }}</span>
 
-      <h3>{{ badge.name }}</h3>
-      <p>{{ badge.description }}</p>
-    </div>
-
-    <time v-if="unlockedAt" :datetime="unlockedAt" class="badge-card__date">
-      {{ formatNumericDate(unlockedAt, 'Asia/Taipei') }} 解鎖
-    </time>
-    <span v-else class="badge-card__date">完成條件後即可收藏</span>
-  </article>
+    <span class="badge-card__status">
+      <Check v-if="unlockedAt" :size="14" aria-hidden="true" />
+      <LockKeyhole v-else :size="13" aria-hidden="true" />
+      {{ unlockedAt ? '已解鎖' : '尚未解鎖' }}
+    </span>
+  </button>
 </template>
 
 <style scoped>
@@ -44,22 +43,29 @@ defineProps<{
   --badge-soft: var(--color-primary-pale);
 
   display: flex;
+  width: 100%;
   min-width: 0;
-  min-height: 270px;
-  padding: var(--space-4);
+  min-height: 180px;
+  padding: var(--space-3);
   flex-direction: column;
   align-items: center;
+  justify-content: center;
 
+  color: var(--color-text);
+  font-family: inherit;
+  letter-spacing: inherit;
   text-align: center;
 
-  background: var(--color-surface);
-  border: 1px solid color-mix(in srgb, var(--badge-color) 32%, var(--color-border));
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
 
   transition:
     transform 0.2s ease,
-    box-shadow 0.2s ease;
+    background-color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .badge-card--distance,
@@ -81,24 +87,28 @@ defineProps<{
   --badge-soft: color-mix(in srgb, var(--color-dark-pale) 24%, var(--color-surface));
 }
 
-.badge-card:not(.badge-card--locked):hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-3px);
+.badge-card:hover {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  transform: translateY(-2px);
+}
+
+.badge-card:focus-visible {
+  outline: 3px solid var(--color-accent-soft);
+  outline-offset: 2px;
 }
 
 .badge-card--locked {
   color: var(--color-text-secondary);
-  background: color-mix(in srgb, var(--color-background) 72%, var(--color-surface));
-  box-shadow: none;
+  opacity: 0.68;
 }
 
 .badge-card__seal {
   position: relative;
 
   display: grid;
-  width: 78px;
+  width: 72px;
   aspect-ratio: 1;
-  margin-bottom: var(--space-3);
   place-items: center;
 
   color: var(--badge-color);
@@ -122,62 +132,32 @@ defineProps<{
   background: var(--color-background);
   border-color: var(--color-border);
   filter: saturate(0);
-  opacity: 0.72;
-}
-
-.badge-card__content {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  align-items: center;
+  opacity: 0.82;
 }
 
 .badge-card__status {
   display: inline-flex;
-  min-height: 22px;
-  padding: var(--space-1) var(--space-2);
   align-items: center;
   gap: var(--space-1);
 
   color: var(--badge-color);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
-
-  background: var(--badge-soft);
-  border-radius: var(--radius-full);
 }
 
 .badge-card--locked .badge-card__status {
   color: var(--color-text-secondary);
-  background: var(--color-background);
 }
 
-.badge-card h3 {
-  margin: var(--space-3) 0 var(--space-2);
+.badge-card__name {
+  max-width: 100%;
+  margin: var(--space-3) 0 var(--space-1);
+  overflow-wrap: anywhere;
 
   color: var(--color-text);
   font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
   line-height: var(--line-height-heading);
-}
-
-.badge-card p {
-  display: -webkit-box;
-  margin: 0;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-xs);
-  line-height: var(--line-height-base);
-}
-
-.badge-card__date {
-  margin-top: auto;
-  padding-top: var(--space-3);
-
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-xs);
 }
 
 @media (prefers-reduced-motion: reduce) {

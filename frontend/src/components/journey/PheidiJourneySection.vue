@@ -46,11 +46,11 @@ const formatDistance = (distance: number) =>
           {{ eligible ? '已符合解鎖資格' : '尚未解鎖' }}
         </span>
 
-        <h3>菲迪的邀請函</h3>
-        <p v-if="eligible">完成一趟屬於你的跑者旅程吧。</p>
-        <p v-else>當你累積完成 50 次跑步與 250 km，菲迪會為你留下一封信。</p>
+        <h3>{{ eligible ? '✉️ 你收到了一封信。' : '尚未抵達的旅程' }}</h3>
+        <p v-if="eligible">寄件人：菲迪</p>
+        <p v-else>當你走得足夠遠，也許會有人為你留下一封信。</p>
 
-        <div v-if="!eligible" class="pheidi-journey__progress" aria-label="菲迪邀請函解鎖進度">
+        <div v-if="!eligible" class="pheidi-journey__progress" aria-label="未解鎖旅程條件進度">
           <span>
             <Route :size="16" aria-hidden="true" />
             跑步 {{ stats.runCount }} / 50 次
