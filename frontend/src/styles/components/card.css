@@ -1,0 +1,55 @@
+.base-card--default {
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-md);
+}
+
+.base-card--glass {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-color: color-mix(in srgb, var(--color-surface) 28%, transparent);
+  background-color: rgba(255, 255, 255, 0.38);
+  background-color: color-mix(in srgb, var(--color-surface) 38%, transparent);
+  box-shadow:
+    var(--shadow-md),
+    inset 0 0 4px 2px rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(20px) saturate(130%);
+  -webkit-backdrop-filter: blur(20px) saturate(130%);
+}
+
+.base-card--glass::before,
+.base-card--glass::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  content: '';
+  pointer-events: none;
+}
+
+.base-card--glass::before {
+  background: linear-gradient(
+    to left top,
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0) 50%
+  );
+  background:
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--color-primary) 13%, transparent) 0%,
+      transparent 44%
+    ),
+    linear-gradient(to left top, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 50%);
+}
+
+.base-card--glass::after {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .base-card--glass {
+    background-color: rgba(255, 255, 255, 0.9);
+    background-color: color-mix(in srgb, var(--color-surface) 90%, transparent);
+  }
+}

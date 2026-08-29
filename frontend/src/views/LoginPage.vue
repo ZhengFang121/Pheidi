@@ -14,6 +14,7 @@ import Tabs from 'primevue/tabs'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
+import BaseCard from '@/components/base/BaseCard.vue'
 import { login, register } from '@/services/auth'
 import { useAuthStore } from '@/stores/auth'
 import type { ApiErrorResponse } from '@/types/api'
@@ -230,7 +231,7 @@ const handleRegister = async (event: FormSubmitEvent) => {
 
 <template>
   <main class="login-page">
-    <section class="account-card">
+    <BaseCard as="section" variant="glass" class="account-card">
       <header class="account-card__header">
         <h1 class="account-card__title">歡迎來到跑者菲迪</h1>
 
@@ -507,7 +508,7 @@ const handleRegister = async (event: FormSubmitEvent) => {
           </TabPanel>
         </TabPanels>
       </Tabs>
-    </section>
+    </BaseCard>
   </main>
 </template>
 
@@ -523,10 +524,7 @@ const handleRegister = async (event: FormSubmitEvent) => {
 .account-card {
   width: min(100%, 30rem);
   padding: var(--space-6);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
-  background-color: var(--color-surface);
-  box-shadow: var(--shadow-lg);
 }
 
 .account-card__header {
