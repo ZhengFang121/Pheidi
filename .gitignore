@@ -16,5 +16,5 @@ dist/
 .DS_Store
 Thumbs.db
 
-# local ai instructions
-AGENTS.md
+# agent project skills
+.agents/skills/
