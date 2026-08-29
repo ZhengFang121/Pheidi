@@ -23,6 +23,12 @@ withDefaults(defineProps<Props>(), {
     :icon="icon"
     :disabled="disabled"
     :loading="loading"
+    :aria-busy="loading || undefined"
+    :pt="{
+      label: { class: 'base-button__content base-button__label' },
+      icon: { class: 'base-button__content' },
+      loadingIcon: { class: 'base-button__content' },
+    }"
     class="base-button"
     :class="`base-button--${variant}`"
   />

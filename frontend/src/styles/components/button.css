@@ -1,53 +1,136 @@
 .base-button {
+  --base-button-translate-x: 0%;
+
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
   font-family: var(--font-family-base);
   font-size: var(--font-size-base);
-  font-weight: var(--font-weight-b);
+  font-weight: var(--font-weight-bold);
 
   padding: var(--space-3) var(--space-5);
 
   border-radius: var(--radius-full);
 
   box-shadow: var(--shadow-sm);
+  transform: translateX(var(--base-button-translate-x));
 
   transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+    background 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease;
+}
+
+.base-button__content {
+  position: relative;
+  z-index: 2;
+}
+
+.base-button .base-button__label {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
 }
 
 /* Primary */
 
-.base-button--primary:hover:not(:disabled) {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+.base-button.base-button--primary {
+  color: #fff;
+  background: linear-gradient(
+    90deg,
+    var(--color-primary) 0%,
+    var(--color-primary-soft) 50%,
+    var(--color-primary) 100%
+  );
+  border: 0;
 }
 
-.base-button--primary:active:not(:disabled) {
+.base-button.base-button--primary::before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  width: 160%;
+  aspect-ratio: 1;
+  content: '';
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    var(--color-primary) 0%,
+    var(--color-primary-soft) 50%,
+    var(--color-primary) 100%
+  );
+  border-radius: 50%;
+  opacity: 0.95;
+  filter: blur(var(--space-2));
+  transform: translate(-50%, -50%) rotate(0deg);
+  animation: base-button-color-flow 5s linear infinite;
+  will-change: transform;
+}
+
+.base-button.base-button--primary:hover:not(:disabled),
+.base-button.base-button--primary:focus-visible:not(:disabled) {
+  color: #fff;
+  background: linear-gradient(
+    90deg,
+    var(--color-accent) 0%,
+    var(--color-accent-soft) 50%,
+    var(--color-accent) 100%
+  );
+  border: 0;
+}
+
+.base-button.base-button--primary:hover:not(:disabled) {
+  box-shadow: var(--shadow-md);
+  transform: translateX(var(--base-button-translate-x)) translateY(-2px);
+}
+
+.base-button.base-button--primary:hover:not(:disabled)::before,
+.base-button.base-button--primary:focus-visible:not(:disabled)::before {
+  background: linear-gradient(
+    90deg,
+    var(--color-accent) 0%,
+    var(--color-accent-soft) 50%,
+    var(--color-accent) 100%
+  );
+}
+
+.base-button.base-button--primary:active:not(:disabled) {
   box-shadow: var(--shadow-sm);
-  transform: translateY(0) scale(0.98);
+  border: 0;
+  transform: translateX(var(--base-button-translate-x)) translateY(0) scale(0.97);
+}
+
+.base-button.base-button--primary:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: var(--space-1);
 }
 
 /* Secondary */
 
 .base-button--secondary:hover:not(:disabled) {
   box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  transform: translateX(var(--base-button-translate-x)) translateY(-2px);
 }
 
 .base-button--secondary:active:not(:disabled) {
   box-shadow: var(--shadow-sm);
-  transform: translateY(0) scale(0.98);
+  transform: translateX(var(--base-button-translate-x)) translateY(0) scale(0.98);
 }
 
 /* Outline */
 
 .base-button--outline:hover:not(:disabled) {
   box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  transform: translateX(var(--base-button-translate-x)) translateY(-2px);
 }
 
 .base-button--outline:active:not(:disabled) {
   box-shadow: var(--shadow-sm);
-  transform: translateY(0) scale(0.98);
+  transform: translateX(var(--base-button-translate-x)) translateY(0) scale(0.98);
 }
 
 /* Disabled */
@@ -55,4 +138,37 @@
 .base-button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+.base-button.base-button--primary:disabled::before {
+  animation: none;
+  will-change: auto;
+}
+
+@keyframes base-button-color-flow {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .base-button {
+    transition:
+      background 200ms ease,
+      box-shadow 200ms ease;
+  }
+
+  .base-button.base-button--primary:hover:not(:disabled),
+  .base-button.base-button--primary:active:not(:disabled) {
+    transform: translateX(var(--base-button-translate-x));
+  }
+
+  .base-button.base-button--primary::before {
+    animation: none;
+    will-change: auto;
+  }
 }

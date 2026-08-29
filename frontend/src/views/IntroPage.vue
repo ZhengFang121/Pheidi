@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import gsap from 'gsap'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 type IntroScene = {
   id: number
@@ -700,13 +701,11 @@ onBeforeUnmount(() => {
       aria-hidden="true"
     />
 
-    <section
-      v-if="currentStep === 0"
-      key="landing"
-      class="intro-content"
-    >
+    <section v-if="currentStep === 0" key="landing" class="intro-content">
       <img src="/logo-1.svg" alt="跑者菲迪 Pheidi the Runner" class="intro-logo" />
-      <RouterLink to="/login" class="login-link">Login</RouterLink>
+      <RouterLink v-slot="{ navigate }" to="/login" custom>
+        <BaseButton label="LOGIN" class="intro-login" @click="navigate" />
+      </RouterLink>
     </section>
 
     <Transition
@@ -751,9 +750,9 @@ onBeforeUnmount(() => {
           />
         </div>
 
-        <RouterLink v-if="currentStep === totalSteps" to="/login" class="login-link end-login"
-          >Login</RouterLink
-        >
+        <RouterLink v-if="currentStep === totalSteps" v-slot="{ navigate }" to="/login" custom>
+          <BaseButton label="LOGIN" class="intro-login end-login" @click="navigate" />
+        </RouterLink>
       </section>
     </Transition>
 
@@ -875,40 +874,23 @@ onBeforeUnmount(() => {
   right: clamp(var(--space-5), 3vw, var(--space-7));
 }
 
-.login-link {
+.intro-login {
   position: relative;
   z-index: 4;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0;
   min-width: 100px;
   min-height: 45px;
   padding: var(--space-2) var(--space-5);
-  color: var(--color-background);
   font-family: var(--font-family-base);
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-regular);
   line-height: var(--line-height-tight);
   letter-spacing: var(--letter-spacing-wide);
-  text-decoration: none;
   text-transform: uppercase;
-  background: var(--color-primary);
   border-radius: var(--radius-full);
-  transition:
-    background-color 200ms ease,
-    transform 200ms ease,
-    box-shadow 200ms ease;
-}
-
-.login-link:hover {
-  background: var(--color-accent);
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-
-.login-link:focus-visible {
-  outline: 3px solid var(--color-accent);
-  outline-offset: var(--space-1);
 }
 
 .story-scene,
@@ -1062,17 +1044,14 @@ onBeforeUnmount(() => {
 }
 
 .end-login {
+  --base-button-translate-x: -50%;
+
   position: absolute;
   top: 17vh;
   left: 50%;
   z-index: 4;
   visibility: hidden;
   opacity: 0;
-  transform: translateX(-50%);
-}
-
-.end-login:hover {
-  transform: translate(-50%, -2px);
 }
 
 .scroll-hint {
@@ -1198,7 +1177,7 @@ onBeforeUnmount(() => {
   .corner-tagline {
     right: 20px;
   }
-  .login-link {
+  .intro-login {
     min-width: 90px;
     min-height: 35px;
     padding: var(--space-2) var(--space-4);
@@ -1254,7 +1233,6 @@ onBeforeUnmount(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .login-link,
   .progress-dot {
     transition: none;
   }
