@@ -11,6 +11,7 @@ import postUploadRoutes from './routes/postUploadRoutes.js'
 import publicArticleRoutes from './routes/publicArticleRoutes.js'
 import runRecordRoutes from './routes/runRecordRoutes.js'
 import runRecordUploadRoutes from './routes/runRecordUploadRoutes.js'
+import runnerProgressRoutes from './routes/runnerProgressRoutes.js'
 import uploadRoutes from './routes/uploadRoutes.js'
 import userRoutes from './routes/userRoutes.js'
 
@@ -44,6 +45,7 @@ app.use('/api/articles', publicArticleRoutes)
 app.use('/api/posts', postRoutes)
 app.use('/api/run-records', runRecordRoutes)
 app.use('/api/run-record-uploads', runRecordUploadRoutes)
+app.use('/api/runner-progress', runnerProgressRoutes)
 app.use('/api/admin/plaza', adminPlazaRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/users', userRoutes)

@@ -48,6 +48,7 @@
             <button
               type="button"
               class="header-action-button check-in-button"
+              data-progression-return-focus
               aria-label="開啟跑步打卡視窗"
               :aria-expanded="isCheckInDialogVisible"
               aria-controls="check-in-dialog"

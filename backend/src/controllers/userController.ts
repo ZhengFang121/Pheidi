@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken'
 import { authenticateToken } from '../middleware/authMiddleware.js'
 import User from '../models/User.js'
 import { sendPasswordResetEmail } from '../services/emailService.js'
+import { ensureRunnerProgress } from '../services/runnerProgressService.js'
 import { isDuplicateKeyError } from '../utils/mongoose.js'
 import { rateLimit } from 'express-rate-limit'
 
@@ -392,6 +393,7 @@ router.post('/', async (req, res) => {
       email: normalizedEmail,
       password,
     })
+    await ensureRunnerProgress(user._id.toString())
 
     res.status(201).json({
       message: '使用者建立成功',

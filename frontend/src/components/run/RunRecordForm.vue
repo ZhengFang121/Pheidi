@@ -18,6 +18,7 @@ import {
   type WeatherCondition,
   type WeatherSource,
 } from '@/constants/runRecord'
+import { toProgressionEvents, useProgressionEvents } from '@/composables/useProgressionEvents'
 import { createRunRecord, updateRunRecord, uploadRunRecordImage } from '@/services/runRecords'
 import { getWeatherConditionForDate } from '@/services/weather'
 import type { RunRecord } from '@/types/runRecord'
@@ -26,6 +27,8 @@ import { getRunRecordCoordinates, type RunRecordCoordinates } from '@/utils/geol
 const props = defineProps<{
   runRecord?: RunRecord
 }>()
+
+const { enqueueProgressionEvents } = useProgressionEvents()
 
 const emit = defineEmits<{
   submitted: [runRecord: RunRecord]
@@ -285,6 +288,10 @@ const handleSubmit = async () => {
     const response = props.runRecord
       ? await updateRunRecord(props.runRecord.id, payload)
       : await createRunRecord(payload)
+
+    if (!isEditMode.value) {
+      enqueueProgressionEvents(toProgressionEvents(response.progression))
+    }
 
     emit('submitted', response.runRecord)
   } catch (error: unknown) {
