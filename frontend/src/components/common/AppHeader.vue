@@ -277,7 +277,7 @@ const navigationItems = ref<NavigationItem[]>([
   z-index: 100;
   width: 100%;
   height: var(--app-header-height);
-  padding-block: var(--space-3);
+  padding-block: var(--space-5) var(--space-3);
   background: transparent;
 }
 

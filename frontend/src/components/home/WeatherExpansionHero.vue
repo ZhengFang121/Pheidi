@@ -4,13 +4,15 @@ import gsap from 'gsap'
 import type { Component } from 'vue'
 import { onMounted, onUnmounted, ref } from 'vue'
 
+import AnimatedWeatherIcon from '@/components/icons/AnimatedWeatherIcon.vue'
 import type { CurrentWeather } from '@/services/weather'
+import type { WeatherIconVariant } from '@/types/weatherIcon'
 import Cloudscape from '@/components/home/Cloudscape.vue'
 
 interface Props {
   title: string
   tone: string
-  mainIcon: Component
+  mainIcon: WeatherIconVariant
   accentIcon: Component
   weather: CurrentWeather | null
   isLoading: boolean
@@ -27,6 +29,7 @@ const dailyPanel = ref<HTMLElement | null>(null)
 const allyArtwork = ref<HTMLImageElement | null>(null)
 const isExpanded = ref(false)
 const isInteracting = ref(true)
+const isWeatherIconActive = ref(true)
 const reducedMotion = ref(false)
 const todayDisplay = ref('')
 const todayDateTime = ref('')
@@ -36,6 +39,7 @@ let targetProgress = 0
 let touchY: number | null = null
 let progressTo: ((value: number) => void) | null = null
 let resizeObserver: ResizeObserver | null = null
+let iconObserver: IntersectionObserver | null = null
 let motionPreference: MediaQueryList | null = null
 let gsapContext: gsap.Context | null = null
 let dateUpdateTimer: number | undefined
@@ -180,6 +184,11 @@ onMounted(() => {
   resizeObserver = new ResizeObserver(renderProgress)
   resizeObserver.observe(media.value)
 
+  iconObserver = new IntersectionObserver(([entry]) => {
+    isWeatherIconActive.value = entry?.isIntersecting ?? false
+  })
+  iconObserver.observe(section.value)
+
   section.value.addEventListener('wheel', handleWheel, { passive: false })
   section.value.addEventListener('touchstart', handleTouchStart, { passive: true })
   section.value.addEventListener('touchmove', handleTouchMove, { passive: false })
@@ -191,6 +200,7 @@ onMounted(() => {
 onUnmounted(() => {
   if (dateUpdateTimer !== undefined) window.clearInterval(dateUpdateTimer)
   resizeObserver?.disconnect()
+  iconObserver?.disconnect()
   motionPreference?.removeEventListener('change', handleMotionPreferenceChange)
   section.value?.removeEventListener('wheel', handleWheel)
   section.value?.removeEventListener('touchstart', handleTouchStart)
@@ -247,7 +257,12 @@ onUnmounted(() => {
               </span>
 
               <span class="weather-visual__main">
-                <component :is="props.mainIcon" :size="152" :stroke-width="1.15" />
+                <AnimatedWeatherIcon
+                  :variant="props.mainIcon"
+                  :size="152"
+                  :stroke-width="1.15"
+                  :active="isWeatherIconActive && !reducedMotion"
+                />
               </span>
             </div>
           </div>
