@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ArrowDown, CloudSun, MapPin, Sun, Wind } from '@lucide/vue'
+import { CloudSun, MapPin, Sun, Wind } from '@lucide/vue'
 import gsap from 'gsap'
 import type { Component } from 'vue'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 
 import type { CurrentWeather } from '@/services/weather'
 import Cloudscape from '@/components/home/Cloudscape.vue'
@@ -23,11 +23,13 @@ const props = defineProps<Props>()
 const section = ref<HTMLElement | null>(null)
 const media = ref<HTMLElement | null>(null)
 const content = ref<HTMLElement | null>(null)
-const artwork = ref<HTMLElement | null>(null)
-const scrollCue = ref<HTMLElement | null>(null)
+const dailyPanel = ref<HTMLElement | null>(null)
+const allyArtwork = ref<HTMLImageElement | null>(null)
 const isExpanded = ref(false)
 const isInteracting = ref(true)
 const reducedMotion = ref(false)
+const todayDisplay = ref('')
+const todayDateTime = ref('')
 
 const progressProxy = { value: 0 }
 let targetProgress = 0
@@ -36,27 +38,36 @@ let progressTo: ((value: number) => void) | null = null
 let resizeObserver: ResizeObserver | null = null
 let motionPreference: MediaQueryList | null = null
 let gsapContext: gsap.Context | null = null
-
-const instruction = computed(() => (reducedMotion.value ? '今日跑步天氣' : '向下滑動，讓天空展開'))
+let dateUpdateTimer: number | undefined
 
 function clamp(value: number, minimum = 0, maximum = 1) {
   return Math.min(Math.max(value, minimum), maximum)
 }
 
+function updateToday() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+
+  todayDisplay.value = `${year}.${month}.${day}`
+  todayDateTime.value = `${year}-${month}-${day}`
+}
+
 function renderProgress() {
-  if (!media.value || !content.value || !artwork.value || !scrollCue.value) return
+  if (!media.value || !content.value || !dailyPanel.value || !allyArtwork.value) return
 
   const progress = reducedMotion.value ? 1 : clamp(progressProxy.value)
   const bounds = media.value.getBoundingClientRect()
-  const initialWidth = Math.min(300, Math.max(0, bounds.width - 32))
-  const initialHeight = Math.min(400, Math.max(0, bounds.height - 32))
+  const isMobile = bounds.width <= 720
+  const initialWidth = Math.min(isMobile ? 300 : 400, Math.max(0, bounds.width - 32))
+  const initialHeight = Math.min(isMobile ? 400 : 500, Math.max(0, bounds.height - 32))
   const horizontalInset = ((bounds.width - initialWidth) / 2) * (1 - progress)
   const verticalInset = ((bounds.height - initialHeight) / 2) * (1 - progress)
-  const contentProgress = clamp((progress - 0.48) / 0.38)
-  const isMobile = bounds.width <= 720
-  const artworkOffset = isMobile
-    ? Math.min(bounds.height * 0.2, 130) * progress
-    : Math.min(bounds.width * 0.22, 300) * progress
+  const contentProgress = clamp((progress - 0.42) / 0.42)
+  const dailyPanelOffset = isMobile
+    ? Math.min(bounds.height * 0.24, 148) * progress
+    : Math.min(bounds.width * 0.27, 310) * progress
 
   gsap.set(media.value, {
     clipPath: `inset(${verticalInset}px ${horizontalInset}px round var(--radius-xl))`,
@@ -65,13 +76,15 @@ function renderProgress() {
     autoAlpha: contentProgress,
     y: (1 - contentProgress) * 24,
   })
-  gsap.set(artwork.value, {
-    x: isMobile ? 0 : artworkOffset,
-    y: isMobile ? artworkOffset : 0,
-    scale: 0.88 + progress * 0.12,
+  gsap.set(dailyPanel.value, {
+    xPercent: -50,
+    yPercent: -50,
+    x: isMobile ? 0 : -dailyPanelOffset,
+    y: isMobile ? -dailyPanelOffset : 0,
+    scale: 1 - (isMobile ? progress * 0.18 : 0),
   })
-  gsap.set(scrollCue.value, {
-    autoAlpha: clamp(1 - progress * 2.4),
+  gsap.set(allyArtwork.value, {
+    y: isMobile ? 0 : -80,
   })
 
   const nextExpanded = progress >= 0.999
@@ -146,6 +159,8 @@ function handleMotionPreferenceChange() {
 onMounted(() => {
   if (!section.value || !media.value) return
 
+  updateToday()
+  dateUpdateTimer = window.setInterval(updateToday, 60_000)
   motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
   reducedMotion.value = motionPreference.matches
   targetProgress = reducedMotion.value ? 1 : 0
@@ -174,6 +189,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (dateUpdateTimer !== undefined) window.clearInterval(dateUpdateTimer)
   resizeObserver?.disconnect()
   motionPreference?.removeEventListener('change', handleMotionPreferenceChange)
   section.value?.removeEventListener('wheel', handleWheel)
@@ -201,10 +217,40 @@ onUnmounted(() => {
 
     <div class="weather-hero__stage">
       <article ref="media" class="weather-window base-card base-card--glass">
+        <div ref="dailyPanel" class="weather-daily">
+          <header class="weather-daily__header">
+            <p class="weather-daily__title">菲迪日報</p>
+            <time class="weather-daily__date" :datetime="todayDateTime">{{ todayDisplay }}</time>
+          </header>
+
+          <div class="weather-daily__divider" aria-hidden="true"></div>
+
+          <img
+            ref="allyArtwork"
+            class="weather-daily__ally"
+            src="/images/ally.png"
+            alt=""
+            width="480"
+            height="480"
+          />
+        </div>
+
         <div ref="content" class="weather-window__content">
-          <h1 id="weather-hero-title" class="weather-window__title">
-            {{ props.title }}
-          </h1>
+          <div class="weather-window__headline">
+            <h1 id="weather-hero-title" class="weather-window__title">
+              {{ props.title }}
+            </h1>
+
+            <div class="weather-visual" :class="`weather-visual--${props.tone}`" aria-hidden="true">
+              <span class="weather-visual__accent">
+                <component :is="props.accentIcon" :size="112" :stroke-width="1.15" />
+              </span>
+
+              <span class="weather-visual__main">
+                <component :is="props.mainIcon" :size="152" :stroke-width="1.15" />
+              </span>
+            </div>
+          </div>
 
           <div class="weather-summary">
             <span v-if="props.isLoading" class="weather-summary__status" role="status">
@@ -244,27 +290,7 @@ onUnmounted(() => {
             </template>
           </div>
         </div>
-
-        <div
-          ref="artwork"
-          class="weather-artwork"
-          :class="`weather-artwork--${props.tone}`"
-          aria-hidden="true"
-        >
-          <span class="weather-artwork__sun">
-            <component :is="props.accentIcon" :size="132" :stroke-width="1.15" />
-          </span>
-
-          <span class="weather-artwork__cloud">
-            <component :is="props.mainIcon" :size="176" :stroke-width="1.15" />
-          </span>
-        </div>
       </article>
-
-      <div ref="scrollCue" class="weather-window__scroll-cue" aria-hidden="true">
-        <ArrowDown :size="18" :stroke-width="2" />
-        <span>{{ instruction }}</span>
-      </div>
     </div>
   </section>
 </template>
@@ -285,7 +311,7 @@ onUnmounted(() => {
   bottom: 0;
   left: 0;
   z-index: 0;
-  height: clamp(8rem, 24vh, 16rem);
+  height: clamp(var(--space-8), 12vh, 8rem);
   pointer-events: none;
   content: '';
   background: linear-gradient(
@@ -319,33 +345,134 @@ onUnmounted(() => {
   width: 100%;
   max-width: none;
   height: 100%;
+  max-height: 650px;
   min-height: 0;
   overflow: hidden;
-  clip-path: inset(calc(50% - 200px) calc(50% - 150px) round var(--radius-xl));
+  clip-path: inset(calc(50% - 250px) calc(50% - 200px) round var(--radius-xl));
   color: var(--color-text);
   border-radius: var(--radius-xl);
   will-change: clip-path;
 }
 
+.weather-daily {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  width: min(400px, calc(100% - (var(--space-6) * 2)));
+  height: min(500px, calc(100% - (var(--space-6) * 2)));
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+  will-change: transform;
+}
+
+.weather-daily__header {
+  margin-top: var(--space-8);
+  text-align: center;
+}
+
+.weather-daily__title {
+  margin: 0;
+  color: var(--color-primary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-heading);
+  letter-spacing: var(--letter-spacing-base);
+}
+
+.weather-daily__date {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--color-primary);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-heading);
+  letter-spacing: var(--letter-spacing-wide);
+  font-variant-numeric: tabular-nums;
+}
+
+.weather-daily__divider {
+  width: calc(100% - (var(--space-7) * 2));
+  height: 1px;
+  margin: var(--space-6) auto 0;
+  background-color: var(--color-primary-soft);
+}
+
+.weather-daily__ally {
+  display: block;
+  width: min(380px, 96%);
+  height: auto;
+  margin: var(--space-5) auto 0;
+  object-fit: contain;
+  will-change: transform;
+}
+
 .weather-window__content {
   position: relative;
+  top: calc(var(--space-5) * -1);
   z-index: 2;
-  width: min(50%, 620px);
-  margin-left: clamp(var(--space-5), 7vw, 96px);
+  width: min(51%, 560px);
+  margin-right: clamp(var(--space-5), 5vw, var(--space-8));
+  margin-left: auto;
   visibility: hidden;
   opacity: 0;
   will-change: transform, opacity;
 }
 
+.weather-window__headline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 200px);
+  align-items: center;
+  gap: var(--space-4);
+}
+
 .weather-window__title {
-  max-width: 12ch;
+  max-width: 9ch;
   margin: 0;
   color: var(--color-text);
-  font-size: clamp(var(--font-size-xl), 4.3vw, var(--font-size-display));
+  font-size: clamp(var(--font-size-lg), 4vw, var(--font-size-display));
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
   letter-spacing: var(--letter-spacing-tight);
   text-wrap: balance;
+}
+
+.weather-visual {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  color: var(--color-accent);
+}
+
+.weather-visual__accent,
+.weather-visual__main {
+  position: absolute;
+  display: grid;
+  place-items: center;
+}
+
+.weather-visual__accent {
+  top: 0;
+  right: 0;
+  opacity: 0.55;
+}
+
+.weather-visual__main {
+  right: var(--space-5);
+  bottom: 0;
+  color: var(--color-primary);
+}
+
+.weather-visual--rain .weather-visual__accent,
+.weather-visual--cold .weather-visual__accent {
+  color: var(--color-dark-pale);
+}
+
+.weather-visual--hot .weather-visual__accent,
+.weather-visual--hot .weather-visual__main {
+  color: var(--color-accent);
 }
 
 .weather-summary {
@@ -403,74 +530,6 @@ onUnmounted(() => {
   letter-spacing: var(--letter-spacing-base);
 }
 
-.weather-artwork {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 1;
-  width: 300px;
-  height: 400px;
-  color: var(--color-accent);
-  transform: translate(-50%, -50%) scale(0.88);
-  transform-origin: center;
-  will-change: transform;
-}
-
-.weather-artwork__sun,
-.weather-artwork__cloud {
-  position: absolute;
-  display: grid;
-  place-items: center;
-}
-
-.weather-artwork__sun {
-  top: 62px;
-  right: 18px;
-  opacity: 0.7;
-}
-
-.weather-artwork__cloud {
-  right: 64px;
-  bottom: 70px;
-  color: var(--color-primary);
-}
-
-.weather-artwork--rain .weather-artwork__sun,
-.weather-artwork--cold .weather-artwork__sun {
-  color: var(--color-dark-pale);
-}
-
-.weather-artwork--hot .weather-artwork__sun,
-.weather-artwork--hot .weather-artwork__cloud {
-  color: var(--color-accent);
-}
-
-.weather-window__scroll-cue {
-  grid-area: stage;
-  align-self: center;
-  justify-self: center;
-  z-index: 3;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  color: var(--color-text);
-  background-color: color-mix(in srgb, var(--color-surface) 78%, transparent);
-  border-radius: var(--radius-full);
-  box-shadow: var(--shadow-sm);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  line-height: var(--line-height-tight);
-  letter-spacing: var(--letter-spacing-base);
-  transform: translateY(230px);
-  white-space: nowrap;
-  will-change: transform, opacity;
-}
-
-.weather-window__scroll-cue svg {
-  flex: 0 0 auto;
-}
-
 @media (max-width: 720px) {
   .weather-hero__stage {
     padding: var(--space-4) var(--layout-gutter);
@@ -480,15 +539,48 @@ onUnmounted(() => {
     clip-path: inset(calc(50% - 200px) calc(50% - 150px) round var(--radius-xl));
   }
 
+  .weather-daily {
+    width: min(300px, calc(100% - (var(--space-5) * 2)));
+    height: min(400px, calc(100% - (var(--space-5) * 2)));
+  }
+
+  .weather-daily__header {
+    margin-top: var(--space-7);
+  }
+
+  .weather-daily__title {
+    font-size: var(--font-size-md);
+  }
+
+  .weather-daily__date {
+    font-size: var(--font-size-sm);
+  }
+
+  .weather-daily__divider {
+    width: calc(100% - (var(--space-5) * 2));
+    margin-top: var(--space-5);
+  }
+
+  .weather-daily__ally {
+    width: min(250px, 84%);
+    margin-top: var(--space-5);
+  }
+
   .weather-window__content {
-    align-self: start;
+    top: 0;
+    align-self: end;
     width: auto;
-    margin: var(--space-7) var(--space-5) 0;
+    margin: 0 var(--space-5) var(--space-5);
+  }
+
+  .weather-window__headline {
+    grid-template-columns: minmax(0, 1fr) 112px;
+    gap: var(--space-3);
   }
 
   .weather-window__title {
-    max-width: 13ch;
-    font-size: clamp(var(--font-size-lg), 9vw, var(--font-size-xl));
+    max-width: 11ch;
+    font-size: clamp(var(--font-size-md), 7.5vw, var(--font-size-xl));
   }
 
   .weather-summary {
@@ -500,13 +592,18 @@ onUnmounted(() => {
     gap: var(--space-2);
   }
 
-  .weather-artwork {
-    width: 280px;
-    height: 360px;
+  .weather-visual__accent svg {
+    width: 72px;
+    height: 72px;
   }
 
-  .weather-window__scroll-cue {
-    max-width: calc(100% - (var(--space-4) * 2));
+  .weather-visual__main {
+    right: 0;
+  }
+
+  .weather-visual__main svg {
+    width: 96px;
+    height: 96px;
   }
 }
 
@@ -523,13 +620,12 @@ onUnmounted(() => {
     will-change: auto;
   }
 
-  .weather-artwork,
-  .weather-window__scroll-cue {
+  .weather-daily {
     will-change: auto;
   }
 
-  .weather-window__scroll-cue {
-    display: none;
+  .weather-daily__ally {
+    will-change: auto;
   }
 }
 </style>
