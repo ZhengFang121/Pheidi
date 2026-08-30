@@ -4,25 +4,31 @@ import Button from 'primevue/button'
 interface Props {
   label: string
   variant?: 'primary' | 'secondary' | 'outline'
+  type?: 'button' | 'submit' | 'reset'
   icon?: string
   disabled?: boolean
   loading?: boolean
+  fluid?: boolean
 }
 
 withDefaults(defineProps<Props>(), {
   variant: 'primary',
+  type: 'button',
   icon: '',
   disabled: false,
   loading: false,
+  fluid: false,
 })
 </script>
 
 <template>
   <Button
     :label="label"
+    :type="type"
     :icon="icon"
     :disabled="disabled"
     :loading="loading"
+    :fluid="fluid"
     :aria-busy="loading || undefined"
     :pt="{
       label: { class: 'base-button__content base-button__label' },

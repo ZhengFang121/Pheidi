@@ -1,20 +1,15 @@
 <script setup lang="ts">
 import { Form, type FormSubmitEvent } from '@primevue/forms'
 import { isAxiosError } from 'axios'
-import Button from 'primevue/button'
 import Checkbox from 'primevue/checkbox'
 import InputText from 'primevue/inputtext'
 import Message from 'primevue/message'
 import Password from 'primevue/password'
-import Tab from 'primevue/tab'
-import TabList from 'primevue/tablist'
-import TabPanel from 'primevue/tabpanel'
-import TabPanels from 'primevue/tabpanels'
-import Tabs from 'primevue/tabs'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import BaseCard from '@/components/base/BaseCard.vue'
+import AccountPageLayout from '@/components/account/AccountPageLayout.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 import { login, register } from '@/services/auth'
 import { useAuthStore } from '@/stores/auth'
 import type { ApiErrorResponse } from '@/types/api'
@@ -230,378 +225,393 @@ const handleRegister = async (event: FormSubmitEvent) => {
 </script>
 
 <template>
-  <main class="login-page">
-    <BaseCard as="section" variant="glass" class="account-card">
-      <header class="account-card__header">
-        <h1 class="account-card__title">歡迎來到跑者菲迪</h1>
+  <AccountPageLayout description="歡迎來到跑者菲迪，請登入或註冊新手跑者帳號。">
+    <div class="account-tabs">
+      <div class="segmented-control" role="group" aria-label="登入或註冊">
+        <span
+          class="segmented-control__indicator"
+          :class="{ 'segmented-control__indicator--register': activeTab === 'register' }"
+          aria-hidden="true"
+        ></span>
 
-        <p class="account-card__description">登入帳號，或建立新的跑者身分。</p>
-      </header>
+        <button
+          id="account-login-option"
+          class="segmented-control__option"
+          type="button"
+          :aria-pressed="activeTab === 'login'"
+          aria-controls="account-login-panel"
+          @click="activeTab = 'login'"
+        >
+          <span class="segmented-control__label">登入</span>
+        </button>
 
-      <Tabs v-model:value="activeTab" class="account-tabs">
-        <TabList>
-          <Tab value="login">登入</Tab>
-          <Tab value="register">註冊</Tab>
-        </TabList>
+        <button
+          id="account-register-option"
+          class="segmented-control__option"
+          type="button"
+          :aria-pressed="activeTab === 'register'"
+          aria-controls="account-register-panel"
+          @click="activeTab = 'register'"
+        >
+          <span class="segmented-control__label">註冊</span>
+        </button>
+      </div>
 
-        <TabPanels>
-          <TabPanel value="login">
-            <Form
-              :key="loginFormKey"
-              v-slot="$form"
-              :initial-values="loginInitialValues"
-              :resolver="loginResolver"
-              :validate-on-value-update="false"
-              :validate-on-blur="true"
-              class="account-form"
-              @submit="handleLogin"
-            >
-              <div class="form-field">
-                <label for="login-email" class="form-field__label"> 電子信箱 </label>
+      <div class="account-tabpanels">
+        <div
+          v-show="activeTab === 'login'"
+          id="account-login-panel"
+          class="account-tabpanel"
+          role="region"
+          aria-labelledby="account-login-option"
+        >
+          <Form
+            :key="loginFormKey"
+            v-slot="$form"
+            :initial-values="loginInitialValues"
+            :resolver="loginResolver"
+            :validate-on-value-update="false"
+            :validate-on-blur="true"
+            class="account-form"
+            @submit="handleLogin"
+          >
+            <div class="form-field">
+              <label for="login-email" class="form-field__label"> 電子信箱 </label>
 
-                <InputText
-                  id="login-email"
-                  name="email"
-                  type="email"
-                  autocomplete="email"
-                  placeholder="runner@example.com"
-                  fluid
-                />
-                <Message v-if="$form.email?.invalid" severity="error" size="small" variant="simple">
-                  {{ $form.email.error?.message }}
-                </Message>
-              </div>
-
-              <div class="form-field">
-                <label for="login-password" class="form-field__label"> 密碼 </label>
-
-                <Password
-                  input-id="login-password"
-                  name="password"
-                  autocomplete="current-password"
-                  placeholder="請輸入密碼"
-                  :feedback="false"
-                  toggle-mask
-                  fluid
-                />
-                <Message
-                  v-if="$form.password?.invalid"
-                  severity="error"
-                  size="small"
-                  variant="simple"
-                >
-                  {{ $form.password.error?.message }}
-                </Message>
-              </div>
-
-              <div class="account-form__preferences">
-                <div class="login-preferences">
-                  <div class="login-preference">
-                    <Checkbox input-id="remember-email" name="rememberEmail" binary />
-
-                    <label for="remember-email">記住電子信箱</label>
-                  </div>
-
-                  <div class="login-preference">
-                    <Checkbox input-id="keep-signed-in" name="keepSignedIn" binary />
-
-                    <label for="keep-signed-in">維持登入狀態</label>
-                  </div>
-                </div>
-
-                <RouterLink class="forgot-password" to="/forgot-password"> 忘記密碼？ </RouterLink>
-              </div>
-
-              <Message
-                v-if="loginSuccessMessage"
-                severity="success"
-                size="small"
-                variant="simple"
-                aria-live="polite"
-              >
-                {{ loginSuccessMessage }}
+              <InputText
+                id="login-email"
+                name="email"
+                type="email"
+                autocomplete="email"
+                placeholder="runner@example.com"
+                fluid
+              />
+              <Message v-if="$form.email?.invalid" severity="error" size="small" variant="simple">
+                {{ $form.email.error?.message }}
               </Message>
+            </div>
 
+            <div class="form-field">
+              <label for="login-password" class="form-field__label"> 密碼 </label>
+
+              <Password
+                input-id="login-password"
+                name="password"
+                autocomplete="current-password"
+                placeholder="請輸入密碼"
+                :feedback="false"
+                toggle-mask
+                fluid
+              />
               <Message
-                v-if="loginErrorMessage"
+                v-if="$form.password?.invalid"
                 severity="error"
                 size="small"
                 variant="simple"
-                aria-live="polite"
               >
-                {{ loginErrorMessage }}
+                {{ $form.password.error?.message }}
               </Message>
+            </div>
 
-              <Button
-                class="account-submit"
-                type="submit"
-                label="登入"
-                :loading="isLoggingIn"
-                :disabled="isLoggingIn"
+            <div class="account-form__preferences">
+              <div class="login-preferences">
+                <div class="login-preference">
+                  <Checkbox input-id="remember-email" name="rememberEmail" binary />
+
+                  <label for="remember-email">記住電子信箱</label>
+                </div>
+
+                <div class="login-preference">
+                  <Checkbox input-id="keep-signed-in" name="keepSignedIn" binary />
+
+                  <label for="keep-signed-in">維持登入狀態</label>
+                </div>
+              </div>
+
+              <RouterLink class="account-link" to="/forgot-password"> 忘記密碼？ </RouterLink>
+            </div>
+
+            <Message
+              v-if="loginSuccessMessage"
+              severity="success"
+              size="small"
+              variant="simple"
+              aria-live="polite"
+            >
+              {{ loginSuccessMessage }}
+            </Message>
+
+            <Message
+              v-if="loginErrorMessage"
+              severity="error"
+              size="small"
+              variant="simple"
+              aria-live="polite"
+            >
+              {{ loginErrorMessage }}
+            </Message>
+
+            <BaseButton
+              class="account-submit"
+              type="submit"
+              label="登入"
+              :loading="isLoggingIn"
+              :disabled="isLoggingIn"
+              fluid
+            />
+          </Form>
+        </div>
+
+        <div
+          v-show="activeTab === 'register'"
+          id="account-register-panel"
+          class="account-tabpanel"
+          role="region"
+          aria-labelledby="account-register-option"
+        >
+          <Form
+            v-slot="$form"
+            :initial-values="registerInitialValues"
+            :resolver="registerResolver"
+            :validate-on-value-update="false"
+            :validate-on-blur="true"
+            class="account-form"
+            @submit="handleRegister"
+          >
+            <div class="form-field">
+              <label for="runner-name" class="form-field__label"> 跑者名稱 </label>
+
+              <InputText
+                id="runner-name"
+                name="username"
+                type="text"
+                autocomplete="nickname"
+                placeholder="請輸入跑者名稱"
+                :maxlength="20"
                 fluid
               />
-            </Form>
-          </TabPanel>
-
-          <TabPanel value="register">
-            <Form
-              v-slot="$form"
-              :initial-values="registerInitialValues"
-              :resolver="registerResolver"
-              :validate-on-value-update="false"
-              :validate-on-blur="true"
-              class="account-form"
-              @submit="handleRegister"
-            >
-              <div class="form-field">
-                <label for="runner-name" class="form-field__label"> 跑者名稱 </label>
-
-                <InputText
-                  id="runner-name"
-                  name="username"
-                  type="text"
-                  autocomplete="nickname"
-                  placeholder="請輸入跑者名稱"
-                  :maxlength="20"
-                  fluid
-                />
-                <Message
-                  v-if="$form.username?.invalid"
-                  severity="error"
-                  size="small"
-                  variant="simple"
-                >
-                  {{ $form.username.error?.message }}
-                </Message>
-              </div>
-
-              <div class="form-field">
-                <label for="register-email" class="form-field__label"> 電子信箱 </label>
-
-                <InputText
-                  id="register-email"
-                  name="email"
-                  type="email"
-                  autocomplete="email"
-                  placeholder="runner@example.com"
-                  fluid
-                />
-                <Message v-if="$form.email?.invalid" severity="error" size="small" variant="simple">
-                  {{ $form.email.error?.message }}
-                </Message>
-              </div>
-
-              <div class="form-field">
-                <label for="register-password" class="form-field__label"> 密碼 </label>
-
-                <Password
-                  input-id="register-password"
-                  name="password"
-                  autocomplete="new-password"
-                  placeholder="請設定密碼"
-                  :feedback="false"
-                  toggle-mask
-                  fluid
-                />
-
-                <div v-if="$form.password?.value" class="password-strength" aria-live="polite">
-                  <div class="password-strength__track">
-                    <span
-                      class="password-strength__bar"
-                      :class="`password-strength__bar--${getPasswordStrength($form.password.value).level}`"
-                    ></span>
-                  </div>
-
-                  <span class="password-strength__label">
-                    {{ getPasswordStrength($form.password.value).label }}
-                  </span>
-                </div>
-
-                <Message
-                  v-if="$form.password?.invalid"
-                  severity="error"
-                  size="small"
-                  variant="simple"
-                >
-                  {{ $form.password.error?.message }}
-                </Message>
-              </div>
-
-              <div class="form-field">
-                <label for="confirm-password" class="form-field__label"> 確認密碼 </label>
-
-                <Password
-                  input-id="confirm-password"
-                  name="confirmPassword"
-                  autocomplete="new-password"
-                  placeholder="請再次輸入密碼"
-                  :feedback="false"
-                  toggle-mask
-                  fluid
-                />
-                <Message
-                  v-if="$form.confirmPassword?.invalid"
-                  severity="error"
-                  size="small"
-                  variant="simple"
-                >
-                  {{ $form.confirmPassword.error?.message }}
-                </Message>
-              </div>
-
-              <div class="form-field">
-                <div class="terms-option">
-                  <Checkbox input-id="agree-to-terms" name="agreeToTerms" binary />
-
-                  <label for="agree-to-terms">
-                    我已閱讀並同意
-                    <RouterLink
-                      to="/terms"
-                      class="terms-link"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      服務條款
-                    </RouterLink>
-                  </label>
-                </div>
-
-                <Message
-                  v-if="$form.agreeToTerms?.invalid"
-                  severity="error"
-                  size="small"
-                  variant="simple"
-                >
-                  {{ $form.agreeToTerms.error?.message }}
-                </Message>
-              </div>
-
               <Message
-                v-if="registerSuccessMessage"
-                severity="success"
-                size="small"
-                variant="simple"
-                aria-live="polite"
-              >
-                {{ registerSuccessMessage }}
-              </Message>
-
-              <Message
-                v-if="registerErrorMessage"
+                v-if="$form.username?.invalid"
                 severity="error"
                 size="small"
                 variant="simple"
-                aria-live="polite"
               >
-                {{ registerErrorMessage }}
+                {{ $form.username.error?.message }}
               </Message>
+            </div>
 
-              <Button
-                class="account-submit"
-                type="submit"
-                label="建立帳號"
-                :loading="isRegistering"
-                :disabled="isRegistering"
+            <div class="form-field">
+              <label for="register-email" class="form-field__label"> 電子信箱 </label>
+
+              <InputText
+                id="register-email"
+                name="email"
+                type="email"
+                autocomplete="email"
+                placeholder="runner@example.com"
                 fluid
               />
-            </Form>
-          </TabPanel>
-        </TabPanels>
-      </Tabs>
-    </BaseCard>
-  </main>
+              <Message v-if="$form.email?.invalid" severity="error" size="small" variant="simple">
+                {{ $form.email.error?.message }}
+              </Message>
+            </div>
+
+            <div class="form-field">
+              <label for="register-password" class="form-field__label"> 密碼 </label>
+
+              <Password
+                input-id="register-password"
+                name="password"
+                autocomplete="new-password"
+                placeholder="請設定密碼"
+                :feedback="false"
+                toggle-mask
+                fluid
+              />
+
+              <div v-if="$form.password?.value" class="password-strength" aria-live="polite">
+                <div class="password-strength__track">
+                  <span
+                    class="password-strength__bar"
+                    :class="`password-strength__bar--${getPasswordStrength($form.password.value).level}`"
+                  ></span>
+                </div>
+
+                <span class="password-strength__label">
+                  {{ getPasswordStrength($form.password.value).label }}
+                </span>
+              </div>
+
+              <Message
+                v-if="$form.password?.invalid"
+                severity="error"
+                size="small"
+                variant="simple"
+              >
+                {{ $form.password.error?.message }}
+              </Message>
+            </div>
+
+            <div class="form-field">
+              <label for="confirm-password" class="form-field__label"> 確認密碼 </label>
+
+              <Password
+                input-id="confirm-password"
+                name="confirmPassword"
+                autocomplete="new-password"
+                placeholder="請再次輸入密碼"
+                :feedback="false"
+                toggle-mask
+                fluid
+              />
+              <Message
+                v-if="$form.confirmPassword?.invalid"
+                severity="error"
+                size="small"
+                variant="simple"
+              >
+                {{ $form.confirmPassword.error?.message }}
+              </Message>
+            </div>
+
+            <div class="form-field">
+              <div class="terms-option">
+                <Checkbox input-id="agree-to-terms" name="agreeToTerms" binary />
+
+                <label for="agree-to-terms">
+                  我已閱讀並同意
+                  <RouterLink
+                    to="/terms"
+                    class="account-link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    服務條款
+                  </RouterLink>
+                </label>
+              </div>
+
+              <Message
+                v-if="$form.agreeToTerms?.invalid"
+                severity="error"
+                size="small"
+                variant="simple"
+              >
+                {{ $form.agreeToTerms.error?.message }}
+              </Message>
+            </div>
+
+            <Message
+              v-if="registerSuccessMessage"
+              severity="success"
+              size="small"
+              variant="simple"
+              aria-live="polite"
+            >
+              {{ registerSuccessMessage }}
+            </Message>
+
+            <Message
+              v-if="registerErrorMessage"
+              severity="error"
+              size="small"
+              variant="simple"
+              aria-live="polite"
+            >
+              {{ registerErrorMessage }}
+            </Message>
+
+            <BaseButton
+              class="account-submit"
+              type="submit"
+              label="建立帳號"
+              :loading="isRegistering"
+              :disabled="isRegistering"
+              fluid
+            />
+          </Form>
+        </div>
+      </div>
+    </div>
+  </AccountPageLayout>
 </template>
 
 <style scoped>
-.login-page {
-  display: grid;
-  min-height: 100vh;
-  padding: var(--space-5);
-  background-color: var(--color-primary-pale);
-  place-items: center;
-}
-
-.account-card {
-  width: min(100%, 30rem);
-  padding: var(--space-6);
-  border-radius: var(--radius-xl);
-}
-
-.account-card__header {
-  margin-bottom: var(--space-5);
-  text-align: center;
-}
-
-.account-card__title {
-  margin: 0;
-  color: var(--color-text);
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-bold);
-  line-height: var(--line-height-heading);
-  letter-spacing: var(--letter-spacing-tight);
-}
-
-.account-card__description {
-  margin: var(--space-2) 0 0;
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  line-height: var(--line-height-base);
-  letter-spacing: var(--letter-spacing-base);
-}
-
 .account-tabs {
   width: 100%;
+  background: transparent;
 }
 
-.account-tabs__placeholder {
-  margin: 0;
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  text-align: center;
+.segmented-control {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  height: var(--account-control-height);
+  overflow: hidden;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-full);
+  background: transparent;
 }
 
-/* PrimeVue Tabs 樣式 */
-.account-tabs :deep(.p-tablist-tab-list) {
-  border-color: var(--color-border);
+.segmented-control__indicator {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 50%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-soft));
+  pointer-events: none;
+  transform: translateX(0);
+  transition: transform 300ms cubic-bezier(0.2, 0, 0, 1);
 }
 
-.account-tabs :deep(.p-tab) {
-  flex: 1;
-  justify-content: center;
-  padding: var(--space-3) var(--space-4);
-  color: var(--color-text-secondary);
+.segmented-control__indicator--register {
+  transform: translateX(100%);
+}
+
+.segmented-control__option {
+  position: relative;
+  z-index: 1;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-full);
+  color: var(--color-primary);
+  background: transparent;
   font-family: var(--font-family-base);
+  font-size: inherit;
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--letter-spacing-base);
+  cursor: pointer;
+  transition: color 150ms ease;
 }
 
-.account-tabs :deep(.p-tab[data-p-active='true']) {
-  color: var(--color-dark);
-  border-color: var(--color-primary);
-}
-
-.account-tabs :deep(.p-tabpanels) {
-  padding: var(--space-5) 0 0;
-  background-color: transparent;
-}
-
-.account-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-}
-
-.form-field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.form-field__label {
-  color: var(--color-text);
+.segmented-control__label {
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  line-height: var(--line-height-heading);
+}
+
+.segmented-control__option[aria-pressed='true'] {
+  color: var(--color-surface);
+}
+
+.segmented-control__option:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -3px;
+}
+
+.account-tabpanels {
+  padding: var(--space-5) 0 0;
+  background: transparent;
+}
+
+.account-tabs :deep(.p-checkbox),
+.account-tabs :deep(.p-checkbox-input),
+.account-tabs :deep(.p-checkbox-box) {
+  border-radius: var(--radius-full);
+}
+
+.account-tabs :deep(.p-checkbox:not(.p-checkbox-checked) .p-checkbox-box) {
+  background: transparent;
 }
 
 .account-form__preferences {
@@ -629,28 +639,6 @@ const handleRegister = async (event: FormSubmitEvent) => {
   cursor: pointer;
 }
 
-.forgot-password {
-  padding: 0;
-  border: 0;
-  color: var(--color-dark-light);
-  background: transparent;
-  font-family: inherit;
-  font-size: var(--font-size-sm);
-  letter-spacing: inherit;
-  cursor: pointer;
-}
-
-.forgot-password:hover {
-  color: var(--color-dark);
-  text-decoration: underline;
-}
-
-.forgot-password:focus-visible {
-  border-radius: var(--radius-sm);
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
 .terms-option {
   display: flex;
   align-items: flex-start;
@@ -664,103 +652,9 @@ const handleRegister = async (event: FormSubmitEvent) => {
   cursor: pointer;
 }
 
-.terms-link {
-  padding: 0;
-  color: var(--color-dark-light);
-  font-family: inherit;
-  font-size: inherit;
-  font-weight: var(--font-weight-medium);
-  letter-spacing: inherit;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.terms-link:hover {
-  color: var(--color-dark);
-  text-decoration: underline;
-}
-
-.terms-link:focus-visible {
-  border-radius: var(--radius-sm);
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-.account-submit {
-  margin-top: var(--space-2);
-}
-
-:deep(.account-submit.p-button) {
-  border-color: var(--color-primary);
-  background-color: var(--color-primary);
-  color: var(--color-surface);
-  font-family: var(--font-family-base);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--letter-spacing-base);
-}
-
-:deep(.account-submit.p-button:hover) {
-  border-color: color-mix(in srgb, var(--color-primary) 85%, var(--color-dark));
-  background-color: color-mix(in srgb, var(--color-primary) 85%, var(--color-dark));
-  color: var(--color-surface);
-}
-
-.password-strength {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.password-strength__track {
-  width: 100%;
-  height: 0.5rem;
-  overflow: hidden;
-  border-radius: 999px;
-  background-color: var(--color-border);
-}
-
-.password-strength__bar {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  transition:
-    width 200ms ease,
-    background-color 200ms ease;
-}
-
-.password-strength__bar--weak {
-  width: 33.333%;
-  background-color: var(--color-error);
-}
-
-.password-strength__bar--medium {
-  width: 66.666%;
-  background-color: var(--color-warning);
-}
-
-.password-strength__bar--strong {
-  width: 100%;
-  background-color: var(--color-success);
-}
-
-.password-strength__label {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  line-height: var(--line-height-heading);
-}
-
-@media (max-width: 480px) {
-  .login-page {
-    padding: var(--space-4);
-  }
-
-  .account-card {
-    padding: var(--space-5);
-    border-radius: var(--radius-lg);
-  }
-
-  .account-card__title {
-    font-size: var(--font-size-base);
+@media (prefers-reduced-motion: reduce) {
+  .segmented-control__indicator {
+    transition: none;
   }
 }
 </style>

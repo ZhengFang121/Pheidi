@@ -1,0 +1,169 @@
+.account-card .p-inputtext,
+.account-card .p-password {
+  height: var(--account-control-height);
+  border-radius: var(--radius-full);
+  background: transparent;
+}
+
+.account-card .p-inputtext,
+.account-card .p-button,
+.account-card .p-button-label,
+.account-card .p-message,
+.account-card .p-message-text {
+  letter-spacing: var(--letter-spacing-base);
+}
+
+.account-card .p-inputtext {
+  padding-block: 0;
+  font-size: var(--font-size-xs);
+  line-height: normal;
+}
+
+.account-card .p-inputtext::placeholder {
+  letter-spacing: var(--letter-spacing-base);
+}
+
+.account-card .p-inputtext.p-invalid,
+.account-card .p-inputtext.p-invalid:enabled:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.account-card .p-inputtext.p-invalid:enabled:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+.account-card .p-inputtext.p-invalid::placeholder {
+  color: var(--color-accent);
+  opacity: 1;
+}
+
+.account-card .p-checkbox.p-invalid .p-checkbox-box {
+  border-color: var(--color-accent);
+}
+
+.account-card .p-message.p-message-error,
+.account-card .p-message.p-message-error .p-message-icon,
+.account-card .p-message.p-message-error .p-message-text {
+  color: var(--color-accent);
+}
+
+.account-card .p-password-toggle-mask-icon {
+  background: transparent;
+}
+
+.account-form,
+.account-result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.form-field__label {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-heading);
+}
+
+.account-hint {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-base);
+  letter-spacing: var(--letter-spacing-base);
+}
+
+.account-link {
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-dark-light);
+  background: transparent;
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.account-link--center {
+  align-self: center;
+  text-align: center;
+}
+
+.account-link:hover {
+  color: var(--color-dark);
+  text-decoration: underline;
+}
+
+.account-link:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.account-submit.base-button {
+  width: 100%;
+  height: var(--account-control-height);
+  margin-top: var(--space-2);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
+}
+
+.password-strength {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.password-strength__track {
+  width: 100%;
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background-color: var(--color-border);
+}
+
+.password-strength__bar {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition:
+    width 200ms ease,
+    background-color 200ms ease;
+}
+
+.password-strength__bar--weak {
+  width: 33.333%;
+  background-color: var(--color-accent);
+}
+
+.password-strength__bar--medium {
+  width: 66.666%;
+  background-color: var(--color-warning);
+}
+
+.password-strength__bar--strong {
+  width: 100%;
+  background-color: var(--color-success);
+}
+
+.password-strength__label {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-heading);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .password-strength__bar {
+    transition: none;
+  }
+}
