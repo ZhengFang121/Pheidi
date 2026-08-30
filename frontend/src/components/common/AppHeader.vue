@@ -253,7 +253,7 @@ const navigationItems = ref<NavigationItem[]>([
 /* Menubar */
 :deep(.main-menu.p-menubar) {
   width: 100%;
-  min-height: 100px;
+  min-height: var(--app-header-height);
   padding: 0;
 
   background: transparent;
