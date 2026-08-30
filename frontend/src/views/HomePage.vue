@@ -1,23 +1,13 @@
 <script setup lang="ts">
-import {
-  CloudRainWind,
-  CloudSun,
-  CloudSunRain,
-  Cloudy,
-  Snowflake,
-  Sun,
-  SunMedium,
-  ThermometerSnowflake,
-  ThermometerSun,
-  Wind,
-} from '@lucide/vue'
-import { computed, onMounted, ref } from 'vue'
+import { Cloudy, Snowflake, Sun, SunMedium, ThermometerSun, Wind } from '@lucide/vue'
+import { computed, onMounted, ref, type Component } from 'vue'
 
 import WeatherExpansionHero from '@/components/home/WeatherExpansionHero.vue'
 import RunnerProgressCard from '@/components/progress/RunnerProgressCard.vue'
 import { useRunnerProgress } from '@/composables/useRunnerProgress'
 import { getLocationLabel } from '@/services/geocoding'
 import { getCurrentWeather, type CurrentWeather } from '@/services/weather'
+import type { WeatherIconVariant } from '@/types/weatherIcon'
 import { getCurrentCoordinates } from '@/utils/geolocation'
 
 const weather = ref<CurrentWeather | null>(null)
@@ -27,11 +17,18 @@ const locationLabel = ref('位置解析中...')
 const { runnerProgress, isRunnerProgressLoading, runnerProgressError, loadRunnerProgress } =
   useRunnerProgress()
 
-const weatherPresentation = computed(() => {
+interface WeatherPresentation {
+  title: string
+  mainIcon: WeatherIconVariant
+  accentIcon: Component
+  tone: string
+}
+
+const weatherPresentation = computed<WeatherPresentation>(() => {
   if (isWeatherLoading.value) {
     return {
       title: '正在確認今天的跑步天氣',
-      mainIcon: CloudSun,
+      mainIcon: 'cloud-sun',
       accentIcon: Sun,
       tone: 'mild',
     }
@@ -40,7 +37,7 @@ const weatherPresentation = computed(() => {
   if (!weather.value) {
     return {
       title: '今天的跑步天氣',
-      mainIcon: Cloudy,
+      mainIcon: 'cloud-sun',
       accentIcon: Wind,
       tone: 'mild',
     }
@@ -51,7 +48,7 @@ const weatherPresentation = computed(() => {
   if (precipitationProbability >= 70) {
     return {
       title: '降雨偏高，今天改做室內訓練',
-      mainIcon: CloudRainWind,
+      mainIcon: 'cloud-hail',
       accentIcon: Cloudy,
       tone: 'rain',
     }
@@ -60,7 +57,7 @@ const weatherPresentation = computed(() => {
   if (precipitationProbability >= 40) {
     return {
       title: '可能下雨，今天適合短程慢跑',
-      mainIcon: CloudSunRain,
+      mainIcon: 'cloud-sun-rain',
       accentIcon: Cloudy,
       tone: 'rain',
     }
@@ -69,7 +66,7 @@ const weatherPresentation = computed(() => {
   if (temperature >= 35) {
     return {
       title: '天氣炎熱，今天先別急著出發',
-      mainIcon: ThermometerSun,
+      mainIcon: 'sun-medium',
       accentIcon: SunMedium,
       tone: 'hot',
     }
@@ -78,7 +75,7 @@ const weatherPresentation = computed(() => {
   if (temperature >= 30) {
     return {
       title: '氣溫偏高，今天適合晚點再跑',
-      mainIcon: SunMedium,
+      mainIcon: 'sun-medium',
       accentIcon: ThermometerSun,
       tone: 'hot',
     }
@@ -87,7 +84,7 @@ const weatherPresentation = computed(() => {
   if (temperature <= 10) {
     return {
       title: '氣溫偏低，暖身後再出發',
-      mainIcon: ThermometerSnowflake,
+      mainIcon: 'cloud-snow',
       accentIcon: Snowflake,
       tone: 'cold',
     }
@@ -96,7 +93,7 @@ const weatherPresentation = computed(() => {
   if (precipitationProbability >= 20) {
     return {
       title: '偶有短暫雨，今天適合輕鬆短跑',
-      mainIcon: CloudSunRain,
+      mainIcon: 'cloud-sun-rain',
       accentIcon: Sun,
       tone: 'mild',
     }
@@ -105,7 +102,7 @@ const weatherPresentation = computed(() => {
   if (temperature >= 18 && temperature <= 27) {
     return {
       title: '天氣舒適，今天適合自在開跑',
-      mainIcon: CloudSun,
+      mainIcon: 'cloud-sun',
       accentIcon: Sun,
       tone: 'mild',
     }
@@ -113,7 +110,7 @@ const weatherPresentation = computed(() => {
 
   return {
     title: '今天適合輕鬆跑',
-    mainIcon: CloudSun,
+    mainIcon: 'cloud-sun',
     accentIcon: Wind,
     tone: 'mild',
   }
