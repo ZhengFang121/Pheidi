@@ -2,97 +2,126 @@
   <header class="app-header">
     <Toast position="top-right" />
 
-    <div class="layout-container">
-      <Menubar :model="navigationItems" aria-label="主要導覽列" class="main-menu">
-        <!-- Logo -->
-        <template #start>
-          <RouterLink to="/home" class="logo-link" aria-label="回到首頁">
-            <img src="/logo.svg" alt="跑者菲迪 Pheidi the Runner" class="logo-image" />
-          </RouterLink>
-        </template>
+    <div class="app-header__container layout-container">
+      <BaseCard as="div" variant="glass" class="navigation-shell">
+        <Menubar
+          :model="navigationItems"
+          breakpoint="0px"
+          aria-label="主要導覽列"
+          class="main-menu"
+        >
+          <!-- Logo -->
+          <template #start>
+            <RouterLink to="/home" class="logo-link" aria-label="回到首頁">
+              <img src="/logo.svg" alt="跑者菲迪 Pheidi the Runner" class="logo-image" />
+            </RouterLink>
+          </template>
 
-        <!-- 中間導覽選單 -->
-        <template #item="{ item, props }">
-          <RouterLink v-slot="{ href, navigate, isActive }" :to="item.route ?? '/'" custom>
-            <a
-              v-ripple
-              :href="href"
-              v-bind="props.action"
-              :class="['root-menu-link', { 'is-active': isActive }]"
-              @click="navigate"
-            >
-              <component
-                :is="item.lucideIcon"
-                v-if="item.lucideIcon"
-                class="root-menu-icon"
-                aria-hidden="true"
-              />
+          <!-- 中間導覽選單 -->
+          <template #item="{ item, props }">
+            <RouterLink v-slot="{ href, navigate, isActive }" :to="item.route ?? '/'" custom>
+              <BaseIconAction
+                v-ripple
+                as="a"
+                :label="typeof item.label === 'string' ? item.label : ''"
+                :href="href"
+                v-bind="props.action"
+                :class="['root-menu-link', { 'is-active': isActive }]"
+                :aria-current="isActive ? 'page' : undefined"
+                @click="navigate"
+              >
+                <template #icon>
+                  <component :is="item.lucideIcon" v-if="item.lucideIcon" class="root-menu-icon" />
+                </template>
 
-              <span class="menu-text">
-                <span class="menu-label">
-                  {{ item.label }}
-                </span>
+                <template #label>
+                  <span class="menu-label-stack">
+                    <span class="menu-label">
+                      {{ typeof item.label === 'string' ? item.label : '' }}
+                    </span>
 
-                <span v-if="item.labelEn" class="menu-label-en">
-                  {{ item.labelEn }}
-                </span>
-              </span>
-            </a>
-          </RouterLink>
-        </template>
+                    <span v-if="item.labelEn" class="menu-label-en">
+                      {{ item.labelEn }}
+                    </span>
+                  </span>
+                </template>
+              </BaseIconAction>
+            </RouterLink>
+          </template>
 
-        <!-- 右側功能 -->
-        <template #end>
-          <div class="header-actions">
-            <!-- 打卡按鈕 -->
-            <button
-              type="button"
-              class="header-action-button check-in-button"
-              data-progression-return-focus
-              aria-label="開啟跑步打卡視窗"
-              :aria-expanded="isCheckInDialogVisible"
-              aria-controls="check-in-dialog"
-              @click="isCheckInDialogVisible = true"
-            >
-              <NotebookPen class="header-action-icon" aria-hidden="true" />
-            </button>
+          <!-- 右側功能 -->
+          <template #end>
+            <div class="header-actions">
+              <!-- 打卡按鈕 -->
+              <BaseIconAction
+                type="button"
+                label="跑步打卡"
+                class="header-action-button check-in-button"
+                data-progression-return-focus
+                aria-label="開啟跑步打卡視窗"
+                :aria-expanded="isCheckInDialogVisible"
+                aria-controls="check-in-dialog"
+                @click="isCheckInDialogVisible = true"
+              >
+                <template #icon>
+                  <NotebookPen class="header-action-icon" />
+                </template>
 
-            <!-- 玩家頭像按鈕 -->
-            <button
-              type="button"
-              class="header-action-button avatar-button"
-              aria-label="開啟玩家選單"
-              aria-haspopup="true"
-              :aria-expanded="isAccountMenuVisible"
-              @click="toggleAccountMenu"
-            >
-              <CircleUserRound class="player-icon" aria-hidden="true" />
-            </button>
+                <template #label>
+                  <span class="menu-label-stack">
+                    <span class="menu-label">跑步打卡</span>
+                    <span class="menu-label-en">Run Check-in</span>
+                  </span>
+                </template>
+              </BaseIconAction>
 
-            <!-- 玩家下拉選單 -->
-            <Menu
-              ref="accountMenu"
-              :model="accountItems"
-              popup
-              class="account-menu"
-              @show="isAccountMenuVisible = true"
-              @hide="isAccountMenuVisible = false"
-            >
-              <template #item="{ item, props }">
-                <a v-ripple v-bind="props.action" class="account-menu-link">
-                  <component
-                    :is="item.lucideIcon"
-                    v-if="item.lucideIcon"
-                    class="account-menu-icon"
-                    aria-hidden="true"
-                  />
-                  <span class="account-menu-label">{{ item.label }}</span>
-                </a>
-              </template>
-            </Menu>
-          </div>
-        </template>
-      </Menubar>
+              <!-- 玩家頭像按鈕 -->
+              <BaseIconAction
+                type="button"
+                label="玩家選單"
+                class="header-action-button avatar-button"
+                aria-label="開啟玩家選單"
+                aria-haspopup="true"
+                :aria-expanded="isAccountMenuVisible"
+                @click="toggleAccountMenu"
+              >
+                <template #icon>
+                  <CircleUserRound class="player-icon" />
+                </template>
+
+                <template #label>
+                  <span class="menu-label-stack">
+                    <span class="menu-label">玩家選單</span>
+                    <span class="menu-label-en">Player Menu</span>
+                  </span>
+                </template>
+              </BaseIconAction>
+
+              <!-- 玩家下拉選單 -->
+              <Menu
+                ref="accountMenu"
+                :model="accountItems"
+                popup
+                class="account-menu"
+                @show="isAccountMenuVisible = true"
+                @hide="isAccountMenuVisible = false"
+              >
+                <template #item="{ item, props }">
+                  <a v-ripple v-bind="props.action" class="account-menu-link">
+                    <component
+                      :is="item.lucideIcon"
+                      v-if="item.lucideIcon"
+                      class="account-menu-icon"
+                      aria-hidden="true"
+                    />
+                    <span class="account-menu-label">{{ item.label }}</span>
+                  </a>
+                </template>
+              </Menu>
+            </div>
+          </template>
+        </Menubar>
+      </BaseCard>
     </div>
 
     <!-- 打卡彈出視窗 -->
@@ -141,6 +170,8 @@ import {
 } from '@lucide/vue'
 
 import { useAuthStore } from '@/stores/auth'
+import BaseCard from '@/components/base/BaseCard.vue'
+import BaseIconAction from '@/components/base/BaseIconAction.vue'
 import RunRecordForm from '@/components/run/RunRecordForm.vue'
 
 interface NavigationItem extends MenuItem {
@@ -244,37 +275,59 @@ const navigationItems = ref<NavigationItem[]>([
 .app-header {
   position: relative;
   z-index: 100;
-
   width: 100%;
+  height: var(--app-header-height);
+  padding-block: var(--space-3);
+  background: transparent;
+}
 
-  background: var(--color-primary-pale);
+.app-header__container,
+.navigation-shell {
+  height: 100%;
+}
+
+.navigation-shell {
+  padding-inline: var(--space-4);
+  border-radius: var(--radius-full);
 }
 
 /* Menubar */
 :deep(.main-menu.p-menubar) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: var(--space-4);
   width: 100%;
-  min-height: var(--app-header-height);
+  height: 100%;
+  min-height: 0;
   padding: 0;
-
   background: transparent;
   border: 0;
   border-radius: 0;
 }
 
 :deep(.main-menu .p-menubar-start) {
-  flex-shrink: 0;
-  margin-right: auto;
+  min-width: 0;
+  margin: 0;
+  justify-self: start;
 }
 
 :deep(.main-menu .p-menubar-root-list) {
+  position: static;
+  display: flex;
   justify-content: center;
-  gap: var(--space-7);
-  margin-inline: auto;
+  gap: var(--space-2);
+  margin: 0;
+  justify-self: center;
 }
 
 :deep(.main-menu .p-menubar-end) {
-  flex-shrink: 0;
-  margin-left: auto;
+  min-width: 0;
+  margin: 0;
+  justify-self: end;
+}
+
+:deep(.main-menu .p-menubar-button) {
+  display: none;
 }
 
 /* 移除 PrimeVue 主選單所有狀態的背景色 */
@@ -304,60 +357,39 @@ const navigationItems = ref<NavigationItem[]>([
 .logo-link {
   display: flex;
   align-items: center;
+  min-width: 0;
   text-decoration: none;
 }
 
 .logo-image {
   display: block;
   width: auto;
-  height: 60px;
+  height: 44px;
 }
 
 /* 主選單 */
 .root-menu-link {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  min-height: 72px;
-  padding: 12px 16px;
-
-  color: var(--color-primary);
-  text-decoration: none;
-
-  background: transparent !important;
-  border-radius: 16px;
-
-  transition: color 0.2s ease;
-}
-
-.root-menu-link:hover,
-.root-menu-link:focus,
-.root-menu-link:focus-visible,
-.root-menu-link.is-active {
-  color: var(--color-accent);
-  background: transparent !important;
+  --base-icon-action-expanded-width: 180px;
 }
 
 .root-menu-icon {
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   stroke-width: 2;
 }
 
-.menu-text {
+.menu-label-stack {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .menu-label {
   font-family: var(--font-family-base);
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  line-height: 1.2;
-  letter-spacing: 0.3em;
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-wide);
   white-space: nowrap;
 }
 
@@ -374,64 +406,17 @@ const navigationItems = ref<NavigationItem[]>([
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-2);
 }
 
 .header-action-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  width: 35px;
-  height: 35px;
-  padding: 0;
-
-  color: var(--color-primary);
-
-  cursor: pointer;
-
-  background: transparent;
-  border: 0;
-  border-radius: 50%;
-
-  transition:
-    color 0.2s ease,
-    background-color 0.2s ease,
-    transform 0.2s ease;
+  --base-icon-action-expanded-width: 164px;
 }
 
-.header-action-button:hover {
-  color: var(--color-accent);
-  background: transparent;
-  transform: translateY(-2px);
-}
-
-.header-action-button:focus-visible {
-  outline: 3px solid var(--color-accent-soft);
-  outline-offset: 3px;
-}
-
-/* 打卡按鈕 */
-.check-in-button {
-  color: white;
-  background: var(--color-primary);
-}
-
-.check-in-button:hover {
-  color: white;
-  background: var(--color-accent);
-}
-
-.header-action-icon {
-  width: 20px;
-  height: 20px;
-  stroke-width: 2.5;
-}
-
-/* 玩家 */
+.header-action-icon,
 .player-icon {
-  width: 35px;
-  height: 35px;
+  width: 22px;
+  height: 22px;
   stroke-width: 2;
 }
 
@@ -489,16 +474,71 @@ const navigationItems = ref<NavigationItem[]>([
 
 /* 平板尺寸 */
 @media (max-width: 1100px) {
-  :deep(.main-menu .p-menubar-root-list) {
+  .root-menu-link {
+    --base-icon-action-expanded-width: 150px;
+  }
+}
+
+@media (max-width: 768px) {
+  .navigation-shell {
+    padding-inline: var(--space-2);
+  }
+
+  :deep(.main-menu.p-menubar) {
     gap: var(--space-2);
   }
 
-  .menu-label-en {
-    display: none;
+  .logo-image {
+    height: 28px;
   }
 
-  .root-menu-link {
-    padding-inline: 10px;
+  .root-menu-link,
+  .header-action-button {
+    --base-icon-action-size: 42px;
+  }
+}
+
+@media (max-width: 480px) {
+  :deep(.main-menu.p-menubar) {
+    grid-template-columns: auto auto auto;
+    gap: 0;
+    justify-content: space-between;
+  }
+
+  .logo-link {
+    width: 38px;
+    height: 38px;
+    overflow: hidden;
+  }
+
+  .logo-image {
+    max-width: none;
+    height: 38px;
+  }
+
+  .root-menu-link,
+  .header-action-button {
+    --base-icon-action-size: 38px;
+  }
+
+  :deep(.main-menu .p-menubar-root-list),
+  .header-actions {
+    gap: var(--space-1);
+  }
+
+  :deep(.main-menu:has(.header-action-button[aria-expanded='true']) .root-menu-link.is-active) {
+    gap: 0;
+    max-width: var(--base-icon-action-size);
+  }
+
+  :deep(
+    .main-menu:has(.header-action-button[aria-expanded='true'])
+      .root-menu-link.is-active
+      .base-icon-action__label
+  ) {
+    max-width: 0;
+    opacity: 0;
+    transform: translateX(-8px);
   }
 }
 </style>
