@@ -279,6 +279,23 @@ onUnmounted(() => {
   background-color: var(--color-primary-pale);
 }
 
+.weather-hero::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 0;
+  height: clamp(8rem, 24vh, 16rem);
+  pointer-events: none;
+  content: '';
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in srgb, var(--color-background) 42%, transparent) 55%,
+    var(--color-background) 100%
+  );
+}
+
 .weather-hero.is-interacting {
   touch-action: none;
 }
