@@ -1,7 +1,7 @@
 :root {
   --app-header-height: 100px;
-  --layout-max-width: 1440px;
-  --layout-gutter: 32px;
+  --layout-width: 85%;
+  --layout-gutter: 7.5vw;
 }
 
 *,
@@ -29,15 +29,18 @@ body {
 }
 
 .layout-container {
-  width: 100%;
-  max-width: var(--layout-max-width);
+  width: var(--layout-width);
   margin-inline: auto;
-  padding-inline: var(--layout-gutter);
 }
 
 @media (max-width: 768px) {
   :root {
     --layout-gutter: 24px;
+  }
+
+  .layout-container {
+    width: 100%;
+    padding-inline: var(--layout-gutter);
   }
 }
 
