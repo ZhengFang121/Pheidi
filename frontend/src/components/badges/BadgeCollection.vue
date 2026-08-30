@@ -5,6 +5,7 @@ import Dialog from 'primevue/dialog'
 import Skeleton from 'primevue/skeleton'
 
 import BadgeCard from '@/components/badges/BadgeCard.vue'
+import BaseCard from '@/components/base/BaseCard.vue'
 import type { BadgeDefinition, UnlockedBadge } from '@/types/runnerProgress'
 import { formatNumericDate } from '@/utils/date'
 
@@ -93,16 +94,16 @@ const openBadgeDialog = (definition: BadgeDefinition, unlockedAt: string | null)
       </strong>
     </header>
 
-    <div v-if="loading" class="badge-collection__grid" aria-label="成就徽章載入中">
+    <BaseCard v-if="loading" class="badge-collection__grid" aria-label="成就徽章載入中">
       <Skeleton
         v-for="index in 10"
         :key="index"
         height="11.25rem"
         border-radius="var(--radius-md)"
       />
-    </div>
+    </BaseCard>
 
-    <div v-else-if="definitions.length" class="badge-collection__grid">
+    <BaseCard v-else-if="definitions.length" class="badge-collection__grid">
       <BadgeCard
         v-for="badge in definitions"
         :key="badge.key"
@@ -110,9 +111,9 @@ const openBadgeDialog = (definition: BadgeDefinition, unlockedAt: string | null)
         :unlocked-at="unlockedBadgeDates.get(badge.key) ?? null"
         @select="openBadgeDialog(badge, unlockedBadgeDates.get(badge.key) ?? null)"
       />
-    </div>
+    </BaseCard>
 
-    <p v-else class="badge-collection__empty">目前沒有可顯示的徽章定義。</p>
+    <BaseCard v-else as="p" class="badge-collection__empty"> 目前沒有可顯示的徽章定義。 </BaseCard>
   </section>
 </template>
 
@@ -170,8 +171,6 @@ const openBadgeDialog = (definition: BadgeDefinition, unlockedAt: string | null)
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--space-1);
 
-  background: color-mix(in srgb, var(--color-primary-pale) 36%, var(--color-surface));
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
 }
 
@@ -299,8 +298,7 @@ const openBadgeDialog = (definition: BadgeDefinition, unlockedAt: string | null)
   color: var(--color-text-secondary);
   text-align: center;
 
-  background: var(--color-surface);
-  border: 1px dashed var(--color-border);
+  border-style: dashed;
   border-radius: var(--radius-lg);
 }
 

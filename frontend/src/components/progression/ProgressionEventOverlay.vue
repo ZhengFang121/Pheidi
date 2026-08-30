@@ -245,7 +245,12 @@ onBeforeUnmount(() => {
         <span v-for="index in 4" :key="index" />
       </div>
 
-      <article ref="content" class="progression-event" aria-live="polite" aria-atomic="true">
+      <article
+        ref="content"
+        class="progression-event base-card base-card--glass"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         <span class="progression-event__announcement">{{ announcement }}</span>
 
         <header class="progression-event__header">
@@ -429,11 +434,7 @@ onBeforeUnmount(() => {
 
   text-align: center;
 
-  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-surface) 76%, var(--color-border));
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(12px);
 }
 
 .progression-event__announcement {

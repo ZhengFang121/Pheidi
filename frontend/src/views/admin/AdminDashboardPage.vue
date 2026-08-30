@@ -35,9 +35,10 @@
     </div>
 
     <div v-else-if="statistics" class="management-overview-grid">
-      <RouterLink
+      <BaseCard
         v-for="module in managementModules"
         :key="module.route"
+        :as="RouterLink"
         :to="module.route"
         :class="['management-card', `management-card--${module.tone}`]"
       >
@@ -66,10 +67,10 @@
             <dd>{{ detail.value.toLocaleString('zh-TW') }}</dd>
           </div>
         </dl>
-      </RouterLink>
+      </BaseCard>
     </div>
 
-    <section class="latest-users-panel">
+    <BaseCard as="section" class="latest-users-panel">
       <div class="panel-heading">
         <div>
           <p class="panel-eyebrow">LATEST USERS</p>
@@ -113,13 +114,14 @@
           </template>
         </Column>
       </DataTable>
-    </section>
+    </BaseCard>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import type { Component } from 'vue'
+import { RouterLink } from 'vue-router'
 import { isAxiosError } from 'axios'
 import { ArrowRight, Files, MessageSquareText, UsersRound } from '@lucide/vue'
 import Button from 'primevue/button'
@@ -129,6 +131,7 @@ import Message from 'primevue/message'
 import Skeleton from 'primevue/skeleton'
 import Tag from 'primevue/tag'
 
+import BaseCard from '@/components/base/BaseCard.vue'
 import { getAdminDashboard } from '@/services/adminDashboard'
 import type { AdminDashboardStatistics, AdminLatestUser } from '@/types/user'
 import { formatNumericDate } from '@/utils/date'
@@ -286,10 +289,7 @@ onMounted(() => {
 
   color: var(--color-text);
   text-decoration: none;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 
   transition:
     border-color 0.2s ease,
@@ -431,10 +431,7 @@ onMounted(() => {
 
   padding: var(--space-4);
 
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 }
 
 .panel-heading {

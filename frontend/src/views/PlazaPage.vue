@@ -32,7 +32,7 @@
       <TabPanels>
         <TabPanel value="feed">
           <div class="feed-content">
-            <form class="post-composer" @submit.prevent="handleSubmitPost">
+            <BaseCard as="form" class="post-composer" @submit.prevent="handleSubmitPost">
               <div class="composer-header">
                 <CircleUserRound class="composer-avatar" aria-hidden="true" />
 
@@ -121,7 +121,7 @@
                   </template>
                 </Button>
               </div>
-            </form>
+            </BaseCard>
 
             <section class="feed-section" aria-labelledby="feed-heading">
               <div class="feed-heading-row">
@@ -160,15 +160,15 @@
                 />
               </div>
 
-              <div v-else-if="posts.length === 0" class="empty-state">
+              <BaseCard v-else-if="posts.length === 0" class="empty-state">
                 <UsersRound class="empty-state-icon" aria-hidden="true" />
 
                 <h3>目前還沒有跑友動態</h3>
                 <p>成為第一位分享今天跑步故事的跑者吧！</p>
-              </div>
+              </BaseCard>
 
               <div v-else class="post-list">
-                <article v-for="post in posts" :key="post.id" class="post-card">
+                <BaseCard v-for="post in posts" :key="post.id" as="article" class="post-card">
                   <header class="post-header">
                     <CircleUserRound class="post-avatar" aria-hidden="true" />
 
@@ -275,9 +275,10 @@
                     />
 
                     <div v-else-if="post.comments.length > 0" class="comment-list">
-                      <article
+                      <BaseCard
                         v-for="comment in post.comments"
                         :key="comment.id"
+                        as="article"
                         class="comment-item"
                       >
                         <CircleUserRound class="comment-avatar" aria-hidden="true" />
@@ -401,12 +402,12 @@
                             {{ comment.likeCount }}
                           </button>
                         </div>
-                      </article>
+                      </BaseCard>
                     </div>
 
                     <p v-else class="comment-empty">目前還沒有留言，成為第一位留言的跑友吧！</p>
                   </div>
-                </article>
+                </BaseCard>
               </div>
             </section>
           </div>
@@ -446,15 +447,15 @@
               />
             </div>
 
-            <div v-else-if="events.length === 0" class="empty-state">
+            <BaseCard v-else-if="events.length === 0" class="empty-state">
               <CalendarDays class="empty-state-icon" aria-hidden="true" />
 
               <h3>目前沒有近期活動</h3>
               <p>新的跑步活動準備好後，會第一時間在這裡公布。</p>
-            </div>
+            </BaseCard>
 
             <div v-else class="event-grid">
-              <article v-for="event in events" :key="event.id" class="event-card">
+              <BaseCard v-for="event in events" :key="event.id" as="article" class="event-card">
                 <div class="event-date" aria-hidden="true">
                   <span class="event-month">{{ event.month }}</span>
                   <strong class="event-day">{{ event.day }}</strong>
@@ -509,7 +510,7 @@
                     </template>
                   </Button>
                 </div>
-              </article>
+              </BaseCard>
             </div>
           </section>
         </TabPanel>
@@ -550,6 +551,7 @@ import Tag from 'primevue/tag'
 import Textarea from 'primevue/textarea'
 import { useConfirm } from 'primevue/useconfirm'
 
+import BaseCard from '@/components/base/BaseCard.vue'
 import {
   createPost,
   createPostComment,
@@ -1153,10 +1155,7 @@ onBeforeUnmount(() => {
 
   padding: var(--space-6);
 
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 }
 
 .composer-header {
@@ -1324,10 +1323,7 @@ onBeforeUnmount(() => {
 
   padding: var(--space-6);
 
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 }
 
 .post-header {
@@ -1523,7 +1519,6 @@ onBeforeUnmount(() => {
 
   padding: var(--space-4);
 
-  background: var(--color-background);
   border-radius: var(--radius-md);
 }
 
@@ -1715,10 +1710,7 @@ onBeforeUnmount(() => {
 
   padding: var(--space-6);
 
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 
   transition:
     transform 0.2s ease,
@@ -1853,10 +1845,7 @@ onBeforeUnmount(() => {
   color: var(--color-text-secondary);
   text-align: center;
 
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 }
 
 .empty-state h3,

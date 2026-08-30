@@ -200,7 +200,7 @@ onUnmounted(() => {
     <Cloudscape />
 
     <div class="weather-hero__stage">
-      <article ref="media" class="weather-window">
+      <article ref="media" class="weather-window base-card base-card--glass">
         <div ref="content" class="weather-window__content">
           <h1 id="weather-hero-title" class="weather-window__title">
             {{ props.title }}
@@ -306,11 +306,7 @@ onUnmounted(() => {
   overflow: hidden;
   clip-path: inset(calc(50% - 200px) calc(50% - 150px) round var(--radius-xl));
   color: var(--color-text);
-  background-color: color-mix(in srgb, var(--color-surface) 42%, transparent);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(2px) saturate(112%);
-  -webkit-backdrop-filter: blur(2px) saturate(112%);
   will-change: clip-path;
 }
 

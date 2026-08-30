@@ -7,6 +7,7 @@ import Message from "primevue/message";
 import Password from "primevue/password";
 import { CircleUserRound, KeyRound, UserRound } from "@lucide/vue";
 
+import BaseCard from "@/components/base/BaseCard.vue";
 import { updatePassword, updateProfile } from "@/services/auth";
 import { useAuthStore } from "@/stores/auth";
 
@@ -180,7 +181,7 @@ async function handlePasswordSubmit() {
       </header>
 
       <div class="account-layout">
-        <aside class="account-sidebar" aria-label="帳號管理導覽">
+        <BaseCard as="aside" class="account-sidebar" aria-label="帳號管理導覽">
           <div class="runner-summary">
             <div class="runner-avatar" aria-hidden="true">
               {{ displayInitial }}
@@ -209,9 +210,9 @@ async function handlePasswordSubmit() {
               <span>帳號安全</span>
             </button>
           </nav>
-        </aside>
+        </BaseCard>
 
-        <main class="settings-card">
+        <BaseCard as="main" class="settings-card">
           <form
             v-if="activeSection === 'profile'"
             novalidate
@@ -389,7 +390,7 @@ async function handlePasswordSubmit() {
               />
             </div>
           </form>
-        </main>
+        </BaseCard>
       </div>
     </div>
   </section>
@@ -437,10 +438,7 @@ async function handlePasswordSubmit() {
 }
 .account-sidebar,
 .settings-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 }
 .account-sidebar {
   padding: var(--space-5);

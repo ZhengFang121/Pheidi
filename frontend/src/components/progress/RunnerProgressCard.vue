@@ -7,6 +7,7 @@ import Message from 'primevue/message'
 import ProgressBar from 'primevue/progressbar'
 import Skeleton from 'primevue/skeleton'
 
+import BaseCard from '@/components/base/BaseCard.vue'
 import type {
   NumericRequirementProgress,
   RunnerLevelRequirements,
@@ -137,7 +138,7 @@ const formatValue = (value: number, key: VisibleRequirement['key']) => {
 </script>
 
 <template>
-  <section class="journey-overview" aria-labelledby="journey-overview-title">
+  <BaseCard as="section" class="journey-overview" aria-labelledby="journey-overview-title">
     <div v-if="loading" class="journey-overview__loading" aria-label="玩家成長資訊載入中">
       <Skeleton width="8rem" height="1rem" />
       <Skeleton width="14rem" height="2.5rem" />
@@ -256,7 +257,7 @@ const formatValue = (value: number, key: VisibleRequirement['key']) => {
         </time>
       </aside>
     </template>
-  </section>
+  </BaseCard>
 </template>
 
 <style scoped>
@@ -266,14 +267,6 @@ const formatValue = (value: number, key: VisibleRequirement['key']) => {
   padding: var(--space-5) var(--space-6);
   overflow: hidden;
 
-  background:
-    radial-gradient(
-      circle at 92% 8%,
-      color-mix(in srgb, var(--color-primary) 16%, transparent),
-      transparent 30%
-    ),
-    var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
 }
 

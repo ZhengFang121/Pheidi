@@ -65,7 +65,7 @@
     </div>
 
     <div v-else-if="articles.length" class="article-grid">
-      <article v-for="article in articles" :key="article.id" class="article-card">
+      <BaseCard v-for="article in articles" :key="article.id" as="article" class="article-card">
         <div class="article-cover">
           <img
             v-if="article.coverImageUrl"
@@ -117,16 +117,16 @@
             </RouterLink>
           </div>
         </div>
-      </article>
+      </BaseCard>
     </div>
 
-    <div v-else class="empty-state">
+    <BaseCard v-else class="empty-state">
       <BookOpen class="empty-icon" aria-hidden="true" />
 
       <h2>目前沒有符合條件的文章</h2>
 
       <p>可以嘗試其他關鍵字或文章分類。</p>
-    </div>
+    </BaseCard>
 
     <Paginator
       v-if="pagination.totalPages > 1"
@@ -153,6 +153,7 @@ import Paginator from 'primevue/paginator'
 import Skeleton from 'primevue/skeleton'
 import Tag from 'primevue/tag'
 
+import BaseCard from '@/components/base/BaseCard.vue'
 import { articleCategoryOptions, getArticleCategoryLabel } from '@/constants/article'
 import { useArticleList } from '@/composables/useArticleList'
 import { formatLongDate } from '@/utils/date'
@@ -267,10 +268,7 @@ onMounted(() => {
 .article-card {
   overflow: hidden;
 
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 
   transition:
     transform 0.2s ease,
@@ -395,8 +393,6 @@ onMounted(() => {
   color: var(--color-text-secondary);
   text-align: center;
 
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
 }
 

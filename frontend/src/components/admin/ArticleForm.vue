@@ -1,5 +1,5 @@
 <template>
-  <form class="article-form" @submit.prevent="handleSubmit">
+  <BaseCard as="form" class="article-form" @submit.prevent="handleSubmit">
     <Message v-if="errorMessage" severity="error" :closable="false">
       {{ errorMessage }}
     </Message>
@@ -184,7 +184,7 @@
         :disabled="isUploadingCover"
       />
     </div>
-  </form>
+  </BaseCard>
 </template>
 
 <script setup lang="ts">
@@ -198,6 +198,7 @@ import Message from 'primevue/message'
 import Select from 'primevue/select'
 import Textarea from 'primevue/textarea'
 
+import BaseCard from '@/components/base/BaseCard.vue'
 import { articleCategoryOptions as categoryOptions } from '@/constants/article'
 import { uploadAdminArticleCover } from '@/services/uploads'
 import type { AdminArticleFormPayload } from '@/types/article'
@@ -393,10 +394,7 @@ watch(
 
   padding: var(--space-4);
 
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 }
 
 .form-grid {

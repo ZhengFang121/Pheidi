@@ -95,7 +95,7 @@ const remainingDistance = Math.max(
     </h2>
 
     <!-- 左側：玩家卡片 -->
-    <Card class="overview-card player-card">
+    <Card class="overview-card player-card base-card base-card--glass">
       <template #content>
         <div class="player-card__content">
           <Avatar
@@ -159,7 +159,7 @@ const remainingDistance = Math.max(
     </Card>
 
     <!-- 右側：累積數據 -->
-    <Card class="overview-card stats-card">
+    <Card class="overview-card stats-card base-card base-card--glass">
       <template #content>
         <div class="stats-card__content">
           <div class="stats-heading">
@@ -300,10 +300,7 @@ const remainingDistance = Math.max(
 
 .overview-card {
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 16%, transparent);
   border-radius: 24px;
-  background: var(--color-surface, #ffffff);
-  box-shadow: 0 12px 32px rgb(60 67 94 / 6%);
 }
 
 .overview-card :deep(.p-card-body),
@@ -313,16 +310,6 @@ const remainingDistance = Math.max(
 }
 
 /* 玩家卡片 */
-
-.player-card {
-  background:
-    radial-gradient(
-      circle at top left,
-      rgb(91 208 212 / 18%),
-      transparent 52%
-    ),
-    var(--color-surface, #ffffff);
-}
 
 .player-card__content {
   display: flex;
@@ -523,7 +510,7 @@ const remainingDistance = Math.max(
 
 .runner-progress :deep(.p-progressbar-value) {
   border-radius: 999px;
-  transition: width 500ms ease;
+  transition: none;
 }
 
 .runner-progress--primary :deep(.p-progressbar-value) {

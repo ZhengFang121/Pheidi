@@ -1,12 +1,14 @@
 <script setup lang="ts">
+import type { Component } from 'vue'
+
 interface Props {
-  as?: 'article' | 'div' | 'section'
+  as?: string | Component
   variant?: 'default' | 'glass'
 }
 
 const props = withDefaults(defineProps<Props>(), {
   as: 'div',
-  variant: 'default',
+  variant: 'glass',
 })
 </script>
 

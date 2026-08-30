@@ -24,7 +24,7 @@
       {{ statisticsErrorMessage }}
     </Message>
 
-    <div class="management-panel">
+    <BaseCard class="management-panel">
       <form class="filter-form" @submit.prevent="handleSearch">
         <div class="filter-field search-field">
           <label for="article-search" class="filter-label"> 搜尋文章 </label>
@@ -204,7 +204,7 @@
           </template>
         </Column>
       </DataTable>
-    </div>
+    </BaseCard>
   </section>
 </template>
 
@@ -223,6 +223,7 @@ import Tag from 'primevue/tag'
 import { useConfirm } from 'primevue/useconfirm'
 
 import AdminStatisticsStrip from '@/components/admin/AdminStatisticsStrip.vue'
+import BaseCard from '@/components/base/BaseCard.vue'
 import {
   articleCategoryOptions as categoryOptions,
   articleStatusOptions as statusOptions,
@@ -446,10 +447,7 @@ onMounted(() => {
 
   padding: var(--space-4);
 
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 }
 
 .filter-form {

@@ -3,6 +3,7 @@ import { LockKeyhole, Mail, Route, Sparkles } from '@lucide/vue'
 import Button from 'primevue/button'
 import Skeleton from 'primevue/skeleton'
 
+import BaseCard from '@/components/base/BaseCard.vue'
 import type { RunnerStats } from '@/types/runnerProgress'
 
 defineProps<{
@@ -22,16 +23,17 @@ const formatDistance = (distance: number) =>
       <h2 id="pheidi-journey-title">我的跑者旅程</h2>
     </header>
 
-    <div v-if="loading" class="pheidi-journey__card" aria-label="跑者旅程載入中">
+    <BaseCard v-if="loading" class="pheidi-journey__card" aria-label="跑者旅程載入中">
       <Skeleton shape="circle" size="4.5rem" />
       <div class="pheidi-journey__loading-copy">
         <Skeleton width="11rem" height="1.5rem" />
         <Skeleton width="min(100%, 30rem)" height="1rem" />
       </div>
-    </div>
+    </BaseCard>
 
-    <article
+    <BaseCard
       v-else-if="stats"
+      as="article"
       class="pheidi-journey__card"
       :class="{ 'pheidi-journey__card--eligible': eligible }"
     >
@@ -68,7 +70,7 @@ const formatDistance = (distance: number) =>
           class="pheidi-journey__button"
         />
       </div>
-    </article>
+    </BaseCard>
   </section>
 </template>
 
@@ -103,26 +105,10 @@ const formatDistance = (distance: number) =>
   align-items: center;
   gap: var(--space-5);
 
-  background:
-    radial-gradient(
-      circle at 92% 12%,
-      color-mix(in srgb, var(--color-dark-pale) 20%, transparent),
-      transparent 32%
-    ),
-    var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
 }
 
 .pheidi-journey__card--eligible {
-  background:
-    radial-gradient(
-      circle at 90% 10%,
-      color-mix(in srgb, var(--color-accent) 18%, transparent),
-      transparent 34%
-    ),
-    var(--color-accent-pale);
   border-color: var(--color-accent-soft);
 }
 

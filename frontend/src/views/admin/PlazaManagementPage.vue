@@ -20,7 +20,7 @@
       {{ statisticsErrorMessage }}
     </Message>
 
-    <div class="management-panel">
+    <BaseCard class="management-panel">
       <Tabs :value="activeTab" @update:value="handleTabChange">
         <TabList>
           <Tab value="posts">貼文管理</Tab>
@@ -275,7 +275,7 @@
           </TabPanel>
         </TabPanels>
       </Tabs>
-    </div>
+    </BaseCard>
   </section>
 </template>
 
@@ -298,6 +298,7 @@ import Tag from 'primevue/tag'
 import { useConfirm } from 'primevue/useconfirm'
 
 import AdminStatisticsStrip from '@/components/admin/AdminStatisticsStrip.vue'
+import BaseCard from '@/components/base/BaseCard.vue'
 import {
   deleteAdminPlazaComment,
   deleteAdminPlazaPost,
@@ -608,10 +609,7 @@ onMounted(() => {
 .management-panel {
   padding: var(--space-4);
   overflow: hidden;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 }
 
 .filter-form {

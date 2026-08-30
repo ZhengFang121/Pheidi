@@ -425,9 +425,7 @@ const navigationItems = ref<NavigationItem[]>([
   min-width: 180px;
   padding: 8px;
 
-  border: 1px solid var(--color-border);
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgb(60 67 94 / 12%);
 }
 
 :global(.account-menu-link) {

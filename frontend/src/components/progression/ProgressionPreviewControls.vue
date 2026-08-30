@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { ChevronDown, FlaskConical, Play } from '@lucide/vue'
 
+import BaseCard from '@/components/base/BaseCard.vue'
 import { useProgressionEvents } from '@/composables/useProgressionEvents'
 import type { ProgressionEvent } from '@/types/progressionEvent'
 
@@ -80,7 +81,7 @@ const previews: Array<{
       />
     </button>
 
-    <div v-if="isExpanded" id="progression-preview-options" class="progression-preview__panel">
+    <BaseCard v-if="isExpanded" id="progression-preview-options" class="progression-preview__panel">
       <p>Development only</p>
 
       <button
@@ -93,7 +94,7 @@ const previews: Array<{
         <Play :size="14" fill="currentColor" aria-hidden="true" />
         {{ preview.label }}
       </button>
-    </div>
+    </BaseCard>
   </aside>
 </template>
 
@@ -147,10 +148,7 @@ const previews: Array<{
   padding: var(--space-3);
   gap: var(--space-2);
 
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
 }
 
 .progression-preview__panel p {

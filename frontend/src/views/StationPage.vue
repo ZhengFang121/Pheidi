@@ -10,6 +10,7 @@ import Skeleton from 'primevue/skeleton'
 import { useConfirm } from 'primevue/useconfirm'
 
 import BadgeCollection from '@/components/badges/BadgeCollection.vue'
+import BaseCard from '@/components/base/BaseCard.vue'
 import PheidiJourneySection from '@/components/journey/PheidiJourneySection.vue'
 import RunRecordForm from '@/components/run/RunRecordForm.vue'
 import { useRunnerProgress } from '@/composables/useRunnerProgress'
@@ -412,7 +413,7 @@ watch(
       <p class="station-description">每一次出發都會留下足跡，從月曆回顧你的跑步旅程。</p>
     </header>
 
-    <section class="station-calendar-card" aria-labelledby="station-month-heading">
+    <BaseCard as="section" class="station-calendar-card" aria-labelledby="station-month-heading">
       <header class="station-calendar-toolbar">
         <Button
           type="button"
@@ -522,9 +523,10 @@ watch(
           </button>
         </div>
       </div>
-    </section>
-    <section
+    </BaseCard>
+    <BaseCard
       v-if="selectedDateKey && selectedDateRecords.length > 0"
+      as="section"
       class="station-day-section"
       aria-labelledby="station-day-heading"
     >
@@ -545,9 +547,10 @@ watch(
       </Message>
 
       <div class="station-record-list">
-        <article
+        <BaseCard
           v-for="runRecord in selectedDateRecords"
           :key="runRecord.id"
+          as="article"
           class="station-record-card"
         >
           <div class="station-record-image-wrapper">
@@ -637,12 +640,12 @@ watch(
               />
             </div>
           </div>
-        </article>
+        </BaseCard>
       </div>
-    </section>
+    </BaseCard>
 
     <div class="station-progression-sections">
-      <div v-if="runnerProgressError" class="station-progress-error">
+      <BaseCard v-if="runnerProgressError" class="station-progress-error">
         <Message severity="error" :closable="false">
           {{ runnerProgressError }}
         </Message>
@@ -654,7 +657,7 @@ watch(
           outlined
           @click="loadRunnerProgress"
         />
-      </div>
+      </BaseCard>
 
       <template v-else>
         <BadgeCollection
@@ -725,8 +728,6 @@ watch(
   flex-direction: column;
   gap: var(--space-4);
 
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
 }
 
@@ -739,10 +740,7 @@ watch(
 
   padding: var(--space-6);
 
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 }
 
 .station-day-heading {
@@ -783,8 +781,6 @@ watch(
   grid-template-columns: 160px minmax(0, 1fr);
   overflow: hidden;
 
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
 
@@ -894,10 +890,7 @@ watch(
 
   padding: var(--space-6);
 
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 }
 
 .station-calendar-toolbar {

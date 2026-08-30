@@ -21,7 +21,7 @@
       {{ statisticsErrorMessage }}
     </Message>
 
-    <div class="management-panel">
+    <BaseCard class="management-panel">
       <form class="search-form" @submit.prevent="handleSearch">
         <label for="user-search" class="search-label">搜尋玩家</label>
 
@@ -119,7 +119,7 @@
           </template>
         </Column>
       </DataTable>
-    </div>
+    </BaseCard>
   </section>
 </template>
 
@@ -137,6 +137,7 @@ import Tag from 'primevue/tag'
 import { useConfirm } from 'primevue/useconfirm'
 
 import AdminStatisticsStrip from '@/components/admin/AdminStatisticsStrip.vue'
+import BaseCard from '@/components/base/BaseCard.vue'
 import {
   getAdminUsers,
   getAdminUserStatistics,
@@ -348,10 +349,7 @@ onMounted(() => {
 
   padding: var(--space-4);
 
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 }
 
 .search-form {

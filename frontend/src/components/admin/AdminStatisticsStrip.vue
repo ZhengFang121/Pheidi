@@ -1,5 +1,5 @@
 <template>
-  <div class="statistics-strip" role="region" :aria-label="label">
+  <BaseCard class="statistics-strip" role="region" :aria-label="label">
     <article v-for="item in items" :key="item.label" class="statistic-card">
       <div class="statistic-heading">
         <i :class="item.icon" aria-hidden="true" />
@@ -11,11 +11,13 @@
         {{ item.value.toLocaleString('zh-TW') }}
       </strong>
     </article>
-  </div>
+  </BaseCard>
 </template>
 
 <script setup lang="ts">
 import Skeleton from 'primevue/skeleton'
+
+import BaseCard from '@/components/base/BaseCard.vue'
 
 interface AdminStatisticItem {
   label: string
@@ -44,10 +46,7 @@ withDefaults(
 
   overflow: hidden;
 
-  background: var(--color-border);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 }
 
 .statistic-card {
@@ -58,11 +57,7 @@ withDefaults(
 
   padding: var(--space-4);
 
-  background: var(--color-surface);
-}
-
-.statistic-card:first-child {
-  border-left: 4px solid var(--color-primary);
+  background: transparent;
 }
 
 .statistic-heading {
