@@ -273,8 +273,8 @@ onUnmounted(() => {
 .weather-hero {
   position: relative;
   isolation: isolate;
-  height: calc(100dvh - var(--app-header-height));
-  min-height: calc(100dvh - var(--app-header-height));
+  height: 100dvh;
+  min-height: 100dvh;
   overflow: hidden;
   background-color: var(--color-primary-pale);
 }
@@ -291,7 +291,7 @@ onUnmounted(() => {
   place-items: center;
   height: 100%;
   min-height: 0;
-  padding: var(--space-5) var(--layout-gutter);
+  padding: calc(var(--app-header-height) + var(--space-5)) var(--layout-gutter) var(--space-5);
 }
 
 .weather-window {
@@ -299,7 +299,7 @@ onUnmounted(() => {
   position: relative;
   display: grid;
   align-items: center;
-  width: 80vw;
+  width: 100%;
   max-width: none;
   height: 100%;
   min-height: 0;

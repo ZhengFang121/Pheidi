@@ -73,12 +73,16 @@ const fragmentShaderSource = `
 
     vec2 drift = vec2(uTime * 0.018, -uTime * 0.003);
     float broadCloud = fbm(field * vec2(1.25, 2.1) + drift + vec2(0.0, 1.1));
-    float fineCloud = fbm(field * vec2(2.45, 3.4) - drift * 0.45 + vec2(4.7, 0.3));
+    float fineCloud = fbm(field * vec2(3.35, 4.8) - drift * 0.45 + vec2(4.7, 0.3));
     float cloudBand = smoothstep(0.05, 0.28, uv.y) * (1.0 - smoothstep(0.82, 1.0, uv.y));
-    float cloud = smoothstep(0.48, 0.73, broadCloud * 0.78 + fineCloud * 0.35) * cloudBand;
-    float haze = smoothstep(0.35, 0.72, broadCloud) * (1.0 - uv.y) * 0.24;
+    float cloudField = broadCloud * 0.8 + fineCloud * 0.32;
+    float cloudEdge = smoothstep(0.5, 0.64, cloudField) * cloudBand;
+    float cloudBody = smoothstep(0.58, 0.7, cloudField + fineCloud * 0.04) * cloudBand;
+    float haze = smoothstep(0.38, 0.7, broadCloud) * (1.0 - uv.y) * 0.1;
 
-    vec3 color = mix(sky, uCloud, cloud * 0.72 + haze);
+    vec3 cloudShade = mix(uSkyTop, uCloud, 0.48);
+    vec3 color = mix(sky, cloudShade, cloudEdge * 0.62 + haze);
+    color = mix(color, uCloud, cloudBody * 0.72);
     gl_FragColor = vec4(color, 1.0);
   }
 `
@@ -146,7 +150,7 @@ function resizeCanvas() {
   if (!canvas.value || !gl || !program) return
 
   const bounds = canvas.value.getBoundingClientRect()
-  const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5)
+  const pixelRatio = Math.min(window.devicePixelRatio || 1, 2)
   const width = Math.max(1, Math.round(bounds.width * pixelRatio))
   const height = Math.max(1, Math.round(bounds.height * pixelRatio))
 
