@@ -79,7 +79,7 @@
 .base-icon-action::before {
   position: absolute;
   top: 50%;
-  left: 50%;
+  left: 56%;
   z-index: 0;
   width: 160%;
   aspect-ratio: 1;
@@ -92,7 +92,7 @@
     var(--color-primary) 100%
   );
   border-radius: 50%;
-  opacity: 0.95;
+  opacity: 0.55;
   filter: blur(var(--space-2));
   transform: translate(-50%, -50%) rotate(0deg);
   animation: base-button-color-flow 5s linear infinite;
@@ -212,7 +212,7 @@
 .base-button.base-button--primary::before {
   position: absolute;
   top: 50%;
-  left: 50%;
+  left: 56%;
   z-index: 1;
   width: 160%;
   aspect-ratio: 1;
@@ -225,7 +225,7 @@
     var(--color-primary) 100%
   );
   border-radius: 50%;
-  opacity: 0.95;
+  opacity: 0.55;
   filter: blur(var(--space-2));
   transform: translate(-50%, -50%) rotate(0deg);
   animation: base-button-color-flow 5s linear infinite;

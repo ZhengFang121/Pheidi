@@ -370,6 +370,55 @@ const navigationItems = ref<NavigationItem[]>([
 /* 主選單 */
 .root-menu-link {
   --base-icon-action-expanded-width: 180px;
+
+  justify-content: center;
+  gap: var(--space-2);
+  width: var(--base-icon-action-expanded-width);
+  max-width: var(--base-icon-action-expanded-width);
+  padding-inline: var(--space-3);
+  color: var(--color-surface) !important;
+  background: linear-gradient(
+    90deg,
+    var(--color-primary) 0%,
+    var(--color-primary-soft) 50%,
+    var(--color-primary) 100%
+  );
+  transition:
+    background-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease;
+}
+
+.root-menu-link:hover,
+.root-menu-link:focus-visible,
+.root-menu-link.is-active {
+  color: var(--color-surface) !important;
+  background: linear-gradient(
+    90deg,
+    var(--color-secondary) 0%,
+    var(--color-secondary-soft) 50%,
+    var(--color-secondary) 100%
+  );
+}
+
+.root-menu-link:hover::before,
+.root-menu-link:focus-visible::before,
+.root-menu-link.is-active::before {
+  background: linear-gradient(
+    90deg,
+    var(--color-secondary) 0%,
+    var(--color-secondary-soft) 50%,
+    var(--color-secondary) 100%
+  );
+}
+
+:deep(.root-menu-link .base-icon-action__label) {
+  max-width: none;
+  overflow: visible;
+  opacity: 1;
+  letter-spacing: var(--letter-spacing-base);
+  transform: none;
+  transition: none;
 }
 
 .root-menu-icon {
@@ -411,6 +460,30 @@ const navigationItems = ref<NavigationItem[]>([
 
 .header-action-button {
   --base-icon-action-expanded-width: 164px;
+}
+
+.header-action-button:hover,
+.header-action-button:focus-visible,
+.header-action-button:active,
+.header-action-button[aria-expanded='true'] {
+  background: linear-gradient(
+    90deg,
+    var(--color-secondary) 0%,
+    var(--color-secondary-soft) 50%,
+    var(--color-secondary) 100%
+  );
+}
+
+.header-action-button:hover::before,
+.header-action-button:focus-visible::before,
+.header-action-button:active::before,
+.header-action-button[aria-expanded='true']::before {
+  background: linear-gradient(
+    90deg,
+    var(--color-secondary) 0%,
+    var(--color-secondary-soft) 50%,
+    var(--color-secondary) 100%
+  );
 }
 
 .header-action-icon,
@@ -473,11 +546,15 @@ const navigationItems = ref<NavigationItem[]>([
 /* 平板尺寸 */
 @media (max-width: 1100px) {
   .root-menu-link {
-    --base-icon-action-expanded-width: 150px;
+    --base-icon-action-expanded-width: 140px;
+  }
+
+  .logo-image {
+    height: 28px;
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .navigation-shell {
     padding-inline: var(--space-2);
   }
@@ -486,13 +563,42 @@ const navigationItems = ref<NavigationItem[]>([
     gap: var(--space-2);
   }
 
-  .logo-image {
-    height: 28px;
+  .root-menu-link {
+    --base-icon-action-expanded-width: 128px;
   }
 
-  .root-menu-link,
+  :deep(.main-menu .p-menubar-root-list) {
+    gap: var(--space-1);
+  }
+
+  .root-menu-link .menu-label-en {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .root-menu-link {
+    --base-icon-action-expanded-width: 116px;
+    --base-icon-action-size: 42px;
+    gap: var(--space-1);
+    padding-inline: var(--space-2);
+  }
+
   .header-action-button {
     --base-icon-action-size: 42px;
+  }
+}
+
+@media (max-width: 640px) {
+  .root-menu-link {
+    gap: 0;
+    width: var(--base-icon-action-size);
+    max-width: var(--base-icon-action-size);
+    padding-inline: calc((var(--base-icon-action-size) - 24px) / 2);
+  }
+
+  :deep(.root-menu-link .base-icon-action__label) {
+    display: none;
   }
 }
 
@@ -522,21 +628,6 @@ const navigationItems = ref<NavigationItem[]>([
   :deep(.main-menu .p-menubar-root-list),
   .header-actions {
     gap: var(--space-1);
-  }
-
-  :deep(.main-menu:has(.header-action-button[aria-expanded='true']) .root-menu-link.is-active) {
-    gap: 0;
-    max-width: var(--base-icon-action-size);
-  }
-
-  :deep(
-    .main-menu:has(.header-action-button[aria-expanded='true'])
-      .root-menu-link.is-active
-      .base-icon-action__label
-  ) {
-    max-width: 0;
-    opacity: 0;
-    transform: translateX(-8px);
   }
 }
 </style>

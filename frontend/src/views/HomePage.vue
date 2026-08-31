@@ -174,16 +174,25 @@ onMounted(() => {
 <style scoped>
 .home-page {
   min-height: 100%;
-  background-color: var(--color-background);
+  background: linear-gradient(
+    180deg,
+    var(--color-primary-pale) 0%,
+    color-mix(in srgb, var(--color-background) 48%, var(--color-primary-pale)) 100dvh,
+    var(--color-primary-pale) calc(22% + 78dvh),
+    color-mix(in srgb, var(--color-primary-pale) 50%, var(--color-secondary-pale))
+      calc(44% + 56dvh),
+    var(--color-secondary-pale) calc(68% + 32dvh),
+    var(--color-secondary-soft) 100%
+  );
 }
 
 .home-progress {
-  padding-block: var(--space-7);
+  padding: var(--space-7) 0 calc(var(--space-7) + var(--space-6));
 }
 
 @media (max-width: 600px) {
   .home-progress {
-    padding-block: var(--space-5);
+    padding: var(--space-5) 0 calc(var(--space-5) + var(--space-4));
   }
 }
 </style>

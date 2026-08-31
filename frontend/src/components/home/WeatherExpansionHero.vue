@@ -333,7 +333,7 @@ onUnmounted(() => {
     to bottom,
     transparent 0%,
     color-mix(in srgb, var(--color-background) 42%, transparent) 55%,
-    var(--color-background) 100%
+    color-mix(in srgb, var(--color-background) 48%, var(--color-primary-pale)) 100%
   );
 }
 

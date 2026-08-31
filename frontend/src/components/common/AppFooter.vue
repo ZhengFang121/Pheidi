@@ -9,11 +9,12 @@
   width: 100%;
   padding: var(--space-4) var(--space-3);
 
-  color: var(--color-primary-pale);
+  color: var(--color-secondary-pale);
   text-align: center;
   letter-spacing: var(--letter-spacing-wide);
+  font-size: var(--font-size-sm);
 
-  background-color: var(--color-primary-light);
+  background-color: var(--color-secondary-light);
 }
 
 .footer p {
