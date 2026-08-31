@@ -43,8 +43,6 @@ export const RUNNER_LEVELS = [
 
 export type RunnerLevel = (typeof RUNNER_LEVELS)[number]['level']
 
-export const MAXIMUM_AUTOMATIC_RUNNER_LEVEL: RunnerLevel = 4
-
 export const getRunnerLevelDefinition = (level: RunnerLevel) => {
   return RUNNER_LEVELS.find((definition) => definition.level === level)!
 }

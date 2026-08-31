@@ -18,6 +18,7 @@ export interface RunnerStats {
   totalDistance: number
   distinctLocationCount: number
   badgeCount: number
+  completedPheidiMissionCount: number
 }
 
 export interface UnlockedBadgeResult {

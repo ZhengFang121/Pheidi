@@ -1,7 +1,6 @@
 import { Types } from 'mongoose'
 
 import {
-  MAXIMUM_AUTOMATIC_RUNNER_LEVEL,
   RUNNER_LEVELS,
   type RunnerLevel,
 } from '../constants/runnerLevels.js'
@@ -15,11 +14,20 @@ interface RunStatsAggregationResult {
   runCount: number
   totalDistance: number
   distinctLocationCount: number
+  completedPheidiMissionCount: number
 }
 
 export const calculateHighestEligibleLevel = (stats: RunnerStats): RunnerLevel => {
+  if (
+    stats.runCount >= 50 &&
+    stats.totalDistance >= 250 &&
+    stats.completedPheidiMissionCount >= 1
+  ) {
+    return 5
+  }
+
   if (stats.runCount >= 25 && stats.totalDistance >= 100 && stats.badgeCount >= 10) {
-    return MAXIMUM_AUTOMATIC_RUNNER_LEVEL
+    return 4
   }
 
   if (stats.runCount >= 10 && stats.totalDistance >= 30 && stats.distinctLocationCount >= 3) {
@@ -61,6 +69,7 @@ export const getRunnerStats = async (userId: string): Promise<RunnerStats> => {
           runCount: { $sum: 1 },
           totalDistance: { $sum: '$distance' },
           locationTypes: { $addToSet: '$locationType' },
+          completedPheidiMissionIds: { $addToSet: '$missionId' },
         },
       },
       {
@@ -69,6 +78,15 @@ export const getRunnerStats = async (userId: string): Promise<RunnerStats> => {
           runCount: 1,
           totalDistance: 1,
           distinctLocationCount: { $size: '$locationTypes' },
+          completedPheidiMissionCount: {
+            $size: {
+              $filter: {
+                input: '$completedPheidiMissionIds',
+                as: 'missionId',
+                cond: { $ne: ['$$missionId', null] },
+              },
+            },
+          },
         },
       },
     ]),
@@ -81,6 +99,7 @@ export const getRunnerStats = async (userId: string): Promise<RunnerStats> => {
     totalDistance: runStats?.totalDistance ?? 0,
     distinctLocationCount: runStats?.distinctLocationCount ?? 0,
     badgeCount,
+    completedPheidiMissionCount: runStats?.completedPheidiMissionCount ?? 0,
   }
 }
 
@@ -213,10 +232,7 @@ export const getNextLevelProgress = (currentLevel: RunnerLevel, stats: RunnerSta
         : {}),
       ...('requiresPheidiMission' in requirements
         ? {
-            pheidiMission: {
-              required: true,
-              status: 'not_implemented' as const,
-            },
+            pheidiMission: createNumericProgress(stats.completedPheidiMissionCount, 1),
           }
         : {}),
     },

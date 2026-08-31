@@ -19,6 +19,7 @@ export interface RunnerStats {
   totalDistance: number
   distinctLocationCount: number
   badgeCount: number
+  completedPheidiMissionCount: number
 }
 
 export interface NumericRequirementProgress {
@@ -32,10 +33,7 @@ export interface RunnerLevelRequirements {
   totalDistance?: NumericRequirementProgress
   distinctLocationCount?: NumericRequirementProgress
   badgeCount?: NumericRequirementProgress
-  pheidiMission?: {
-    required: true
-    status: 'not_implemented'
-  }
+  pheidiMission?: NumericRequirementProgress
 }
 
 export interface RunnerNextLevel {

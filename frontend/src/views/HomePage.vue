@@ -9,13 +9,16 @@ import { getLocationLabel } from '@/services/geocoding'
 import { getCurrentWeather, type CurrentWeather } from '@/services/weather'
 import type { WeatherIconVariant } from '@/types/weatherIcon'
 import { getCurrentCoordinates } from '@/utils/geolocation'
+import { useAuthStore } from '@/stores/auth'
 
 const weather = ref<CurrentWeather | null>(null)
 const isWeatherLoading = ref(true)
 const weatherError = ref('')
 const locationLabel = ref('位置解析中...')
+const authStore = useAuthStore()
 const { runnerProgress, isRunnerProgressLoading, runnerProgressError, loadRunnerProgress } =
   useRunnerProgress()
+const username = computed(() => authStore.user?.username ?? '')
 
 interface WeatherPresentation {
   title: string
@@ -163,6 +166,7 @@ onMounted(() => {
     <div class="home-progress layout-container">
       <RunnerProgressCard
         :progress="runnerProgress"
+        :username="username"
         :loading="isRunnerProgressLoading"
         :error="runnerProgressError"
         @retry="loadRunnerProgress"
@@ -187,7 +191,7 @@ onMounted(() => {
 }
 
 .home-progress {
-  padding: var(--space-7) 0 calc(var(--space-7) + var(--space-6));
+  padding: var(--space-7) 0 calc(var(--space-8) + var(--space-8));
 }
 
 @media (max-width: 600px) {

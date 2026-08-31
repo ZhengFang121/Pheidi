@@ -8,6 +8,7 @@ import { getEligibleBadgeKeys, hasFourWeekRunningStreak } from '../src/services/
 import {
   calculateHighestEligibleLevel,
   calculateLevelAfterRefresh,
+  getNextLevelProgress,
   isPheidiMissionEligible,
 } from '../src/services/runnerProgressService.js'
 import type { ProgressRunRecord, RunnerStats } from '../src/types/runnerProgress.js'
@@ -32,6 +33,7 @@ const createStats = (overrides: Partial<RunnerStats> = {}): RunnerStats => ({
   totalDistance: 0,
   distinctLocationCount: 0,
   badgeCount: 0,
+  completedPheidiMissionCount: 0,
   ...overrides,
 })
 
@@ -188,7 +190,7 @@ describe('等級與 Lv.5 解鎖資格', () => {
     assert.equal(calculateLevelAfterRefresh(4, createStats()), 4)
   })
 
-  it('50 次 + 250 公里只解鎖任務資格，最高仍為 Lv.4', () => {
+  it('50 次 + 250 公里會解鎖任務資格，但完成任務前最高仍為 Lv.4', () => {
     const stats = createStats({
       runCount: 50,
       totalDistance: 250,
@@ -199,5 +201,31 @@ describe('等級與 Lv.5 解鎖資格', () => {
     assert.equal(isPheidiMissionEligible(stats), true)
     assert.equal(calculateHighestEligibleLevel(stats), 4)
     assert.equal(calculateLevelAfterRefresh(1, stats), 4 as RunnerLevel)
+  })
+
+  it('50 次 + 250 公里並完成菲迪限定任務後升至 Lv.5', () => {
+    const stats = createStats({
+      runCount: 50,
+      totalDistance: 250,
+      distinctLocationCount: 5,
+      badgeCount: 20,
+      completedPheidiMissionCount: 1,
+    })
+
+    assert.equal(calculateHighestEligibleLevel(stats), 5)
+    assert.equal(calculateLevelAfterRefresh(4, stats), 5 as RunnerLevel)
+  })
+
+  it('Lv.4 的下一階段進度會回傳實際限定任務完成數', () => {
+    const nextLevel = getNextLevelProgress(
+      4,
+      createStats({ runCount: 50, totalDistance: 250, completedPheidiMissionCount: 2 }),
+    )
+
+    assert.deepEqual(nextLevel?.requirements.pheidiMission, {
+      current: 2,
+      required: 1,
+      isMet: true,
+    })
   })
 })
