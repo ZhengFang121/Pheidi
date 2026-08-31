@@ -71,6 +71,7 @@
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   line-height: var(--line-height-heading);
+  letter-spacing: var(--letter-spacing-base);
 }
 
 .account-hint {

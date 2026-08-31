@@ -9,6 +9,7 @@ import Message from 'primevue/message'
 import Select from 'primevue/select'
 import SelectButton from 'primevue/selectbutton'
 
+import BaseButton from '@/components/base/BaseButton.vue'
 import {
   RUN_LOCATION_OPTIONS,
   RUN_MOOD_OPTIONS,
@@ -322,8 +323,8 @@ onBeforeUnmount(() => {
 
 <template>
   <form class="run-record-form" @submit.prevent="handleSubmit">
-    <div class="run-form-field">
-      <label for="run-date" class="run-form-label">跑步日期與時間</label>
+    <div class="form-field">
+      <label for="run-date" class="form-field__label">跑步日期與時間</label>
 
       <DatePicker
         id="run-date"
@@ -333,14 +334,15 @@ onBeforeUnmount(() => {
         hour-format="24"
         show-time
         show-icon
+        panel-class="run-date-overlay"
         fluid
       />
 
-      <small class="text-surface-500"> 可以補登過去的跑步紀錄，但不能選擇未來時間。 </small>
+      <small class="run-form-help">可以補登過去的跑步紀錄，但不能選擇未來時間。</small>
     </div>
 
-    <div class="run-form-field">
-      <label for="run-location" class="run-form-label">跑步地點</label>
+    <div class="form-field">
+      <label for="run-location" class="form-field__label">跑步地點</label>
 
       <Select
         id="run-location"
@@ -349,12 +351,13 @@ onBeforeUnmount(() => {
         option-label="label"
         option-value="value"
         placeholder="請選擇跑步地點"
+        overlay-class="run-select-overlay"
         fluid
       />
     </div>
 
-    <div class="run-form-field">
-      <label for="run-distance" class="run-form-label">跑步距離</label>
+    <div class="form-field">
+      <label for="run-distance" class="form-field__label">跑步距離</label>
 
       <InputNumber
         id="run-distance"
@@ -369,7 +372,7 @@ onBeforeUnmount(() => {
     </div>
 
     <fieldset class="run-duration-fieldset">
-      <legend class="run-form-label">跑步時長</legend>
+      <legend class="form-field__label">跑步時長</legend>
 
       <div class="run-duration-grid">
         <InputNumber v-model="durationHours" :min="0" :max="99" suffix=" 小時" fluid />
@@ -380,8 +383,8 @@ onBeforeUnmount(() => {
       </div>
     </fieldset>
 
-    <div class="run-form-field">
-      <label for="run-mood" class="run-form-label">跑步心情</label>
+    <div class="form-field">
+      <label for="run-mood" class="form-field__label">跑步心情</label>
 
       <Select
         id="run-mood"
@@ -389,6 +392,7 @@ onBeforeUnmount(() => {
         :options="runMoodOptions"
         option-label="label"
         option-value="value"
+        overlay-class="run-select-overlay"
         fluid
       >
         <template #value="{ value }">
@@ -419,46 +423,48 @@ onBeforeUnmount(() => {
       </Select>
     </div>
 
-    <div class="run-form-field">
+    <div class="form-field">
       <div>
-        <p class="run-form-heading">跑步照片（選填）</p>
+        <p class="form-field__label run-form-heading">跑步照片（選填）</p>
 
-        <small class="text-surface-500"> 支援 JPG、PNG、WebP、GIF，檔案最大 5 MB。 </small>
+        <small class="run-form-help">支援 JPG、PNG、WebP、GIF，檔案最大 5 MB。</small>
       </div>
 
-      <input
-        ref="imageInput"
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
-        class="run-image-input"
-        @change="handleImageChange"
-      />
-
-      <div v-if="imagePreviewUrl" class="run-image-preview">
-        <img :src="imagePreviewUrl" alt="跑步照片預覽" class="run-image-preview__image" />
-      </div>
-
-      <div class="flex flex-col gap-2 sm:flex-row">
-        <Button
-          type="button"
-          :label="imagePreviewUrl ? '更換照片' : '選擇照片'"
-          icon="pi pi-image"
-          severity="secondary"
-          outlined
-          :disabled="submitting"
-          @click="openImagePicker"
+      <div class="run-upload-panel">
+        <input
+          ref="imageInput"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          class="run-image-input"
+          @change="handleImageChange"
         />
 
-        <Button
-          v-if="imagePreviewUrl"
-          type="button"
-          label="移除照片"
-          icon="pi pi-trash"
-          severity="danger"
-          text
-          :disabled="submitting"
-          @click="clearImage"
-        />
+        <div v-if="imagePreviewUrl" class="run-image-preview">
+          <img :src="imagePreviewUrl" alt="跑步照片預覽" class="run-image-preview__image" />
+        </div>
+
+        <div class="run-upload-actions">
+          <BaseButton
+            type="button"
+            :label="imagePreviewUrl ? '更換照片' : '選擇照片'"
+            icon="pi pi-image"
+            variant="outline"
+            :disabled="submitting"
+            @click="openImagePicker"
+          />
+
+          <Button
+            v-if="imagePreviewUrl"
+            type="button"
+            label="移除照片"
+            icon="pi pi-trash"
+            severity="danger"
+            text
+            rounded
+            :disabled="submitting"
+            @click="clearImage"
+          />
+        </div>
       </div>
 
       <Message v-if="imageErrorMessage" severity="error" :closable="false">
@@ -466,8 +472,8 @@ onBeforeUnmount(() => {
       </Message>
     </div>
 
-    <div class="run-form-field">
-      <p class="run-form-heading">天氣</p>
+    <div class="form-field">
+      <p class="form-field__label run-form-heading">天氣</p>
 
       <SelectButton
         :model-value="weatherCondition"
@@ -493,7 +499,7 @@ onBeforeUnmount(() => {
         </template>
       </SelectButton>
 
-      <small v-if="weatherLoading" class="text-surface-500"> 正在取得天氣…… </small>
+      <small v-if="weatherLoading" class="run-form-help">正在取得天氣……</small>
     </div>
 
     <Message v-if="submitError" severity="error" :closable="false">
@@ -501,20 +507,20 @@ onBeforeUnmount(() => {
     </Message>
 
     <div class="run-form-actions">
-      <Button
+      <BaseButton
         type="button"
         label="取消"
-        severity="secondary"
-        outlined
+        variant="outline"
         :disabled="submitting"
         @click="emit('cancel')"
       />
 
-      <Button
+      <BaseButton
         type="submit"
         :label="isEditMode ? '儲存修改' : '儲存跑步紀錄'"
         icon="pi pi-check"
         :loading="submitting"
+        :disabled="submitting"
       />
     </div>
   </form>
@@ -522,30 +528,28 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .run-record-form {
+  --run-control-height: calc(var(--space-6) + var(--space-1));
+
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
-  padding: var(--space-6);
+  gap: var(--space-5);
+  padding: var(--space-4) var(--space-6) var(--space-6);
 
   color: var(--color-text);
   font-family: var(--font-family-base);
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
+  letter-spacing: var(--letter-spacing-base);
 }
 
-.run-form-field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.run-form-heading,
-.run-form-label {
+.run-form-heading {
   margin: 0;
+}
 
-  color: var(--color-text);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-medium);
+.run-form-help {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
   line-height: var(--line-height-heading);
+  letter-spacing: var(--letter-spacing-base);
 }
 
 .run-duration-fieldset {
@@ -556,7 +560,7 @@ onBeforeUnmount(() => {
   border: 0;
 }
 
-.run-duration-fieldset > .run-form-label {
+.run-duration-fieldset > .form-field__label {
   display: block;
   width: 100%;
   margin-bottom: var(--space-2);
@@ -592,6 +596,7 @@ onBeforeUnmount(() => {
   flex-direction: row;
   gap: var(--space-3);
   justify-content: flex-end;
+  padding-top: var(--space-1);
 }
 
 .run-image-input {
@@ -612,8 +617,7 @@ onBeforeUnmount(() => {
   width: 100%;
   overflow: hidden;
 
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-surface) 32%, transparent);
   border-radius: var(--radius-lg);
 }
 
@@ -625,10 +629,187 @@ onBeforeUnmount(() => {
   object-fit: contain;
 }
 
+.run-upload-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px dashed var(--color-primary-light);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-primary-pale) 48%, transparent);
+}
+
+.run-upload-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.run-upload-actions :deep(.base-button),
+.run-form-actions :deep(.base-button) {
+  min-height: var(--run-control-height);
+  padding-block: 0;
+  letter-spacing: var(--letter-spacing-base);
+}
+
+.run-record-form :deep(.p-datepicker),
+.run-record-form :deep(.p-inputnumber),
+.run-record-form :deep(.p-select) {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--run-control-height);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-surface) 34%, transparent);
+  box-shadow: none;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+.run-record-form :deep(.p-datepicker:hover),
+.run-record-form :deep(.p-inputnumber:hover),
+.run-record-form :deep(.p-select:not(.p-disabled):hover) {
+  border-color: var(--color-primary-light);
+}
+
+.run-record-form :deep(.p-datepicker:focus-within),
+.run-record-form :deep(.p-inputnumber:focus-within),
+.run-record-form :deep(.p-select.p-focus) {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
+  outline: none;
+}
+
+.run-record-form :deep(.p-datepicker .p-inputtext),
+.run-record-form :deep(.p-inputnumber .p-inputtext) {
+  width: 100%;
+  height: calc(var(--run-control-height) - 2px);
+  min-width: 0;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: inherit;
+  color: var(--color-text);
+  background: transparent;
+  box-shadow: none;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-xs);
+  letter-spacing: var(--letter-spacing-base);
+}
+
+.run-record-form :deep(.p-inputtext::placeholder),
+.run-record-form :deep(.p-select-label.p-placeholder) {
+  color: var(--color-text-secondary);
+  opacity: 0.78;
+}
+
+.run-record-form :deep(.p-datepicker-dropdown),
+.run-record-form :deep(.p-select-dropdown) {
+  flex: 0 0 calc(var(--space-6) + var(--space-2));
+  width: calc(var(--space-6) + var(--space-2));
+  border: 0;
+  border-radius: var(--radius-full);
+  color: var(--color-dark-light);
+  background: transparent;
+  box-shadow: none;
+}
+
+.run-record-form :deep(.p-datepicker-dropdown:hover),
+.run-record-form :deep(.p-select-dropdown:hover) {
+  color: var(--color-primary);
+  background: var(--color-primary-pale);
+}
+
+.run-record-form :deep(.p-select-label) {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  height: calc(var(--run-control-height) - 2px);
+  padding: 0 0 0 var(--space-4);
+  color: var(--color-text);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-xs);
+  letter-spacing: var(--letter-spacing-base);
+}
+
+.run-record-form :deep(.p-selectbutton) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-surface) 34%, transparent);
+}
+
+.run-record-form :deep(.p-selectbutton .p-togglebutton) {
+  min-width: 0;
+  min-height: var(--run-control-height);
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-full);
+  color: var(--color-text-secondary);
+  background: transparent;
+  box-shadow: none;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-xs);
+  letter-spacing: var(--letter-spacing-base);
+}
+
+.run-record-form :deep(.p-selectbutton .p-togglebutton:hover) {
+  color: var(--color-dark);
+  background: var(--color-primary-pale);
+}
+
+.run-record-form :deep(.p-selectbutton .p-togglebutton.p-togglebutton-checked) {
+  color: var(--color-dark);
+  background: var(--color-secondary-pale);
+}
+
+.run-record-form :deep(.p-selectbutton .p-togglebutton:focus-visible) {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -3px;
+}
+
+:global(.run-select-overlay.p-select-overlay),
+:global(.run-date-overlay.p-datepicker-panel) {
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+  font-family: var(--font-family-base);
+  letter-spacing: var(--letter-spacing-base);
+}
+
+:global(.run-select-overlay .p-select-list) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+}
+
+:global(.run-select-overlay .p-select-option) {
+  min-height: calc(var(--space-6) + var(--space-2));
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-full);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+:global(.run-select-overlay .p-select-option:not(.p-select-option-selected):hover),
+:global(.run-select-overlay .p-select-option.p-focus:not(.p-select-option-selected)) {
+  color: var(--color-dark);
+  background: var(--color-primary-pale);
+}
+
+:global(.run-select-overlay .p-select-option.p-select-option-selected) {
+  color: var(--color-dark);
+  background: var(--color-secondary-pale);
+}
+
 @media (max-width: 639px) {
   .run-record-form {
     gap: var(--space-5);
-    padding: var(--space-5) var(--space-4);
+    padding: var(--space-3) var(--space-4) var(--space-5);
   }
 
   .run-duration-grid {
@@ -641,6 +822,20 @@ onBeforeUnmount(() => {
 
   .run-form-actions > :deep(.p-button) {
     width: 100%;
+  }
+
+  .run-upload-actions > :deep(.p-button) {
+    flex: 1 1 auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .run-duration-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .run-duration-grid > :last-child {
+    grid-column: 1 / -1;
   }
 }
 </style>
