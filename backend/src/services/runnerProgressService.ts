@@ -1,9 +1,7 @@
 import { Types } from 'mongoose'
 
-import {
-  RUNNER_LEVELS,
-  type RunnerLevel,
-} from '../constants/runnerLevels.js'
+import { resolveBadgeKey } from '../constants/badges.js'
+import { RUNNER_LEVELS, type RunnerLevel } from '../constants/runnerLevels.js'
 import RunRecord from '../models/RunRecord.js'
 import RunnerProgress from '../models/RunnerProgress.js'
 import UserBadge from '../models/UserBadge.js'
@@ -56,7 +54,7 @@ export const calculateLevelAfterRefresh = (
 
 export const getRunnerStats = async (userId: string): Promise<RunnerStats> => {
   const userObjectId = new Types.ObjectId(userId)
-  const [runStatsResults, badgeCount] = await Promise.all([
+  const [runStatsResults, storedBadges] = await Promise.all([
     RunRecord.aggregate<RunStatsAggregationResult>([
       {
         $match: {
@@ -90,9 +88,12 @@ export const getRunnerStats = async (userId: string): Promise<RunnerStats> => {
         },
       },
     ]),
-    UserBadge.countDocuments({ user: userObjectId }),
+    UserBadge.find({ user: userObjectId }).select('badgeKey').lean(),
   ])
   const runStats = runStatsResults[0]
+  const badgeCount = new Set(
+    storedBadges.map(({ badgeKey }) => resolveBadgeKey(badgeKey)).filter(Boolean),
+  ).size
 
   return {
     runCount: runStats?.runCount ?? 0,

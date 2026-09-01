@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Check, LockKeyhole, Medal } from '@lucide/vue'
+import { Check, LockKeyhole } from '@lucide/vue'
 import Dialog from 'primevue/dialog'
 import Skeleton from 'primevue/skeleton'
 
 import BadgeCard from '@/components/badges/BadgeCard.vue'
+import BadgeImage from '@/components/badges/BadgeImage.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
 import type { BadgeDefinition, UnlockedBadge } from '@/types/runnerProgress'
 import { formatNumericDate } from '@/utils/date'
@@ -18,6 +19,15 @@ const props = defineProps<{
 const unlockedBadgeDates = computed(
   () => new Map(props.unlockedBadges.map((badge) => [badge.key, badge.unlockedAt])),
 )
+const unlockedCount = computed(
+  () => props.definitions.filter(({ key }) => unlockedBadgeDates.value.has(key)).length,
+)
+
+const categoryLabels = {
+  'first-experience': '初次體驗',
+  growth: '累積成長',
+  special: '特殊體驗',
+} as const
 
 const selectedBadge = ref<{
   definition: BadgeDefinition
@@ -43,20 +53,20 @@ const openBadgeDialog = (definition: BadgeDefinition, unlockedAt: string | null)
       @hide="selectedBadge = null"
     >
       <article v-if="selectedBadge" class="badge-dialog">
-        <div
-          class="badge-dialog__seal"
-          :class="[
-            `badge-dialog__seal--${selectedBadge.definition.category}`,
-            { 'badge-dialog__seal--locked': !selectedBadge.unlockedAt },
-          ]"
-          aria-hidden="true"
-        >
-          <span />
-          <Medal v-if="selectedBadge.unlockedAt" :size="38" :stroke-width="1.7" />
-          <LockKeyhole v-else :size="34" :stroke-width="1.7" />
-        </div>
+        <BadgeImage
+          class="badge-dialog__image"
+          :name="selectedBadge.definition.name"
+          :image-path="selectedBadge.definition.imagePath"
+          :unlocked="Boolean(selectedBadge.unlockedAt)"
+        />
 
         <div class="badge-dialog__heading">
+          <span
+            class="badge-dialog__category"
+            :class="`badge-dialog__category--${selectedBadge.definition.category}`"
+          >
+            {{ categoryLabels[selectedBadge.definition.category] }}
+          </span>
           <span class="badge-dialog__status">
             <Check v-if="selectedBadge.unlockedAt" :size="15" aria-hidden="true" />
             <LockKeyhole v-else :size="14" aria-hidden="true" />
@@ -90,7 +100,7 @@ const openBadgeDialog = (definition: BadgeDefinition, unlockedAt: string | null)
       </div>
 
       <strong class="badge-collection__count" aria-live="polite">
-        已取得 {{ unlockedBadges.length }} / {{ definitions.length || 20 }}
+        已取得 {{ unlockedCount }} / {{ definitions.length }}
       </strong>
     </header>
 
@@ -183,58 +193,8 @@ const openBadgeDialog = (definition: BadgeDefinition, unlockedAt: string | null)
   text-align: center;
 }
 
-.badge-dialog__seal {
-  --badge-dialog-color: var(--color-primary);
-  --badge-dialog-soft: var(--color-primary-pale);
-
-  position: relative;
-
-  display: grid;
-  width: 96px;
-  aspect-ratio: 1;
-  place-items: center;
-
-  color: var(--badge-dialog-color);
-
-  background: var(--badge-dialog-soft);
-  border: 2px solid color-mix(in srgb, var(--badge-dialog-color) 42%, transparent);
-  border-radius: 50%;
-}
-
-.badge-dialog__seal--distance,
-.badge-dialog__seal--location {
-  --badge-dialog-color: var(--color-secondary);
-  --badge-dialog-soft: var(--color-secondary-pale);
-}
-
-.badge-dialog__seal--time,
-.badge-dialog__seal--weather,
-.badge-dialog__seal--consistency {
-  --badge-dialog-color: var(--color-accent);
-  --badge-dialog-soft: var(--color-accent-pale);
-}
-
-.badge-dialog__seal--mood,
-.badge-dialog__seal--memory {
-  --badge-dialog-color: var(--color-dark-light);
-  --badge-dialog-soft: color-mix(in srgb, var(--color-dark-pale) 24%, var(--color-surface));
-}
-
-.badge-dialog__seal > span {
-  position: absolute;
-  inset: var(--space-2);
-
-  border: 1px dashed currentcolor;
-  border-radius: 50%;
-  opacity: 0.55;
-}
-
-.badge-dialog__seal--locked {
-  color: var(--color-text-secondary);
-
-  background: var(--color-background);
-  border-color: var(--color-border);
-  filter: saturate(0);
+.badge-dialog__image {
+  --badge-image-size: 148px;
 }
 
 .badge-dialog__heading {
@@ -250,6 +210,25 @@ const openBadgeDialog = (definition: BadgeDefinition, unlockedAt: string | null)
   color: var(--color-text);
   font-size: var(--font-size-md);
   line-height: var(--line-height-heading);
+}
+
+.badge-dialog__category {
+  padding: var(--space-1) var(--space-3);
+
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+
+  background: var(--color-secondary-pale);
+  border-radius: var(--radius-full);
+}
+
+.badge-dialog__category--growth {
+  background: var(--color-primary-pale);
+}
+
+.badge-dialog__category--special {
+  background: var(--color-accent-pale);
 }
 
 .badge-dialog__status {
@@ -332,6 +311,10 @@ const openBadgeDialog = (definition: BadgeDefinition, unlockedAt: string | null)
 
   .badge-collection__count {
     align-self: flex-start;
+  }
+
+  .badge-dialog__image {
+    --badge-image-size: 128px;
   }
 }
 </style>

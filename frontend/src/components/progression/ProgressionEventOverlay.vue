@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { ArrowRight, Medal, Sparkles } from '@lucide/vue'
+import { ArrowRight, Sparkles } from '@lucide/vue'
 import gsap from 'gsap'
 
+import BadgeImage from '@/components/badges/BadgeImage.vue'
 import type { ProgressionEvent } from '@/types/progressionEvent'
 
 const props = defineProps<{
@@ -285,8 +286,12 @@ onBeforeUnmount(() => {
             aria-hidden="true"
           >
             <template v-if="event.type === 'badge'">
-              <img v-if="event.imageUrl" :src="event.imageUrl" alt="" />
-              <Medal v-else :size="72" :stroke-width="1.45" />
+              <BadgeImage
+                class="progression-event__badge-image"
+                :name="event.name"
+                :image-path="event.imagePath"
+                :unlocked="true"
+              />
             </template>
 
             <template v-else>
@@ -556,10 +561,19 @@ onBeforeUnmount(() => {
   content: '';
 }
 
-.progression-event__seal img {
-  width: 82%;
-  height: 82%;
-  object-fit: contain;
+.progression-event__seal--badge {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.progression-event__seal--badge::after {
+  display: none;
+}
+
+.progression-event__badge-image {
+  --badge-image-size: 148px;
 }
 
 .progression-event__seal--level {
@@ -692,6 +706,10 @@ onBeforeUnmount(() => {
     width: 128px;
   }
 
+  .progression-event__badge-image {
+    --badge-image-size: 128px;
+  }
+
   .progression-event__ring {
     inset: 12px;
   }
@@ -710,6 +728,10 @@ onBeforeUnmount(() => {
 
   .progression-event__seal {
     width: 116px;
+  }
+
+  .progression-event__badge-image {
+    --badge-image-size: 116px;
   }
 
   .progression-event__button {

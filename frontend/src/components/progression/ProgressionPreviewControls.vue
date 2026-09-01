@@ -13,21 +13,24 @@ const isExpanded = ref(false)
 const previewBadges: ProgressionEvent[] = [
   {
     type: 'badge',
-    badgeKey: 'preview-first-run',
+    badgeKey: 'first-step',
     name: '啟程之印',
     description: '完成第 1 次跑步紀錄',
+    imagePath: '/images/badges/01-first-step.png',
   },
   {
     type: 'badge',
-    badgeKey: 'preview-three-kilometers',
-    name: '三公里的約定',
-    description: '單次跑步距離至少 3 公里',
+    badgeKey: 'three-kilometer',
+    name: '三公里約定',
+    description: '完成第 1 次單次跑步距離 ≥ 3 km',
+    imagePath: '/images/badges/02-three-kilometer.png',
   },
   {
     type: 'badge',
-    badgeKey: 'preview-five-kilometers',
-    name: '五公里遠征',
-    description: '單次跑步距離至少 5 公里',
+    badgeKey: 'five-kilometer',
+    name: '五公里堅持',
+    description: '完成第 1 次單次跑步距離 ≥ 5 km',
+    imagePath: '/images/badges/03-five-kilometer.png',
   },
 ]
 

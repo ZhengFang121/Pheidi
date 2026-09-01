@@ -1,10 +1,10 @@
 import { Schema, model, type Types } from 'mongoose'
 
-import { BADGE_KEYS, type BadgeKey } from '../constants/badges.js'
+import { BADGE_STORAGE_KEYS, type BadgeStorageKey } from '../constants/badges.js'
 
 export interface IUserBadge {
   user: Types.ObjectId
-  badgeKey: BadgeKey
+  badgeKey: BadgeStorageKey
   unlockedAt: Date
   createdAt?: Date
   updatedAt?: Date
@@ -20,7 +20,7 @@ const userBadgeSchema = new Schema<IUserBadge>(
     },
     badgeKey: {
       type: String,
-      enum: BADGE_KEYS,
+      enum: BADGE_STORAGE_KEYS,
       required: true,
       immutable: true,
     },

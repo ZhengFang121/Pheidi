@@ -38,6 +38,7 @@ export const toProgressionEvents = ({
     badgeKey: badge.key,
     name: badge.name,
     description: badge.description,
+    imagePath: badge.imagePath,
   }))
 
   if (levelUp) {

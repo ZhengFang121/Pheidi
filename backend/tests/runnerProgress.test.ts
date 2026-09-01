@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { BADGE_DEFINITIONS } from '../src/constants/badges.js'
+import { BADGE_DEFINITIONS, getBadgeStorageKeys, resolveBadgeKey } from '../src/constants/badges.js'
 import type { RunnerLevel } from '../src/constants/runnerLevels.js'
 import UserBadge from '../src/models/UserBadge.js'
 import { getEligibleBadgeKeys, hasFourWeekRunningStreak } from '../src/services/badgeService.js'
@@ -43,6 +43,70 @@ describe('徽章定義', () => {
     assert.equal(new Set(BADGE_DEFINITIONS.map(({ key }) => key)).size, BADGE_DEFINITIONS.length)
   })
 
+  it('20 枚定義依正式順序提供 canonical key 與 PNG 素材路徑', () => {
+    assert.deepEqual(
+      BADGE_DEFINITIONS.map(({ key }) => key),
+      [
+        'first-step',
+        'three-kilometer',
+        'five-kilometer',
+        'dawn-runner',
+        'moonlight-runner',
+        'city-runner',
+        'track-runner',
+        'trail-adventurer',
+        'rain-runner',
+        'scenic-moments',
+        'run-count-5',
+        'run-count-10',
+        'distance-50k',
+        'distance-100k',
+        'location-explorer',
+        'all-terrain-runner',
+        'photo-collector',
+        'weather-collector',
+        'tired-runner',
+        'four-week-streak',
+      ],
+    )
+    assert.ok(
+      BADGE_DEFINITIONS.every(({ imagePath }) =>
+        /^\/images\/badges\/\d{2}-[a-z0-9-]+\.png$/.test(imagePath),
+      ),
+    )
+    assert.deepEqual(
+      BADGE_DEFINITIONS.map(({ name }) => name),
+      [
+        '啟程之印',
+        '三公里約定',
+        '五公里堅持',
+        '破曉跑者',
+        '逐月跑者',
+        '城市行者',
+        '環道行者',
+        '山野冒險者',
+        '雨中跑者',
+        '沿途拾光',
+        '足跡漸深',
+        '旅途漸長',
+        '半百公里旅人',
+        '百公里征途',
+        '足跡探險家',
+        '無界旅人',
+        '足跡收藏家',
+        '晴雨收藏家',
+        '一步之遙',
+        '四週之約',
+      ],
+    )
+  })
+
+  it('舊 badgeKey 可解析為正式 key，並保留為相容儲存值', () => {
+    assert.equal(resolveBadgeKey('first_run'), 'first-step')
+    assert.equal(resolveBadgeKey('mountain_runner'), 'trail-adventurer')
+    assert.deepEqual(getBadgeStorageKeys('first-step'), ['first-step', 'first_run'])
+  })
+
   it('UserBadge 以 user + badgeKey 建立 unique compound index', () => {
     const uniqueIndex = UserBadge.schema
       .indexes()
@@ -61,9 +125,9 @@ describe('單筆與累積徽章判定', () => {
       createRunRecord('2026-01-01T12:00:00+08:00', { distance: 5 }),
     ])
 
-    assert.ok(badgeKeys.includes('first_run'))
-    assert.ok(badgeKeys.includes('single_run_3k'))
-    assert.ok(badgeKeys.includes('single_run_5k'))
+    assert.ok(badgeKeys.includes('first-step'))
+    assert.ok(badgeKeys.includes('three-kilometer'))
+    assert.ok(badgeKeys.includes('five-kilometer'))
   })
 
   it('使用台灣時間判定破曉與逐月跑者的邊界', () => {
@@ -74,8 +138,8 @@ describe('單筆與累積徽章判定', () => {
       createRunRecord('2026-01-04T04:59:59+08:00'),
     ])
 
-    assert.ok(badgeKeys.includes('dawn_runner'))
-    assert.ok(badgeKeys.includes('moonlight_runner'))
+    assert.ok(badgeKeys.includes('dawn-runner'))
+    assert.ok(badgeKeys.includes('moonlight-runner'))
   })
 
   it('不會把台灣時間 08:00–17:59 誤判為時段徽章', () => {
@@ -84,8 +148,8 @@ describe('單筆與累積徽章判定', () => {
       createRunRecord('2026-01-01T17:59:59+08:00'),
     ])
 
-    assert.ok(!badgeKeys.includes('dawn_runner'))
-    assert.ok(!badgeKeys.includes('moonlight_runner'))
+    assert.ok(!badgeKeys.includes('dawn-runner'))
+    assert.ok(!badgeKeys.includes('moonlight-runner'))
   })
 
   it('判定雨天、三種天氣、疲累心情與照片徽章', () => {
@@ -111,11 +175,11 @@ describe('單筆與累積徽章判定', () => {
     ]
     const badgeKeys = getEligibleBadgeKeys(records)
 
-    assert.ok(badgeKeys.includes('rainy_run'))
-    assert.ok(badgeKeys.includes('all_weather_runner'))
-    assert.ok(badgeKeys.includes('tired_run'))
-    assert.ok(badgeKeys.includes('first_photo_run'))
-    assert.ok(badgeKeys.includes('five_photo_runs'))
+    assert.ok(badgeKeys.includes('rain-runner'))
+    assert.ok(badgeKeys.includes('weather-collector'))
+    assert.ok(badgeKeys.includes('tired-runner'))
+    assert.ok(badgeKeys.includes('scenic-moments'))
+    assert.ok(badgeKeys.includes('photo-collector'))
   })
 
   it('分別判定 city、track、mountain 與 3／5 種地點', () => {
@@ -126,11 +190,11 @@ describe('單筆與累積徽章判定', () => {
     )
     const badgeKeys = getEligibleBadgeKeys(records)
 
-    assert.ok(badgeKeys.includes('city_runner'))
-    assert.ok(badgeKeys.includes('track_runner'))
-    assert.ok(badgeKeys.includes('mountain_runner'))
-    assert.ok(badgeKeys.includes('three_location_types'))
-    assert.ok(badgeKeys.includes('five_location_types'))
+    assert.ok(badgeKeys.includes('city-runner'))
+    assert.ok(badgeKeys.includes('track-runner'))
+    assert.ok(badgeKeys.includes('trail-adventurer'))
+    assert.ok(badgeKeys.includes('location-explorer'))
+    assert.ok(badgeKeys.includes('all-terrain-runner'))
   })
 })
 
@@ -142,7 +206,7 @@ describe('四週之約', () => {
 
   it('以週一為每週起點，連續四週每週兩日時解鎖', () => {
     assert.equal(hasFourWeekRunningStreak(fourQualifiedWeeks), true)
-    assert.ok(getEligibleBadgeKeys(fourQualifiedWeeks).includes('four_week_streak'))
+    assert.ok(getEligibleBadgeKeys(fourQualifiedWeeks).includes('four-week-streak'))
   })
 
   it('同一天多筆只算一個跑步日', () => {

@@ -1,6 +1,11 @@
 import type { Router } from 'express'
 
-import { BADGE_DEFINITIONS, BADGE_DEFINITION_BY_KEY } from '../constants/badges.js'
+import {
+  BADGE_DEFINITIONS,
+  BADGE_DEFINITION_BY_KEY,
+  resolveBadgeKey,
+  type BadgeKey,
+} from '../constants/badges.js'
 import { getRunnerLevelDefinition } from '../constants/runnerLevels.js'
 import User from '../models/User.js'
 import UserBadge from '../models/UserBadge.js'
@@ -36,6 +41,15 @@ export const registerRunnerProgressHandlers = (router: Router) => {
         .sort({ unlockedAt: 1, _id: 1 })
         .lean()
       const currentLevel = getRunnerLevelDefinition(progression.currentLevel)
+      const unlockedBadgesByKey = new Map<BadgeKey, (typeof userBadges)[number]>()
+
+      for (const userBadge of userBadges) {
+        const badgeKey = resolveBadgeKey(userBadge.badgeKey)
+
+        if (badgeKey && !unlockedBadgesByKey.has(badgeKey)) {
+          unlockedBadgesByKey.set(badgeKey, userBadge)
+        }
+      }
 
       res.status(200).json({
         message: '取得玩家進度成功',
@@ -45,14 +59,15 @@ export const registerRunnerProgressHandlers = (router: Router) => {
             name: currentLevel.name,
           },
           stats: progression.stats,
-          badges: userBadges.map((userBadge) => {
-            const definition = BADGE_DEFINITION_BY_KEY.get(userBadge.badgeKey)
+          badges: [...unlockedBadgesByKey].map(([badgeKey, userBadge]) => {
+            const definition = BADGE_DEFINITION_BY_KEY.get(badgeKey)
 
             return {
-              key: userBadge.badgeKey,
-              name: definition?.name ?? userBadge.badgeKey,
+              key: badgeKey,
+              name: definition?.name ?? badgeKey,
               description: definition?.description ?? '',
-              category: definition?.category ?? 'milestone',
+              category: definition?.category ?? 'first-experience',
+              imagePath: definition?.imagePath ?? '',
               unlockedAt: userBadge.unlockedAt,
             }
           }),

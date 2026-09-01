@@ -1,4 +1,9 @@
-import { BADGE_DEFINITIONS, type BadgeKey } from '../constants/badges.js'
+import {
+  BADGE_DEFINITIONS,
+  getBadgeStorageKeys,
+  resolveBadgeKey,
+  type BadgeKey,
+} from '../constants/badges.js'
 import RunRecord from '../models/RunRecord.js'
 import UserBadge from '../models/UserBadge.js'
 import type { ProgressRunRecord, UnlockedBadgeResult } from '../types/runnerProgress.js'
@@ -102,43 +107,43 @@ export const getEligibleBadgeKeys = (runRecords: readonly ProgressRunRecord[]): 
     (runRecord) => getTaipeiCalendarParts(runRecord.runDate).hour,
   )
 
-  if (runRecords.length >= 1) eligibleBadgeKeys.add('first_run')
+  if (runRecords.length >= 1) eligibleBadgeKeys.add('first-step')
   if (runRecords.some(({ distance }) => distance >= 3)) {
-    eligibleBadgeKeys.add('single_run_3k')
+    eligibleBadgeKeys.add('three-kilometer')
   }
   if (runRecords.some(({ distance }) => distance >= 5)) {
-    eligibleBadgeKeys.add('single_run_5k')
+    eligibleBadgeKeys.add('five-kilometer')
   }
   if (taipeiRunHours.some((hour) => hour >= 5 && hour < 8)) {
-    eligibleBadgeKeys.add('dawn_runner')
+    eligibleBadgeKeys.add('dawn-runner')
   }
   if (taipeiRunHours.some((hour) => hour >= 18 || hour < 5)) {
-    eligibleBadgeKeys.add('moonlight_runner')
+    eligibleBadgeKeys.add('moonlight-runner')
   }
-  if (runRecords.length >= 5) eligibleBadgeKeys.add('five_runs')
-  if (runRecords.length >= 10) eligibleBadgeKeys.add('ten_runs')
-  if (totalDistance >= 50) eligibleBadgeKeys.add('total_distance_50k')
-  if (totalDistance >= 100) eligibleBadgeKeys.add('total_distance_100k')
-  if (locationTypes.has('city')) eligibleBadgeKeys.add('city_runner')
-  if (locationTypes.has('track')) eligibleBadgeKeys.add('track_runner')
-  if (locationTypes.has('mountain')) eligibleBadgeKeys.add('mountain_runner')
-  if (locationTypes.size >= 3) eligibleBadgeKeys.add('three_location_types')
-  if (locationTypes.size >= 5) eligibleBadgeKeys.add('five_location_types')
-  if (weatherConditions.has('rainy')) eligibleBadgeKeys.add('rainy_run')
+  if (runRecords.length >= 5) eligibleBadgeKeys.add('run-count-5')
+  if (runRecords.length >= 10) eligibleBadgeKeys.add('run-count-10')
+  if (totalDistance >= 50) eligibleBadgeKeys.add('distance-50k')
+  if (totalDistance >= 100) eligibleBadgeKeys.add('distance-100k')
+  if (locationTypes.has('city')) eligibleBadgeKeys.add('city-runner')
+  if (locationTypes.has('track')) eligibleBadgeKeys.add('track-runner')
+  if (locationTypes.has('mountain')) eligibleBadgeKeys.add('trail-adventurer')
+  if (locationTypes.size >= 3) eligibleBadgeKeys.add('location-explorer')
+  if (locationTypes.size >= 5) eligibleBadgeKeys.add('all-terrain-runner')
+  if (weatherConditions.has('rainy')) eligibleBadgeKeys.add('rain-runner')
   if (
     weatherConditions.has('sunny') &&
     weatherConditions.has('cloudy') &&
     weatherConditions.has('rainy')
   ) {
-    eligibleBadgeKeys.add('all_weather_runner')
+    eligibleBadgeKeys.add('weather-collector')
   }
   if (runRecords.some(({ mood }) => mood === 'tired')) {
-    eligibleBadgeKeys.add('tired_run')
+    eligibleBadgeKeys.add('tired-runner')
   }
-  if (photoRunCount >= 1) eligibleBadgeKeys.add('first_photo_run')
-  if (photoRunCount >= 5) eligibleBadgeKeys.add('five_photo_runs')
+  if (photoRunCount >= 1) eligibleBadgeKeys.add('scenic-moments')
+  if (photoRunCount >= 5) eligibleBadgeKeys.add('photo-collector')
   if (hasFourWeekRunningStreak(runRecords)) {
-    eligibleBadgeKeys.add('four_week_streak')
+    eligibleBadgeKeys.add('four-week-streak')
   }
 
   return BADGE_DEFINITIONS.map(({ key }) => key).filter((key) => eligibleBadgeKeys.has(key))
@@ -149,16 +154,26 @@ export const unlockEligibleBadges = async (userId: string): Promise<UnlockedBadg
     .select('runDate distance locationType mood weather.condition images')
     .lean<ProgressRunRecord[]>()
   const eligibleBadgeKeys = getEligibleBadgeKeys(runRecords)
+  const storedBadges = await UserBadge.find({ user: userId }).select('badgeKey').lean()
+  const unlockedBadgeKeys = new Set(
+    storedBadges
+      .map(({ badgeKey }) => resolveBadgeKey(badgeKey))
+      .filter((badgeKey): badgeKey is BadgeKey => badgeKey !== undefined),
+  )
 
   const unlockedBadges = await Promise.all(
     eligibleBadgeKeys.map(async (badgeKey) => {
+      if (unlockedBadgeKeys.has(badgeKey)) return null
+
       const unlockedAt = new Date()
 
       try {
         const result = await UserBadge.updateOne(
           {
             user: userId,
-            badgeKey,
+            badgeKey: {
+              $in: getBadgeStorageKeys(badgeKey),
+            },
           },
           {
             $setOnInsert: {

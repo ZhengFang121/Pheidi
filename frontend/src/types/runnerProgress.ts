@@ -1,13 +1,13 @@
 export type RunnerLevel = 1 | 2 | 3 | 4 | 5
 
-export type BadgeCategory =
-  'milestone' | 'distance' | 'time' | 'location' | 'weather' | 'mood' | 'memory' | 'consistency'
+export type BadgeCategory = 'first-experience' | 'growth' | 'special'
 
 export interface BadgeDefinition {
   key: string
   name: string
   description: string
   category: BadgeCategory
+  imagePath: string
 }
 
 export interface UnlockedBadge extends BadgeDefinition {

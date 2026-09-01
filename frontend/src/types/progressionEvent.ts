@@ -5,7 +5,7 @@ export interface BadgeProgressionEvent {
   badgeKey: string
   name: string
   description: string
-  imageUrl?: string
+  imagePath: string
 }
 
 export interface LevelProgressionEvent {

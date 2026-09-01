@@ -55,7 +55,8 @@ const createProgressionResponse = (
         key: badgeKey,
         name: definition?.name ?? badgeKey,
         description: definition?.description ?? '',
-        category: definition?.category ?? 'milestone',
+        category: definition?.category ?? 'first-experience',
+        imagePath: definition?.imagePath ?? '',
         unlockedAt,
       }
     }),
