@@ -2,6 +2,10 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { isAxiosError } from 'axios'
 import { ChevronLeft, ChevronRight } from '@lucide/vue'
+import Accordion from 'primevue/accordion'
+import AccordionContent from 'primevue/accordioncontent'
+import AccordionHeader from 'primevue/accordionheader'
+import AccordionPanel from 'primevue/accordionpanel'
 import Button from 'primevue/button'
 import ConfirmDialog from 'primevue/confirmdialog'
 import Dialog from 'primevue/dialog'
@@ -43,12 +47,8 @@ const weatherLabels = new Map(
 )
 
 const confirm = useConfirm()
-const {
-  runnerProgress,
-  isRunnerProgressLoading,
-  runnerProgressError,
-  loadRunnerProgress,
-} = useRunnerProgress()
+const { runnerProgress, isRunnerProgressLoading, runnerProgressError, loadRunnerProgress } =
+  useRunnerProgress()
 
 const now = new Date()
 
@@ -62,6 +62,7 @@ const actionErrorMessage = ref('')
 const editingRunRecord = ref<RunRecord | null>(null)
 const isEditDialogVisible = ref(false)
 const deletingRunRecordId = ref<string | null>(null)
+const activeRunRecordPanel = ref<string | null>(null)
 
 let latestRequestId = 0
 let loadingStateTimer: ReturnType<typeof setTimeout> | undefined
@@ -268,9 +269,7 @@ const handleRunRecordUpdated = (updatedRunRecord: RunRecord) => {
     )
     selectedDateKey.value = getLocalDateKey(updatedRunRecord.runDate)
   } else {
-    runRecords.value = runRecords.value.filter(
-      (runRecord) => runRecord.id !== updatedRunRecord.id,
-    )
+    runRecords.value = runRecords.value.filter((runRecord) => runRecord.id !== updatedRunRecord.id)
     clearSelectedDateIfEmpty()
   }
 
@@ -295,10 +294,7 @@ const deleteSelectedRunRecord = async (runRecord: RunRecord) => {
     clearSelectedDateIfEmpty()
     void loadRunnerProgress()
   } catch (error: unknown) {
-    actionErrorMessage.value = getApiErrorMessage(
-      error,
-      '刪除跑步紀錄失敗，請稍後再試。',
-    )
+    actionErrorMessage.value = getApiErrorMessage(error, '刪除跑步紀錄失敗，請稍後再試。')
   } finally {
     deletingRunRecordId.value = null
   }
@@ -322,8 +318,8 @@ const confirmDeleteRunRecord = (runRecord: RunRecord) => {
   })
 }
 
-const selectCalendarDate = (dateKey: string, isCurrentMonth: boolean, recordCount: number) => {
-  if (!isCurrentMonth || recordCount === 0) {
+const selectCalendarDate = (dateKey: string, isCurrentMonth: boolean) => {
+  if (!isCurrentMonth) {
     return
   }
 
@@ -377,6 +373,16 @@ watch(
     immediate: true,
   },
 )
+
+watch(
+  selectedDateRecords,
+  (records) => {
+    if (!records.some((runRecord) => runRecord.id === activeRunRecordPanel.value)) {
+      activeRunRecordPanel.value = records[0]?.id ?? null
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -413,236 +419,250 @@ watch(
       <p class="station-description">每一次出發都會留下足跡，從月曆回顧你的跑步旅程。</p>
     </header>
 
-    <BaseCard as="section" class="station-calendar-card" aria-labelledby="station-month-heading">
-      <header class="station-calendar-toolbar">
-        <Button
-          type="button"
-          severity="secondary"
-          text
-          rounded
-          aria-label="查看上一個月"
-          :disabled="isLoading"
-          @click="goToPreviousMonth"
-        >
-          <template #icon>
-            <ChevronLeft aria-hidden="true" />
-          </template>
-        </Button>
+    <div class="station-record-layout">
+      <BaseCard as="section" class="station-calendar-card" aria-labelledby="station-month-heading">
+        <header class="station-calendar-toolbar">
+          <Button
+            type="button"
+            severity="secondary"
+            text
+            rounded
+            aria-label="查看上一個月"
+            :disabled="isLoading"
+            @click="goToPreviousMonth"
+          >
+            <template #icon>
+              <ChevronLeft aria-hidden="true" />
+            </template>
+          </Button>
 
-        <div class="station-month-heading">
-          <h2 id="station-month-heading">
-            {{ currentMonthTitle }}
-          </h2>
+          <div class="station-month-heading">
+            <h2 id="station-month-heading">
+              {{ currentMonthTitle }}
+            </h2>
 
-          <span aria-live="polite"> 共 {{ runRecords.length }} 筆跑步紀錄 </span>
-        </div>
-
-        <Button
-          type="button"
-          severity="secondary"
-          text
-          rounded
-          aria-label="查看下一個月"
-          :disabled="isLoading || !canGoToNextMonth"
-          @click="goToNextMonth"
-        >
-          <template #icon>
-            <ChevronRight aria-hidden="true" />
-          </template>
-        </Button>
-      </header>
-
-      <Message v-if="errorMessage" severity="error" :closable="false">
-        <div class="station-error">
-          <span>{{ errorMessage }}</span>
+            <span aria-live="polite"> 共 {{ runRecords.length }} 筆跑步紀錄 </span>
+          </div>
 
           <Button
             type="button"
-            label="重新載入"
             severity="secondary"
-            size="small"
-            @click="loadMonthRecords"
+            text
+            rounded
+            aria-label="查看下一個月"
+            :disabled="isLoading || !canGoToNextMonth"
+            @click="goToNextMonth"
+          >
+            <template #icon>
+              <ChevronRight aria-hidden="true" />
+            </template>
+          </Button>
+        </header>
+
+        <Message v-if="errorMessage" severity="error" :closable="false">
+          <div class="station-error">
+            <span>{{ errorMessage }}</span>
+
+            <Button
+              type="button"
+              label="重新載入"
+              severity="secondary"
+              size="small"
+              @click="loadMonthRecords"
+            />
+          </div>
+        </Message>
+
+        <div v-else-if="showLoadingState" class="station-loading" aria-label="月份跑步紀錄載入中">
+          <Skeleton
+            v-for="index in 5"
+            :key="index"
+            height="4.5rem"
+            border-radius="var(--radius-md)"
           />
         </div>
-      </Message>
 
-      <div v-else-if="showLoadingState" class="station-loading" aria-label="月份跑步紀錄載入中">
-        <Skeleton
-          v-for="index in 5"
-          :key="index"
-          height="4.5rem"
-          border-radius="var(--radius-md)"
-        />
-      </div>
-
-      <div v-else class="station-calendar" :aria-busy="isLoading">
-        <div class="station-weekday-grid" aria-hidden="true">
-          <span v-for="weekday in weekdayLabels" :key="weekday" class="station-weekday">
-            {{ weekday }}
-          </span>
-        </div>
-
-        <div class="station-date-grid">
-          <button
-            v-for="calendarDate in calendarDates"
-            :key="calendarDate.dateKey"
-            type="button"
-            class="station-date-cell"
-            :class="{
-              'station-date-cell--outside': !calendarDate.isCurrentMonth,
-              'station-date-cell--today': calendarDate.isToday,
-              'station-date-cell--recorded': calendarDate.records.length > 0,
-              'station-date-cell--selected': selectedDateKey === calendarDate.dateKey,
-            }"
-            :disabled="!calendarDate.isCurrentMonth || calendarDate.records.length === 0"
-            :aria-label="
-              calendarDate.records.length > 0
-                ? `${calendarDate.dateKey}，共有 ${calendarDate.records.length} 筆跑步紀錄`
-                : calendarDate.dateKey
-            "
-            :aria-pressed="selectedDateKey === calendarDate.dateKey"
-            @click="
-              selectCalendarDate(
-                calendarDate.dateKey,
-                calendarDate.isCurrentMonth,
-                calendarDate.records.length,
-              )
-            "
-          >
-            <img
-              v-if="calendarDate.thumbnailUrl"
-              :src="calendarDate.thumbnailUrl"
-              alt=""
-              class="station-date-content station-date-thumbnail"
-              loading="lazy"
-            />
-
-            <span v-else class="station-date-content station-date-number">
-              {{ calendarDate.dayNumber }}
-            </span>
-          </button>
-        </div>
-      </div>
-    </BaseCard>
-    <BaseCard
-      v-if="selectedDateKey && selectedDateRecords.length > 0"
-      as="section"
-      class="station-day-section"
-      aria-labelledby="station-day-heading"
-    >
-      <header class="station-day-heading">
-        <div>
-          <p class="station-day-eyebrow">DAILY RECORD</p>
-
-          <h2 id="station-day-heading">
-            {{ selectedDateTitle }}
-          </h2>
-        </div>
-
-        <span> 共 {{ selectedDateRecords.length }} 筆紀錄 </span>
-      </header>
-
-      <Message v-if="actionErrorMessage" severity="error" :closable="false">
-        {{ actionErrorMessage }}
-      </Message>
-
-      <div class="station-record-list">
-        <BaseCard
-          v-for="runRecord in selectedDateRecords"
-          :key="runRecord.id"
-          as="article"
-          class="station-record-card"
-        >
-          <div class="station-record-image-wrapper">
-            <img
-              v-if="runRecord.images.length > 0"
-              :src="runRecord.images[0]"
-              alt=""
-              class="station-record-image"
-              loading="lazy"
-            />
-
-            <span v-else class="station-record-image-placeholder">尚無照片</span>
-
-            <span v-if="runRecord.images.length > 1" class="station-record-image-count">
-              +{{ runRecord.images.length - 1 }}
+        <div v-else class="station-calendar" :aria-busy="isLoading">
+          <div class="station-weekday-grid" aria-hidden="true">
+            <span v-for="weekday in weekdayLabels" :key="weekday" class="station-weekday">
+              {{ weekday }}
             </span>
           </div>
 
-          <div class="station-record-content">
-            <time class="station-record-time" :datetime="runRecord.runDate">
-              {{ formatRunTime(runRecord.runDate) }}
-            </time>
-
-            <dl class="station-record-details">
-              <div>
-                <dt>距離</dt>
-                <dd>
-                  {{ formatDistance(runRecord.distance) }}
-                </dd>
-              </div>
-
-              <div>
-                <dt>時長</dt>
-                <dd>
-                  {{ formatDuration(runRecord.duration) }}
-                </dd>
-              </div>
-
-              <div>
-                <dt>地點</dt>
-                <dd>
-                  {{ locationLabels.get(runRecord.locationType) ?? runRecord.locationType }}
-                </dd>
-              </div>
-
-              <div>
-                <dt>心情</dt>
-                <dd>
-                  {{ moodLabels.get(runRecord.mood) ?? runRecord.mood }}
-                </dd>
-              </div>
-
-              <div>
-                <dt>天氣</dt>
-                <dd>
-                  {{
-                    weatherLabels.get(runRecord.weather.condition) ?? runRecord.weather.condition
-                  }}
-                </dd>
-              </div>
-            </dl>
-
-            <div class="station-record-actions">
-              <Button
-                type="button"
-                label="編輯"
-                icon="pi pi-pencil"
-                severity="secondary"
-                outlined
-                size="small"
-                :disabled="deletingRunRecordId !== null"
-                @click="openEditDialog(runRecord)"
+          <div class="station-date-grid">
+            <button
+              v-for="calendarDate in calendarDates"
+              :key="calendarDate.dateKey"
+              type="button"
+              class="station-date-cell"
+              :class="{
+                'station-date-cell--outside': !calendarDate.isCurrentMonth,
+                'station-date-cell--today': calendarDate.isToday,
+                'station-date-cell--selected': selectedDateKey === calendarDate.dateKey,
+              }"
+              :disabled="!calendarDate.isCurrentMonth"
+              :aria-label="
+                calendarDate.records.length > 0
+                  ? `${calendarDate.dateKey}，共有 ${calendarDate.records.length} 筆跑步紀錄`
+                  : `${calendarDate.dateKey}，沒有跑步紀錄`
+              "
+              :aria-pressed="selectedDateKey === calendarDate.dateKey"
+              @click="selectCalendarDate(calendarDate.dateKey, calendarDate.isCurrentMonth)"
+            >
+              <img
+                v-if="calendarDate.thumbnailUrl"
+                :src="calendarDate.thumbnailUrl"
+                alt=""
+                class="station-date-content station-date-thumbnail"
+                loading="lazy"
               />
 
-              <Button
-                type="button"
-                label="刪除"
-                icon="pi pi-trash"
-                severity="danger"
-                text
-                size="small"
-                :loading="deletingRunRecordId === runRecord.id"
-                :disabled="
-                  deletingRunRecordId !== null && deletingRunRecordId !== runRecord.id
-                "
-                @click="confirmDeleteRunRecord(runRecord)"
-              />
-            </div>
+              <span v-else class="station-date-content station-date-number">
+                {{ calendarDate.dayNumber }}
+              </span>
+            </button>
           </div>
-        </BaseCard>
-      </div>
-    </BaseCard>
+        </div>
+      </BaseCard>
+
+      <BaseCard as="section" class="station-day-section" aria-labelledby="station-day-heading">
+        <header class="station-day-heading">
+          <div>
+            <p class="station-day-eyebrow">DAILY RECORD</p>
+
+            <h2 id="station-day-heading">
+              {{ selectedDateTitle || '每日跑步紀錄' }}
+            </h2>
+          </div>
+
+          <span aria-live="polite"> 共 {{ selectedDateRecords.length }} 筆紀錄 </span>
+        </header>
+
+        <Message v-if="actionErrorMessage" severity="error" :closable="false">
+          {{ actionErrorMessage }}
+        </Message>
+
+        <div v-if="showLoadingState" class="station-day-loading" aria-label="每日跑步紀錄載入中">
+          <Skeleton height="3.5rem" border-radius="var(--radius-md)" />
+          <Skeleton height="11rem" border-radius="var(--radius-md)" />
+        </div>
+
+        <div v-else-if="selectedDateRecords.length === 0" class="station-day-empty" role="status">
+          <span class="station-day-empty-icon pi pi-calendar" aria-hidden="true" />
+
+          <div>
+            <p>{{ selectedDateKey ? '當天尚無跑步紀錄' : '尚未選擇跑步紀錄' }}</p>
+            <span>
+              {{
+                selectedDateKey
+                  ? '可以選擇其他日期，繼續查看你的跑步足跡。'
+                  : '從左側月曆點選日期，即可查看當天紀錄。'
+              }}
+            </span>
+          </div>
+        </div>
+
+        <div v-else class="station-record-scroll-area">
+          <Accordion v-model:value="activeRunRecordPanel" class="station-record-accordion">
+            <AccordionPanel
+              v-for="runRecord in selectedDateRecords"
+              :key="runRecord.id"
+              :value="runRecord.id"
+              class="station-record-panel"
+            >
+              <AccordionHeader>
+                <time class="station-record-time" :datetime="runRecord.runDate">
+                  {{ formatRunTime(runRecord.runDate) }}
+                </time>
+              </AccordionHeader>
+
+              <AccordionContent>
+                <div
+                  class="station-record-card"
+                  :class="{ 'station-record-card--without-image': runRecord.images.length === 0 }"
+                >
+                  <div v-if="runRecord.images.length > 0" class="station-record-image-wrapper">
+                    <img
+                      :src="runRecord.images[0]"
+                      alt="跑步紀錄照片"
+                      class="station-record-image"
+                      loading="lazy"
+                    />
+
+                    <span v-if="runRecord.images.length > 1" class="station-record-image-count">
+                      +{{ runRecord.images.length - 1 }}
+                    </span>
+                  </div>
+
+                  <div class="station-record-content">
+                    <dl class="station-record-details">
+                      <div>
+                        <dt>距離</dt>
+                        <dd>{{ formatDistance(runRecord.distance) }}</dd>
+                      </div>
+
+                      <div>
+                        <dt>時長</dt>
+                        <dd>{{ formatDuration(runRecord.duration) }}</dd>
+                      </div>
+
+                      <div>
+                        <dt>地點</dt>
+                        <dd>
+                          {{ locationLabels.get(runRecord.locationType) ?? runRecord.locationType }}
+                        </dd>
+                      </div>
+
+                      <div>
+                        <dt>心情</dt>
+                        <dd>{{ moodLabels.get(runRecord.mood) ?? runRecord.mood }}</dd>
+                      </div>
+
+                      <div>
+                        <dt>天氣</dt>
+                        <dd>
+                          {{
+                            weatherLabels.get(runRecord.weather.condition) ??
+                            runRecord.weather.condition
+                          }}
+                        </dd>
+                      </div>
+                    </dl>
+
+                    <div class="station-record-actions">
+                      <Button
+                        type="button"
+                        label="編輯"
+                        icon="pi pi-pencil"
+                        severity="secondary"
+                        outlined
+                        size="small"
+                        :disabled="deletingRunRecordId !== null"
+                        @click="openEditDialog(runRecord)"
+                      />
+
+                      <Button
+                        type="button"
+                        label="刪除"
+                        icon="pi pi-trash"
+                        severity="danger"
+                        text
+                        size="small"
+                        :loading="deletingRunRecordId === runRecord.id"
+                        :disabled="
+                          deletingRunRecordId !== null && deletingRunRecordId !== runRecord.id
+                        "
+                        @click="confirmDeleteRunRecord(runRecord)"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionPanel>
+          </Accordion>
+        </div>
+      </BaseCard>
+    </div>
 
     <div class="station-progression-sections">
       <BaseCard v-if="runnerProgressError" class="station-progress-error">
@@ -719,6 +739,13 @@ watch(
   gap: var(--space-8);
 }
 
+.station-record-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: stretch;
+  gap: var(--space-5);
+}
+
 .station-progress-error {
   display: flex;
   min-height: 180px;
@@ -733,10 +760,12 @@ watch(
 
 .station-day-section {
   display: flex;
-  width: min(100%, 720px);
-  margin-inline: auto;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-4);
 
   padding: var(--space-6);
 
@@ -767,40 +796,138 @@ watch(
 }
 
 .station-day-heading > span {
+  flex: 0 0 auto;
+
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
 }
 
-.station-record-list {
+.station-day-loading {
   display: grid;
+  gap: var(--space-3);
+}
+
+.station-day-empty {
+  display: flex;
+  flex: 1;
+  min-height: 220px;
+  align-items: center;
+  justify-content: center;
   gap: var(--space-4);
+
+  color: var(--color-text-secondary);
+}
+
+.station-day-empty-icon {
+  display: grid;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+
+  color: var(--color-primary);
+  font-size: var(--font-size-md);
+
+  background: var(--color-primary-pale);
+  border-radius: var(--radius-full);
+}
+
+.station-day-empty p {
+  margin: 0 0 var(--space-1);
+
+  color: var(--color-text);
+  font-weight: var(--font-weight-medium);
+}
+
+.station-day-empty span:not(.station-day-empty-icon) {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-base);
+}
+
+.station-record-scroll-area {
+  flex: 1;
+  min-height: 0;
+  padding-right: var(--space-1);
+  overflow-y: auto;
+
+  scrollbar-color: var(--color-primary-soft) transparent;
+  scrollbar-width: thin;
+}
+
+.station-record-accordion {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.station-record-panel {
+  overflow: hidden;
+
+  background: color-mix(in srgb, var(--color-surface) 56%, transparent);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.station-record-panel :deep(.p-accordionheader) {
+  min-height: 52px;
+  padding: var(--space-3) var(--space-4);
+
+  color: var(--color-text);
+
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.station-record-panel :deep(.p-accordionheader:hover) {
+  color: var(--color-primary);
+  background: var(--color-primary-pale);
+}
+
+.station-record-panel :deep(.p-accordionheader:focus-visible) {
+  outline: 3px solid var(--color-accent);
+  outline-offset: -3px;
+}
+
+.station-record-panel :deep(.p-accordionheader[aria-expanded='true']) {
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary-pale) 62%, transparent);
+}
+
+.station-record-panel :deep(.p-accordionheader-toggle-icon) {
+  width: 18px;
+  height: 18px;
+}
+
+.station-record-panel :deep(.p-accordioncontent-content) {
+  padding: 0;
+
+  background: transparent;
+  border: 0;
 }
 
 .station-record-card {
   display: grid;
-  grid-template-columns: 160px minmax(0, 1fr);
-  overflow: hidden;
+  grid-template-columns: minmax(120px, 0.72fr) minmax(0, 1.28fr);
 
-  border-radius: var(--radius-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.station-record-card--without-image {
+  grid-template-columns: 1fr;
 }
 
 .station-record-image-wrapper {
   position: relative;
 
-  display: flex;
+  align-self: start;
   min-width: 0;
-  min-height: 160px;
-  align-items: center;
-  justify-content: center;
+  width: 100%;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
 
   background: var(--color-primary-pale);
-}
-
-.station-record-image-placeholder {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  text-align: center;
 }
 
 .station-record-details dd {
@@ -844,8 +971,9 @@ watch(
 
 .station-record-time {
   color: var(--color-primary);
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
+  font-variant-numeric: tabular-nums;
 }
 
 .station-record-actions {
@@ -883,14 +1011,35 @@ watch(
 
 .station-calendar-card {
   display: flex;
-  width: min(100%, 720px);
-  margin-inline: auto;
+  min-width: 0;
+  height: 100%;
   flex-direction: column;
   gap: var(--space-5);
 
   padding: var(--space-6);
 
   border-radius: var(--radius-lg);
+}
+
+@media (max-width: 960px) {
+  .station-record-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .station-calendar-card,
+  .station-day-section {
+    width: min(100%, 720px);
+    height: auto;
+    margin-inline: auto;
+  }
+
+  .station-day-section {
+    overflow: visible;
+  }
+
+  .station-record-scroll-area {
+    overflow: visible;
+  }
 }
 
 .station-calendar-toolbar {
@@ -1002,22 +1151,22 @@ watch(
     opacity 0.2s ease;
 }
 
-.station-date-cell--recorded {
+.station-date-cell:not(:disabled) {
   cursor: pointer;
 }
 
-.station-date-cell--recorded:hover {
+.station-date-cell:not(:disabled):hover {
   opacity: 0.78;
 }
 
-.station-date-cell--recorded:focus-visible {
-  outline: none;
+.station-date-cell:not(:disabled):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+  border-radius: var(--radius-sm);
 }
 
-.station-date-cell--recorded:focus-visible .station-date-content,
-.station-date-cell--selected .station-date-content {
-  outline: 3px solid var(--color-accent);
-  outline-offset: 3px;
+.station-date-cell--selected .station-date-number {
+  border-color: var(--color-accent);
 }
 
 .station-date-cell--outside {
@@ -1032,7 +1181,11 @@ watch(
 .station-date-content {
   width: clamp(36px, 68%, 58px);
   aspect-ratio: 1 / 1;
+
+  border: 3px solid transparent;
   border-radius: 50%;
+
+  transition: border-color 0.2s ease;
 }
 
 .station-date-number {
@@ -1055,7 +1208,11 @@ watch(
 
   object-fit: cover;
 
-  border: 3px solid var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.station-date-cell--selected .station-date-thumbnail {
+  border-color: var(--color-accent);
 }
 
 @media (max-width: 768px) {
@@ -1103,6 +1260,10 @@ watch(
 
   .station-record-card {
     grid-template-columns: 112px minmax(0, 1fr);
+  }
+
+  .station-record-card--without-image {
+    grid-template-columns: 1fr;
   }
 
   .station-record-image-wrapper {
