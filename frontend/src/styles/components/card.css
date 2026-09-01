@@ -96,3 +96,146 @@
     background-color: color-mix(in srgb, var(--color-surface) 90%, transparent);
   }
 }
+
+/* 跑步紀錄 Dialog */
+.p-dialog.p-component.run-record-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(44rem, calc(100vw - var(--space-6)));
+  max-height: calc(100dvh - var(--space-7));
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  color: var(--color-text);
+  font-family: var(--font-family-base);
+  letter-spacing: var(--letter-spacing-base);
+  background-color: color-mix(in srgb, var(--color-primary-pale) 38%, transparent);
+}
+
+.run-record-dialog .p-dialog-header {
+  flex: 0 0 auto;
+  padding: var(--space-5) var(--space-6) var(--space-4);
+  background: transparent;
+}
+
+.run-record-dialog .p-dialog-title {
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-heading);
+  letter-spacing: var(--letter-spacing-base);
+}
+
+.run-record-dialog .p-dialog-close-button {
+  width: calc(var(--space-6) + var(--space-2));
+  height: calc(var(--space-6) + var(--space-2));
+  border: 1px solid var(--color-dark-pale);
+  border-radius: var(--radius-full);
+  color: var(--color-dark);
+  background: transparent;
+  box-shadow: none;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+.run-record-dialog .p-dialog-close-button:hover {
+  border-color: var(--color-primary);
+  color: var(--color-dark);
+  background: var(--color-primary-pale);
+}
+
+.run-record-dialog .p-dialog-close-button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: var(--space-1);
+  box-shadow: none;
+}
+
+.run-record-dialog .p-dialog-content {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+.run-record-dialog .run-record-form {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.run-record-dialog .run-record-form__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+  min-height: 0;
+  margin-block: var(--space-2);
+  padding: var(--space-2) var(--space-6);
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-color: var(--color-primary-soft) transparent;
+  scrollbar-width: thin;
+}
+
+.run-record-dialog .run-record-form__body::-webkit-scrollbar {
+  width: var(--space-2);
+}
+
+.run-record-dialog .run-record-form__body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.run-record-dialog .run-record-form__body::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-soft);
+  background-clip: padding-box;
+}
+
+.run-record-dialog .run-form-actions {
+  flex: 0 0 auto;
+  padding: var(--space-3) var(--space-6) var(--space-5);
+  background: transparent;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-surface) 24%, transparent);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .p-dialog.p-component.run-record-dialog {
+    background-color: color-mix(in srgb, var(--color-secondary-soft) 90%, transparent);
+  }
+}
+
+@media (max-width: 480px) {
+  .p-dialog.p-component.run-record-dialog {
+    width: calc(100vw - var(--space-5));
+    max-height: calc(100dvh - var(--space-5));
+    border-radius: var(--radius-lg);
+  }
+
+  .run-record-dialog .p-dialog-header {
+    padding: var(--space-4) var(--space-4) var(--space-3);
+  }
+
+  .run-record-dialog .p-dialog-title {
+    font-size: var(--font-size-base);
+  }
+}
+
+@media (max-width: 639px) {
+  .run-record-dialog .run-record-form__body {
+    margin-block: var(--space-1);
+    padding: var(--space-2) var(--space-4);
+  }
+
+  .run-record-dialog .run-form-actions {
+    padding: var(--space-3) var(--space-4) var(--space-5);
+  }
+}

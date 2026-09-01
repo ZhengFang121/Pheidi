@@ -131,7 +131,7 @@
       modal
       header="今日跑步打卡"
       :draggable="false"
-      class="run-check-in-dialog"
+      class="run-record-dialog"
     >
       <RunRecordForm
         v-if="isCheckInDialogVisible"
@@ -533,97 +533,6 @@ const navigationItems = ref<NavigationItem[]>([
   font-size: 12px;
   font-weight: var(--font-weight-regular);
   letter-spacing: var(--letter-spacing-wide);
-}
-
-/* 打卡視窗 */
-:global(.run-check-in-dialog.p-dialog) {
-  width: min(44rem, calc(100vw - var(--space-6)));
-  max-height: calc(100dvh - var(--space-7));
-  overflow: hidden;
-  border-radius: var(--radius-xl);
-  color: var(--color-text);
-  font-family: var(--font-family-base);
-  letter-spacing: var(--letter-spacing-base);
-}
-
-:global(.run-check-in-dialog .p-dialog-header) {
-  flex: 0 0 auto;
-  padding: var(--space-5) var(--space-6) var(--space-4);
-  background: transparent;
-}
-
-:global(.run-check-in-dialog .p-dialog-title) {
-  color: var(--color-text);
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-bold);
-  line-height: var(--line-height-heading);
-  letter-spacing: var(--letter-spacing-base);
-}
-
-:global(.run-check-in-dialog .p-dialog-close-button) {
-  width: calc(var(--space-6) + var(--space-2));
-  height: calc(var(--space-6) + var(--space-2));
-  border: 1px solid var(--color-dark-pale);
-  border-radius: var(--radius-full);
-  color: var(--color-dark);
-  background: transparent;
-  box-shadow: none;
-  transition:
-    color 150ms ease,
-    background-color 150ms ease,
-    border-color 150ms ease;
-}
-
-:global(.run-check-in-dialog .p-dialog-close-button:hover) {
-  border-color: var(--color-primary);
-  color: var(--color-dark);
-  background: var(--color-primary-pale);
-}
-
-:global(.run-check-in-dialog .p-dialog-close-button:focus-visible) {
-  outline: 2px solid var(--color-primary);
-  outline-offset: var(--space-1);
-  box-shadow: none;
-}
-
-:global(.run-check-in-dialog .p-dialog-content) {
-  min-height: 0;
-  padding: 0;
-  overflow-y: auto;
-  background: transparent;
-  scrollbar-color: var(--color-primary-soft) transparent;
-  scrollbar-width: thin;
-}
-
-:global(.run-check-in-dialog .p-dialog-content::-webkit-scrollbar) {
-  width: var(--space-2);
-}
-
-:global(.run-check-in-dialog .p-dialog-content::-webkit-scrollbar-track) {
-  background: transparent;
-}
-
-:global(.run-check-in-dialog .p-dialog-content::-webkit-scrollbar-thumb) {
-  border: 2px solid transparent;
-  border-radius: var(--radius-full);
-  background: var(--color-primary-soft);
-  background-clip: padding-box;
-}
-
-@media (max-width: 480px) {
-  :global(.run-check-in-dialog.p-dialog) {
-    width: calc(100vw - var(--space-5));
-    max-height: calc(100dvh - var(--space-5));
-    border-radius: var(--radius-lg);
-  }
-
-  :global(.run-check-in-dialog .p-dialog-header) {
-    padding: var(--space-4) var(--space-4) var(--space-3);
-  }
-
-  :global(.run-check-in-dialog .p-dialog-title) {
-    font-size: var(--font-size-base);
-  }
 }
 
 /* 平板尺寸 */

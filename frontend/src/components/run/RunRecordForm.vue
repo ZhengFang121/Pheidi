@@ -77,6 +77,16 @@ const weatherCondition = ref<WeatherCondition>(props.runRecord?.weather.conditio
 const weatherSource = ref<WeatherSource>(props.runRecord?.weather.source ?? 'manual')
 const coordinates = ref<RunRecordCoordinates | null>(null)
 
+const weatherIndex = computed(() => {
+  const selectedIndex = weatherConditionOptions.findIndex(
+    (option) => option.value === weatherCondition.value,
+  )
+
+  return Math.max(selectedIndex, 0)
+})
+
+const weatherIndicatorOffset = computed(() => `${weatherIndex.value * 100}%`)
+
 const weatherLoading = ref(false)
 const submitError = ref('')
 const submitting = ref(false)
@@ -323,190 +333,203 @@ onBeforeUnmount(() => {
 
 <template>
   <form class="run-record-form" @submit.prevent="handleSubmit">
-    <div class="form-field">
-      <label for="run-date" class="form-field__label">跑步日期與時間</label>
+    <div class="run-record-form__body">
+      <div class="form-field">
+        <label for="run-date" class="form-field__label">跑步日期與時間</label>
 
-      <DatePicker
-        id="run-date"
-        v-model="runDate"
-        :max-date="maxRunDate"
-        date-format="yy/mm/dd"
-        hour-format="24"
-        show-time
-        show-icon
-        panel-class="run-date-overlay"
-        fluid
-      />
-
-      <small class="run-form-help">可以補登過去的跑步紀錄，但不能選擇未來時間。</small>
-    </div>
-
-    <div class="form-field">
-      <label for="run-location" class="form-field__label">跑步地點</label>
-
-      <Select
-        id="run-location"
-        v-model="locationType"
-        :options="runLocationOptions"
-        option-label="label"
-        option-value="value"
-        placeholder="請選擇跑步地點"
-        overlay-class="run-select-overlay"
-        fluid
-      />
-    </div>
-
-    <div class="form-field">
-      <label for="run-distance" class="form-field__label">跑步距離</label>
-
-      <InputNumber
-        id="run-distance"
-        v-model="distance"
-        :min="0"
-        :min-fraction-digits="1"
-        :max-fraction-digits="2"
-        suffix=" km"
-        placeholder="例如 5.2 km"
-        fluid
-      />
-    </div>
-
-    <fieldset class="run-duration-fieldset">
-      <legend class="form-field__label">跑步時長</legend>
-
-      <div class="run-duration-grid">
-        <InputNumber v-model="durationHours" :min="0" :max="99" suffix=" 小時" fluid />
-
-        <InputNumber v-model="durationMinutes" :min="0" :max="59" suffix=" 分" fluid />
-
-        <InputNumber v-model="durationSeconds" :min="0" :max="59" suffix=" 秒" fluid />
-      </div>
-    </fieldset>
-
-    <div class="form-field">
-      <label for="run-mood" class="form-field__label">跑步心情</label>
-
-      <Select
-        id="run-mood"
-        v-model="mood"
-        :options="runMoodOptions"
-        option-label="label"
-        option-value="value"
-        overlay-class="run-select-overlay"
-        fluid
-      >
-        <template #value="{ value }">
-          <span v-if="value" class="run-option">
-            <component
-              :is="getMoodIcon(value)"
-              class="run-option-icon"
-              :size="18"
-              :stroke-width="2"
-              aria-hidden="true"
-            />
-            <span>{{ getMoodLabel(value) }}</span>
-          </span>
-        </template>
-
-        <template #option="{ option }">
-          <span class="run-option">
-            <component
-              :is="getMoodIcon(option.value)"
-              class="run-option-icon"
-              :size="18"
-              :stroke-width="2"
-              aria-hidden="true"
-            />
-            <span>{{ option.label }}</span>
-          </span>
-        </template>
-      </Select>
-    </div>
-
-    <div class="form-field">
-      <div>
-        <p class="form-field__label run-form-heading">跑步照片（選填）</p>
-
-        <small class="run-form-help">支援 JPG、PNG、WebP、GIF，檔案最大 5 MB。</small>
-      </div>
-
-      <div class="run-upload-panel">
-        <input
-          ref="imageInput"
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
-          class="run-image-input"
-          @change="handleImageChange"
+        <DatePicker
+          id="run-date"
+          v-model="runDate"
+          :max-date="maxRunDate"
+          date-format="yy/mm/dd"
+          hour-format="24"
+          show-time
+          show-icon
+          panel-class="run-date-overlay"
+          fluid
         />
 
-        <div v-if="imagePreviewUrl" class="run-image-preview">
-          <img :src="imagePreviewUrl" alt="跑步照片預覽" class="run-image-preview__image" />
-        </div>
-
-        <div class="run-upload-actions">
-          <BaseButton
-            type="button"
-            :label="imagePreviewUrl ? '更換照片' : '選擇照片'"
-            icon="pi pi-image"
-            variant="outline"
-            :disabled="submitting"
-            @click="openImagePicker"
-          />
-
-          <Button
-            v-if="imagePreviewUrl"
-            type="button"
-            label="移除照片"
-            icon="pi pi-trash"
-            severity="danger"
-            text
-            rounded
-            :disabled="submitting"
-            @click="clearImage"
-          />
-        </div>
+        <small class="run-form-help">可以補登過去的跑步紀錄，但不能選擇未來時間。</small>
       </div>
 
-      <Message v-if="imageErrorMessage" severity="error" :closable="false">
-        {{ imageErrorMessage }}
+      <div class="form-field">
+        <label for="run-location" class="form-field__label">跑步地點</label>
+
+        <Select
+          id="run-location"
+          v-model="locationType"
+          :options="runLocationOptions"
+          option-label="label"
+          option-value="value"
+          placeholder="請選擇跑步地點"
+          overlay-class="run-select-overlay"
+          fluid
+        />
+      </div>
+
+      <div class="form-field">
+        <label for="run-distance" class="form-field__label">跑步距離</label>
+
+        <InputNumber
+          id="run-distance"
+          v-model="distance"
+          :min="0"
+          :min-fraction-digits="1"
+          :max-fraction-digits="2"
+          suffix=" km"
+          placeholder="例如 5.2 km"
+          fluid
+        />
+      </div>
+
+      <fieldset class="run-duration-fieldset">
+        <legend class="form-field__label">跑步時長</legend>
+
+        <div class="run-duration-grid">
+          <InputNumber v-model="durationHours" :min="0" :max="99" suffix=" 小時" fluid />
+
+          <InputNumber v-model="durationMinutes" :min="0" :max="59" suffix=" 分" fluid />
+
+          <InputNumber v-model="durationSeconds" :min="0" :max="59" suffix=" 秒" fluid />
+        </div>
+      </fieldset>
+
+      <div class="form-field">
+        <label for="run-mood" class="form-field__label">跑步心情</label>
+
+        <Select
+          id="run-mood"
+          v-model="mood"
+          :options="runMoodOptions"
+          option-label="label"
+          option-value="value"
+          overlay-class="run-select-overlay"
+          fluid
+        >
+          <template #value="{ value }">
+            <span v-if="value" class="run-option">
+              <component
+                :is="getMoodIcon(value)"
+                class="run-option-icon"
+                :size="18"
+                :stroke-width="2"
+                aria-hidden="true"
+              />
+              <span>{{ getMoodLabel(value) }}</span>
+            </span>
+          </template>
+
+          <template #option="{ option }">
+            <span class="run-option">
+              <component
+                :is="getMoodIcon(option.value)"
+                class="run-option-icon"
+                :size="18"
+                :stroke-width="2"
+                aria-hidden="true"
+              />
+              <span>{{ option.label }}</span>
+            </span>
+          </template>
+        </Select>
+      </div>
+
+      <div class="form-field">
+        <div>
+          <p class="form-field__label run-form-heading">跑步照片（選填）</p>
+
+          <small class="run-form-help">支援 JPG、PNG、WebP、GIF，檔案最大 5 MB。</small>
+        </div>
+
+        <div class="run-upload-panel">
+          <input
+            ref="imageInput"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            class="run-image-input"
+            @change="handleImageChange"
+          />
+
+          <div v-if="imagePreviewUrl" class="run-image-preview">
+            <img :src="imagePreviewUrl" alt="跑步照片預覽" class="run-image-preview__image" />
+          </div>
+
+          <div class="run-upload-actions">
+            <BaseButton
+              type="button"
+              :label="imagePreviewUrl ? '更換照片' : '選擇照片'"
+              icon="pi pi-image"
+              variant="outline"
+              :disabled="submitting"
+              @click="openImagePicker"
+            />
+
+            <Button
+              v-if="imagePreviewUrl"
+              type="button"
+              label="移除照片"
+              icon="pi pi-trash"
+              severity="danger"
+              text
+              rounded
+              :disabled="submitting"
+              @click="clearImage"
+            />
+          </div>
+        </div>
+
+        <Message v-if="imageErrorMessage" severity="error" :closable="false">
+          {{ imageErrorMessage }}
+        </Message>
+      </div>
+
+      <div class="form-field">
+        <p id="run-weather-label" class="form-field__label run-form-heading">天氣</p>
+
+        <div
+          class="run-weather-selector"
+          :style="{ '--weather-indicator-offset': weatherIndicatorOffset }"
+        >
+          <span class="run-weather-indicator-track" aria-hidden="true">
+            <span class="run-weather-active-indicator" />
+          </span>
+
+          <SelectButton
+            :model-value="weatherCondition"
+            :options="weatherConditionOptions"
+            option-label="label"
+            option-value="value"
+            class="run-weather-select"
+            aria-labelledby="run-weather-label"
+            :disabled="weatherLoading"
+            :allow-empty="false"
+            fluid
+            @update:model-value="handleWeatherChange"
+          >
+            <template #option="{ option }">
+              <span class="run-option run-option--centered">
+                <component
+                  :is="getWeatherIcon(option.value)"
+                  class="run-option-icon"
+                  :size="18"
+                  :stroke-width="2"
+                  aria-hidden="true"
+                />
+                <span>{{ option.label }}</span>
+              </span>
+            </template>
+          </SelectButton>
+        </div>
+
+        <small v-if="weatherLoading" class="run-form-help">正在取得天氣……</small>
+      </div>
+
+      <Message v-if="submitError" severity="error" :closable="false">
+        {{ submitError }}
       </Message>
     </div>
 
-    <div class="form-field">
-      <p class="form-field__label run-form-heading">天氣</p>
-
-      <SelectButton
-        :model-value="weatherCondition"
-        :options="weatherConditionOptions"
-        option-label="label"
-        option-value="value"
-        :disabled="weatherLoading"
-        :allow-empty="false"
-        fluid
-        @update:model-value="handleWeatherChange"
-      >
-        <template #option="{ option }">
-          <span class="run-option run-option--centered">
-            <component
-              :is="getWeatherIcon(option.value)"
-              class="run-option-icon"
-              :size="18"
-              :stroke-width="2"
-              aria-hidden="true"
-            />
-            <span>{{ option.label }}</span>
-          </span>
-        </template>
-      </SelectButton>
-
-      <small v-if="weatherLoading" class="run-form-help">正在取得天氣……</small>
-    </div>
-
-    <Message v-if="submitError" severity="error" :closable="false">
-      {{ submitError }}
-    </Message>
-
-    <div class="run-form-actions">
+    <footer class="run-form-actions">
       <BaseButton
         type="button"
         label="取消"
@@ -522,7 +545,7 @@ onBeforeUnmount(() => {
         :loading="submitting"
         :disabled="submitting"
       />
-    </div>
+    </footer>
   </form>
 </template>
 
@@ -532,8 +555,6 @@ onBeforeUnmount(() => {
 
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  padding: var(--space-4) var(--space-6) var(--space-6);
 
   color: var(--color-text);
   font-family: var(--font-family-base);
@@ -596,7 +617,6 @@ onBeforeUnmount(() => {
   flex-direction: row;
   gap: var(--space-3);
   justify-content: flex-end;
-  padding-top: var(--space-1);
 }
 
 .run-image-input {
@@ -645,10 +665,11 @@ onBeforeUnmount(() => {
   gap: var(--space-2);
 }
 
-.run-upload-actions :deep(.base-button),
-.run-form-actions :deep(.base-button) {
+.run-upload-actions :deep(.p-button),
+.run-form-actions :deep(.p-button) {
   min-height: var(--run-control-height);
   padding-block: 0;
+  border-radius: var(--radius-full);
   letter-spacing: var(--letter-spacing-base);
 }
 
@@ -735,6 +756,7 @@ onBeforeUnmount(() => {
 }
 
 .run-record-form :deep(.p-selectbutton) {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   overflow: hidden;
@@ -743,7 +765,38 @@ onBeforeUnmount(() => {
   background: color-mix(in srgb, var(--color-surface) 34%, transparent);
 }
 
+.run-weather-selector {
+  --weather-indicator-inset: calc(var(--space-1) / 2);
+
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+}
+
+.run-weather-indicator-track {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  z-index: 1;
+  width: calc(100% / 3);
+  padding: var(--weather-indicator-inset);
+  pointer-events: none;
+  transform: translateX(var(--weather-indicator-offset, 0%));
+  transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.run-weather-active-indicator {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+}
+
 .run-record-form :deep(.p-selectbutton .p-togglebutton) {
+  position: relative;
+  z-index: 2;
   min-width: 0;
   min-height: var(--run-control-height);
   padding: 0 var(--space-2);
@@ -757,14 +810,19 @@ onBeforeUnmount(() => {
   letter-spacing: var(--letter-spacing-base);
 }
 
-.run-record-form :deep(.p-selectbutton .p-togglebutton:hover) {
-  color: var(--color-dark);
-  background: var(--color-primary-pale);
+.run-record-form :deep(.run-weather-select .p-togglebutton:hover) {
+  color: var(--color-text-secondary);
+  background: transparent;
 }
 
 .run-record-form :deep(.p-selectbutton .p-togglebutton.p-togglebutton-checked) {
   color: var(--color-dark);
-  background: var(--color-secondary-pale);
+  background: transparent;
+}
+
+.run-record-form :deep(.run-weather-select .p-togglebutton-checked .p-togglebutton-content) {
+  background: transparent;
+  box-shadow: none;
 }
 
 .run-record-form :deep(.p-selectbutton .p-togglebutton:focus-visible) {
@@ -806,12 +864,13 @@ onBeforeUnmount(() => {
   background: var(--color-secondary-pale);
 }
 
-@media (max-width: 639px) {
-  .run-record-form {
-    gap: var(--space-5);
-    padding: var(--space-3) var(--space-4) var(--space-5);
+@media (prefers-reduced-motion: reduce) {
+  .run-weather-indicator-track {
+    transition: none;
   }
+}
 
+@media (max-width: 639px) {
   .run-duration-grid {
     gap: var(--space-2);
   }

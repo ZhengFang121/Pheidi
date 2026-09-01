@@ -394,12 +394,7 @@ watch(
       modal
       header="編輯跑步紀錄"
       :draggable="false"
-      :style="{ width: '44rem' }"
-      :breakpoints="{ '768px': 'calc(100vw - 32px)' }"
-      :content-style="{
-        maxHeight: 'calc(100vh - 10rem)',
-        overflowY: 'auto',
-      }"
+      class="run-record-dialog"
       @hide="editingRunRecord = null"
     >
       <RunRecordForm
