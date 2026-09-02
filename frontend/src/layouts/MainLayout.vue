@@ -6,6 +6,8 @@
       <router-view />
     </main>
 
+    <div v-if="route.name !== 'home'" class="footer-transition" aria-hidden="true"></div>
+
     <AppFooter />
 
     <ProgressionEventLayer />
@@ -31,5 +33,15 @@ const ProgressionPreviewControls = import.meta.env.DEV
 <style scoped>
 .main-layout--home .page-content {
   margin-top: calc(-1 * var(--app-header-height));
+}
+
+.footer-transition {
+  height: clamp(var(--space-8), 10vw, calc(var(--space-8) + var(--space-8)));
+  background: linear-gradient(
+    180deg,
+    var(--color-background) 0%,
+    var(--color-secondary-pale) 52%,
+    var(--color-secondary-soft) 100%
+  );
 }
 </style>
