@@ -101,6 +101,7 @@
               <Menu
                 ref="accountMenu"
                 :model="accountItems"
+                :style="{ width: accountMenuWidth }"
                 popup
                 class="account-menu"
                 @show="isAccountMenuVisible = true"
@@ -184,11 +185,21 @@ const authStore = useAuthStore()
 const toast = useToast()
 
 const accountMenu = ref<InstanceType<typeof Menu> | null>(null)
+const accountMenuWidth = ref<string>()
 
 const isAccountMenuVisible = ref(false)
 const isCheckInDialogVisible = ref(false)
 
 function toggleAccountMenu(event: MouseEvent) {
+  if (event.currentTarget instanceof HTMLElement) {
+    const expandedWidth = window
+      .getComputedStyle(event.currentTarget)
+      .getPropertyValue('--base-icon-action-expanded-width')
+      .trim()
+
+    accountMenuWidth.value = expandedWidth || `${event.currentTarget.offsetWidth}px`
+  }
+
   accountMenu.value?.toggle(event)
 }
 
@@ -490,35 +501,44 @@ const navigationItems = ref<NavigationItem[]>([
 
 /* 玩家下拉選單 */
 :global(.account-menu.p-menu) {
-  min-width: 180px;
-  padding: 8px;
+  min-width: 0;
+  max-width: calc(100vw - var(--space-4));
+  margin-inline-start: calc(-1 * var(--space-3));
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+}
 
-  border-radius: 12px;
+:global(.account-menu .p-menu-item-content),
+:global(.account-menu .p-menu-item:not(.p-disabled) > .p-menu-item-content:hover),
+:global(.account-menu .p-menu-item[data-p-focused='true'] > .p-menu-item-content) {
+  color: inherit;
+  background: transparent;
 }
 
 :global(.account-menu-link) {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-2);
 
   width: 100%;
   min-height: 44px;
-  padding: 10px 12px;
+  padding: var(--space-2) var(--space-3);
 
   color: var(--color-primary);
   text-decoration: none;
 
-  border-radius: 8px;
+  border-radius: var(--radius-full);
 
   transition:
-    color 0.2s ease,
-    background-color 0.2s ease;
+    color 200ms ease,
+    background-color 200ms ease;
 }
 
 :global(.account-menu-link:hover),
-:global(.account-menu-link:focus-visible) {
-  color: var(--color-accent);
-  background: var(--color-primary-pale);
+:global(.account-menu-link:focus-visible),
+:global(.account-menu .p-menu-item[data-p-focused='true'] .account-menu-link) {
+  color: var(--color-surface);
+  background: var(--color-secondary);
 }
 
 :global(.account-menu-icon) {
