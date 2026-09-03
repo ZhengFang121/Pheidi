@@ -42,20 +42,24 @@ import grasslandUrl from '@/assets/images/grassland.png'
 }
 
 .app-footer__scene {
-  --footer-grass-size: clamp(48rem, 142vw, 128rem);
+  --footer-grass-size: clamp(48rem, 142vw, 168rem);
+  --footer-grass-lift: clamp(0rem, calc(12.8vw - 11.5rem), 3.625rem);
   --footer-runner-size: clamp(8.25rem, 10.833vw, 9.75rem);
   --footer-scene-trim: var(--space-8);
 
   position: relative;
-  height: calc(clamp(22.5rem, 28vw, 25.5rem) - var(--footer-scene-trim));
+  height: calc(clamp(22.5rem, 28vw, 25.5rem) - var(--space-4));
   overflow: hidden;
 }
 
 .app-footer__grass-position {
   position: absolute;
-  top: calc(clamp(1.375rem, 1.67vw, 1.5rem) - var(--footer-scene-trim));
+  top: calc(
+    clamp(1.375rem, 1.67vw, 1.5rem) - var(--footer-scene-trim) - var(--footer-grass-lift)
+  );
   left: 50%;
   width: var(--footer-grass-size);
+  max-width: none;
   aspect-ratio: 1;
   transform: translateX(-50%);
 }
@@ -99,7 +103,8 @@ import grasslandUrl from '@/assets/images/grassland.png'
 
 @media (max-width: 480px) {
   .app-footer__scene {
-    --footer-grass-size: 150vw;
+    --footer-grass-size: 165vw;
+    --footer-grass-lift: var(--space-2);
     --footer-runner-size: 7.75rem;
   }
 }
