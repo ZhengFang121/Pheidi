@@ -394,6 +394,7 @@ watch(
       modal
       header="編輯跑步紀錄"
       :draggable="false"
+      :pt="{ mask: { class: 'run-record-dialog-mask' } }"
       class="run-record-dialog"
       @hide="editingRunRecord = null"
     >

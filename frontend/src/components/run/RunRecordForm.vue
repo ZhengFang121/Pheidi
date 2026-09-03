@@ -670,7 +670,6 @@ onBeforeUnmount(() => {
   min-height: var(--run-control-height);
   padding-block: 0;
   border-radius: var(--radius-full);
-  letter-spacing: var(--letter-spacing-base);
 }
 
 .run-record-form :deep(.p-datepicker),

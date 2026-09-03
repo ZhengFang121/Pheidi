@@ -131,6 +131,7 @@
       modal
       header="今日跑步打卡"
       :draggable="false"
+      :pt="{ mask: { class: 'run-record-dialog-mask' } }"
       class="run-record-dialog"
     >
       <RunRecordForm

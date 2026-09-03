@@ -98,6 +98,16 @@
 }
 
 /* 跑步紀錄 Dialog */
+.p-dialog-mask.p-overlay-mask.run-record-dialog-mask {
+  background:
+    radial-gradient(
+      circle at 50% 43%,
+      color-mix(in srgb, var(--color-secondary-pale) 48%, transparent) 0 14%,
+      transparent 46%
+    ),
+    color-mix(in srgb, var(--color-primary-soft) 60%, transparent) !important;
+}
+
 .p-dialog.p-component.run-record-dialog {
   display: flex;
   flex-direction: column;
@@ -105,10 +115,17 @@
   max-height: calc(100dvh - var(--space-7));
   overflow: hidden;
   border-radius: var(--radius-xl);
+  background-image:
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--color-primary) 13%, transparent) 0%,
+      transparent 44%
+    ),
+    linear-gradient(to left top, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 50%);
   color: var(--color-text);
   font-family: var(--font-family-base);
   letter-spacing: var(--letter-spacing-base);
-  background-color: color-mix(in srgb, var(--color-primary-pale) 38%, transparent);
 }
 
 .run-record-dialog .p-dialog-header {
@@ -205,12 +222,6 @@
   padding: var(--space-3) var(--space-6) var(--space-5);
   background: transparent;
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-surface) 24%, transparent);
-}
-
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .p-dialog.p-component.run-record-dialog {
-    background-color: color-mix(in srgb, var(--color-secondary-soft) 90%, transparent);
-  }
 }
 
 @media (max-width: 480px) {
