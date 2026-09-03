@@ -8,6 +8,8 @@ import { useAuthStore } from '@/stores/auth'
 import AccountPage from '@/views/AccountPage.vue'
 import AcademyPage from '@/views/AcademyPage.vue'
 import ArticleDetailPage from '@/views/ArticleDetailPage.vue'
+import EventDetailPage from '@/views/EventDetailPage.vue'
+import EventEditorPage from '@/views/EventEditorPage.vue'
 import ForgotPasswordPage from '@/views/ForgotPasswordPage.vue'
 import HomePage from '@/views/HomePage.vue'
 import IntroPage from '@/views/IntroPage.vue'
@@ -96,6 +98,26 @@ const router = createRouter({
           path: '/plaza',
           name: 'plaza',
           component: PlazaPage,
+          meta: { requiresAuth: true },
+        },
+        {
+          path: '/plaza/events/create',
+          name: 'event-create',
+          component: EventEditorPage,
+          props: { mode: 'create' },
+          meta: { requiresAuth: true },
+        },
+        {
+          path: '/plaza/events/:eventId',
+          name: 'event-detail',
+          component: EventDetailPage,
+          meta: { requiresAuth: true },
+        },
+        {
+          path: '/plaza/events/:eventId/edit',
+          name: 'event-edit',
+          component: EventEditorPage,
+          props: { mode: 'edit' },
           meta: { requiresAuth: true },
         },
         {

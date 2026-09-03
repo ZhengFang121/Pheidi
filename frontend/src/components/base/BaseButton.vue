@@ -40,5 +40,11 @@ withDefaults(defineProps<Props>(), {
     }"
     class="base-button"
     :class="`base-button--${variant}`"
-  />
+  >
+    <template v-if="$slots.icon" #icon>
+      <span class="base-button__content">
+        <slot name="icon" />
+      </span>
+    </template>
+  </Button>
 </template>

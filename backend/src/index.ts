@@ -6,6 +6,7 @@ import { connectDatabase } from './configs/database.js'
 import adminRoutes from './routes/adminRoutes.js'
 import adminPlazaRoutes from './routes/adminPlazaRoutes.js'
 import articleRoutes from './routes/articleRoutes.js'
+import eventRoutes from './routes/eventRoutes.js'
 import postRoutes from './routes/postRoutes.js'
 import postUploadRoutes from './routes/postUploadRoutes.js'
 import publicArticleRoutes from './routes/publicArticleRoutes.js'
@@ -42,6 +43,7 @@ app.use('/api/admin/articles', articleRoutes)
 app.use('/api/admin/uploads', uploadRoutes)
 app.use('/api/uploads', postUploadRoutes)
 app.use('/api/articles', publicArticleRoutes)
+app.use('/api/events', eventRoutes)
 app.use('/api/posts', postRoutes)
 app.use('/api/run-records', runRecordRoutes)
 app.use('/api/run-record-uploads', runRecordUploadRoutes)

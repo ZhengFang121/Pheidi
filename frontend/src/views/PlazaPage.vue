@@ -421,7 +421,14 @@
                 <h2 id="event-heading" class="event-heading">近期跑步活動</h2>
               </div>
 
-              <span class="event-count">共 {{ events.length }} 場</span>
+              <div class="event-heading-actions">
+                <span class="event-count">共 {{ events.length }} 場</span>
+                <BaseButton label="發起活動" class="create-event-button" @click="createEvent">
+                  <template #icon>
+                    <Plus aria-hidden="true" />
+                  </template>
+                </BaseButton>
+              </div>
             </div>
 
             <Message v-if="eventErrorMessage" severity="error" :closable="false">
@@ -438,7 +445,13 @@
               </div>
             </Message>
 
-            <div v-else-if="isEventLoading" class="event-grid" aria-label="活動情報載入中">
+            <div
+              v-else-if="isEventLoading"
+              class="event-grid"
+              aria-label="活動情報載入中"
+              aria-live="polite"
+              aria-busy="true"
+            >
               <Skeleton
                 v-for="index in 4"
                 :key="index"
@@ -496,19 +509,30 @@
                       </dt>
                       <dd>{{ event.distance }}</dd>
                     </div>
+
+                    <div class="event-detail">
+                      <dt>
+                        <UsersRound aria-hidden="true" />
+                        參加
+                      </dt>
+                      <dd>
+                        {{ formatEventParticipantCount(event.participantCount, event.capacity) }}
+                      </dd>
+                    </div>
                   </dl>
 
-                  <Button
+                  <BaseButton
                     type="button"
                     label="查看活動"
-                    severity="secondary"
-                    outlined
+                    variant="outline"
                     class="event-button"
+                    :aria-label="`查看活動：${event.title}`"
+                    @click="viewEvent(event.id)"
                   >
                     <template #icon>
                       <ArrowRight aria-hidden="true" />
                     </template>
-                  </Button>
+                  </BaseButton>
                 </div>
               </BaseCard>
             </div>
@@ -521,6 +545,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { isAxiosError } from 'axios'
 import {
   ArrowRight,
@@ -532,6 +557,7 @@ import {
   MapPin,
   MessageCircle,
   Pencil,
+  Plus,
   Route,
   Send,
   Trash2,
@@ -552,6 +578,8 @@ import Textarea from 'primevue/textarea'
 import { useConfirm } from 'primevue/useconfirm'
 
 import BaseCard from '@/components/base/BaseCard.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
+import { getEvents } from '@/services/events'
 import {
   createPost,
   createPostComment,
@@ -565,6 +593,13 @@ import {
 import { uploadPostImage } from '@/services/uploads'
 import { useAuthStore } from '@/stores/auth'
 import type { PlazaPost as ApiPlazaPost, PostComment as ApiPostComment } from '@/types/post'
+import type { RunningEventListItem } from '@/types/event'
+import { formatEventDay, formatEventMonth, formatEventTimeRange } from '@/utils/date'
+import {
+  formatEventParticipantCount,
+  getEventStatusPresentation,
+  type EventStatusSeverity,
+} from '@/utils/event'
 
 type PlazaTab = 'feed' | 'events'
 
@@ -578,25 +613,21 @@ interface PlazaPostView extends ApiPlazaPost {
   comments: PlazaCommentView[]
 }
 
-type EventStatusSeverity = 'success' | 'warn' | 'secondary'
-
-interface PlazaEvent {
-  id: number
+interface PlazaEvent extends RunningEventListItem {
   month: string
   day: string
-  title: string
   description: string
-  location: string
   time: string
-  distance: string
   statusLabel: string
   statusSeverity: EventStatusSeverity
 }
 
 const authStore = useAuthStore()
 const confirm = useConfirm()
+const route = useRoute()
+const router = useRouter()
 
-const activeTab = ref<PlazaTab>('feed')
+const activeTab = ref<PlazaTab>(route.query.tab === 'events' ? 'events' : 'feed')
 const maximumPostLength = 500
 const maximumPostImageSize = 5 * 1024 * 1024
 const allowedPostImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
@@ -630,44 +661,7 @@ const eventErrorMessage = ref('')
 const posts = ref<PlazaPostView[]>([])
 const totalPosts = ref(0)
 
-const events = ref<PlazaEvent[]>([
-  {
-    id: 1,
-    month: 'SEP',
-    day: '06',
-    title: '河濱晨光練跑',
-    description: '適合剛開始跑步的跑者，一起用舒服的節奏迎接早晨。',
-    location: '大佳河濱公園',
-    time: '06:30－08:00',
-    distance: '3K／5K',
-    statusLabel: '報名中',
-    statusSeverity: 'success',
-  },
-  {
-    id: 2,
-    month: 'SEP',
-    day: '13',
-    title: '不看數字的一天',
-    description: '放下配速與里程，只感受呼吸、腳步和沿途風景。',
-    location: '台北市大安森林公園',
-    time: '16:00－17:30',
-    distance: '自由距離',
-    statusLabel: '即將額滿',
-    statusSeverity: 'warn',
-  },
-  {
-    id: 3,
-    month: 'OCT',
-    day: '04',
-    title: '菲迪城市探索跑',
-    description: '跟著線索穿梭城市，在奔跑途中尋找菲迪留下的神秘足跡。',
-    location: '台北市信義區',
-    time: '07:00－10:00',
-    distance: '8K',
-    statusLabel: '即將開放',
-    statusSeverity: 'secondary',
-  },
-])
+const events = ref<PlazaEvent[]>([])
 
 const remainingCharacters = computed(() => maximumPostLength - postContent.value.length)
 
@@ -686,8 +680,6 @@ const remainingEditCommentCharacters = computed(
 const canSaveEditedComment = computed(
   () => editingCommentContent.value.trim().length > 0 && updatingCommentId.value === null,
 )
-
-let eventLoadingTimer: ReturnType<typeof setTimeout> | null = null
 
 const postDateFormatter = new Intl.DateTimeFormat('zh-TW', {
   year: 'numeric',
@@ -744,16 +736,43 @@ async function loadFeed() {
   }
 }
 
-function loadEvents() {
+function toPlazaEvent(event: RunningEventListItem): PlazaEvent {
+  const statusPresentation = getEventStatusPresentation(event.status)
+
+  return {
+    ...event,
+    month: formatEventMonth(event.startAt),
+    day: formatEventDay(event.startAt),
+    description: event.summary,
+    time: formatEventTimeRange(event.startAt, event.endAt),
+    statusLabel: statusPresentation.label,
+    statusSeverity: statusPresentation.severity,
+  }
+}
+
+async function loadEvents() {
   eventErrorMessage.value = ''
   isEventLoading.value = true
 
-  if (eventLoadingTimer) clearTimeout(eventLoadingTimer)
-
-  eventLoadingTimer = setTimeout(() => {
+  try {
+    const response = await getEvents()
+    events.value = response.events.map(toPlazaEvent)
+  } catch (error: unknown) {
+    eventErrorMessage.value = getApiErrorMessage(error, '載入活動情報失敗，請稍後再試。')
+  } finally {
     isEventLoading.value = false
-    eventLoadingTimer = null
-  }, 900)
+  }
+}
+
+function viewEvent(eventId: string) {
+  void router.push({
+    name: 'event-detail',
+    params: { eventId },
+  })
+}
+
+function createEvent() {
+  void router.push({ name: 'event-create' })
 }
 
 function openPostImagePicker() {
@@ -1038,12 +1057,11 @@ function confirmDeleteComment(post: PlazaPostView, comment: PlazaCommentView) {
 
 onMounted(() => {
   void loadFeed()
-  loadEvents()
+  void loadEvents()
 })
 
 onBeforeUnmount(() => {
   revokePostImagePreviewUrl()
-  if (eventLoadingTimer) clearTimeout(eventLoadingTimer)
 })
 </script>
 
@@ -1697,14 +1715,34 @@ onBeforeUnmount(() => {
   font-size: var(--font-size-sm);
 }
 
+.event-heading-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.create-event-button :deep(svg) {
+  width: 18px;
+  height: 18px;
+}
+
 .event-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-5);
 }
 
+.event-grid > * {
+  min-width: 0;
+}
+
 .event-card {
   display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
   align-items: flex-start;
   gap: var(--space-5);
 
@@ -1770,6 +1808,7 @@ onBeforeUnmount(() => {
   color: var(--color-text);
   font-size: var(--font-size-md);
   line-height: var(--line-height-heading);
+  overflow-wrap: anywhere;
 }
 
 .event-description {
@@ -1777,6 +1816,7 @@ onBeforeUnmount(() => {
 
   color: var(--color-text-secondary);
   line-height: var(--line-height-base);
+  overflow-wrap: anywhere;
 }
 
 .event-details {
@@ -1803,10 +1843,12 @@ onBeforeUnmount(() => {
 }
 
 .event-detail dd {
+  min-width: 0;
   margin: 0;
 
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
+  overflow-wrap: anywhere;
 }
 
 .event-detail svg {
@@ -1818,6 +1860,7 @@ onBeforeUnmount(() => {
 
 .event-button {
   align-self: flex-end;
+  margin-top: auto;
 }
 
 .event-button :deep(svg) {
@@ -1948,6 +1991,16 @@ onBeforeUnmount(() => {
     padding: var(--space-5);
   }
 
+  .event-heading-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .event-heading-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
   .event-date {
     width: 64px;
     height: 72px;
@@ -1969,6 +2022,16 @@ onBeforeUnmount(() => {
 
   .empty-state {
     padding: var(--space-7) var(--space-5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-card {
+    transition: box-shadow 0.2s ease;
+  }
+
+  .event-card:hover {
+    transform: none;
   }
 }
 </style>
