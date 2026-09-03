@@ -460,6 +460,7 @@ onBeforeUnmount(() => {
               :label="imagePreviewUrl ? '更換照片' : '選擇照片'"
               icon="pi pi-image"
               variant="outline"
+              class="run-upload-button"
               :disabled="submitting"
               @click="openImagePicker"
             />
@@ -472,6 +473,7 @@ onBeforeUnmount(() => {
               severity="danger"
               text
               rounded
+              class="run-remove-image-button"
               :disabled="submitting"
               @click="clearImage"
             />
@@ -672,6 +674,38 @@ onBeforeUnmount(() => {
   border-radius: var(--radius-full);
 }
 
+.run-upload-actions :deep(.run-upload-button.base-button--outline) {
+  --base-button-flow-opacity: 0;
+  --base-button-flow-play-state: paused;
+
+  border-color: var(--color-primary-light);
+  color: var(--color-primary);
+  background: var(--color-primary-pale);
+}
+
+.run-upload-actions :deep(.run-upload-button.base-button--outline:hover:not(:disabled)),
+.run-upload-actions :deep(.run-upload-button.base-button--outline:active:not(:disabled)) {
+  --base-button-flow-opacity: 0;
+  --base-button-flow-play-state: paused;
+
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.run-upload-actions :deep(.run-remove-image-button.p-button) {
+  border-color: transparent;
+  color: var(--color-accent);
+  background: var(--color-accent-pale);
+}
+
+.run-upload-actions :deep(.run-remove-image-button.p-button:hover:not(:disabled)),
+.run-upload-actions :deep(.run-remove-image-button.p-button:active:not(:disabled)) {
+  border-color: transparent;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
 .run-record-form :deep(.p-datepicker),
 .run-record-form :deep(.p-inputnumber),
 .run-record-form :deep(.p-select) {
@@ -790,7 +824,7 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   border-radius: var(--radius-full);
-  background: var(--color-primary);
+  background: var(--color-primary-pale);
 }
 
 .run-record-form :deep(.p-selectbutton .p-togglebutton) {
@@ -815,7 +849,7 @@ onBeforeUnmount(() => {
 }
 
 .run-record-form :deep(.p-selectbutton .p-togglebutton.p-togglebutton-checked) {
-  color: var(--color-dark);
+  color: var(--color-primary);
   background: transparent;
 }
 
@@ -835,6 +869,11 @@ onBeforeUnmount(() => {
   color: var(--color-text);
   font-family: var(--font-family-base);
   letter-spacing: var(--letter-spacing-base);
+}
+
+:global(.run-date-overlay.p-datepicker-panel .p-datepicker-header) {
+  border-color: transparent;
+  background: transparent;
 }
 
 :global(.run-select-overlay .p-select-list) {
