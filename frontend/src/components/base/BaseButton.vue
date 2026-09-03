@@ -6,6 +6,7 @@ interface Props {
   variant?: 'primary' | 'secondary' | 'outline'
   type?: 'button' | 'submit' | 'reset'
   icon?: string
+  iconPos?: 'left' | 'right' | 'top' | 'bottom'
   disabled?: boolean
   loading?: boolean
   fluid?: boolean
@@ -15,6 +16,7 @@ withDefaults(defineProps<Props>(), {
   variant: 'primary',
   type: 'button',
   icon: '',
+  iconPos: 'left',
   disabled: false,
   loading: false,
   fluid: false,
@@ -26,6 +28,7 @@ withDefaults(defineProps<Props>(), {
     :label="label"
     :type="type"
     :icon="icon"
+    :icon-pos="iconPos"
     :disabled="disabled"
     :loading="loading"
     :fluid="fluid"

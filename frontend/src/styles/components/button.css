@@ -1,5 +1,9 @@
 .base-button {
   --base-button-translate-x: 0%;
+  --base-button-flow-color: var(--color-primary);
+  --base-button-flow-highlight: var(--color-primary-soft);
+  --base-button-flow-opacity: 0;
+  --base-button-flow-play-state: paused;
 
   position: relative;
   isolation: isolate;
@@ -8,6 +12,7 @@
   font-family: var(--font-family-base);
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-wide);
 
   padding: var(--space-3) var(--space-5);
 
@@ -20,6 +25,31 @@
     background 200ms ease,
     box-shadow 200ms ease,
     transform 200ms ease;
+}
+
+.base-button::before {
+  position: absolute;
+  top: 50%;
+  left: 56%;
+  z-index: 1;
+  width: 160%;
+  aspect-ratio: 1;
+  content: '';
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    var(--base-button-flow-color) 0%,
+    var(--base-button-flow-highlight) 50%,
+    var(--base-button-flow-color) 100%
+  );
+  border-radius: 50%;
+  opacity: var(--base-button-flow-opacity);
+  filter: blur(var(--space-2));
+  transform: translate(-50%, -50%) rotate(0deg);
+  animation: base-button-color-flow 5s linear infinite;
+  animation-play-state: var(--base-button-flow-play-state);
+  transition: opacity 200ms ease;
+  will-change: transform;
 }
 
 .base-button__content {
@@ -199,6 +229,9 @@
 /* Primary */
 
 .base-button.base-button--primary {
+  --base-button-flow-opacity: 0.55;
+  --base-button-flow-play-state: running;
+
   color: #fff;
   background: linear-gradient(
     90deg,
@@ -209,37 +242,18 @@
   border: 0;
 }
 
-.base-button.base-button--primary::before {
-  position: absolute;
-  top: 50%;
-  left: 56%;
-  z-index: 1;
-  width: 160%;
-  aspect-ratio: 1;
-  content: '';
-  pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    var(--color-primary) 0%,
-    var(--color-primary-soft) 50%,
-    var(--color-primary) 100%
-  );
-  border-radius: 50%;
-  opacity: 0.55;
-  filter: blur(var(--space-2));
-  transform: translate(-50%, -50%) rotate(0deg);
-  animation: base-button-color-flow 5s linear infinite;
-  will-change: transform;
-}
-
 .base-button.base-button--primary:hover:not(:disabled),
 .base-button.base-button--primary:focus-visible:not(:disabled) {
+  --base-button-flow-color: var(--color-secondary);
+  --base-button-flow-highlight: var(--color-secondary-soft);
+  --base-button-flow-play-state: running;
+
   color: #fff;
   background: linear-gradient(
     90deg,
-    var(--color-accent) 0%,
-    var(--color-accent-soft) 50%,
-    var(--color-accent) 100%
+    var(--color-secondary) 0%,
+    var(--color-secondary-soft) 50%,
+    var(--color-secondary) 100%
   );
   border: 0;
 }
@@ -247,16 +261,6 @@
 .base-button.base-button--primary:hover:not(:disabled) {
   box-shadow: var(--shadow-md);
   transform: translateX(var(--base-button-translate-x)) translateY(-2px);
-}
-
-.base-button.base-button--primary:hover:not(:disabled)::before,
-.base-button.base-button--primary:focus-visible:not(:disabled)::before {
-  background: linear-gradient(
-    90deg,
-    var(--color-accent) 0%,
-    var(--color-accent-soft) 50%,
-    var(--color-accent) 100%
-  );
 }
 
 .base-button.base-button--primary:active:not(:disabled) {
@@ -273,6 +277,19 @@
 /* Secondary */
 
 .base-button--secondary:hover:not(:disabled) {
+  --base-button-flow-color: var(--color-secondary);
+  --base-button-flow-highlight: var(--color-secondary-soft);
+  --base-button-flow-opacity: 0.55;
+  --base-button-flow-play-state: running;
+
+  color: #fff;
+  background: linear-gradient(
+    90deg,
+    var(--color-secondary) 0%,
+    var(--color-secondary-soft) 50%,
+    var(--color-secondary) 100%
+  );
+  border-color: var(--color-secondary);
   box-shadow: var(--shadow-md);
   transform: translateX(var(--base-button-translate-x)) translateY(-2px);
 }
@@ -285,6 +302,19 @@
 /* Outline */
 
 .base-button--outline:hover:not(:disabled) {
+  --base-button-flow-color: var(--color-secondary);
+  --base-button-flow-highlight: var(--color-secondary-soft);
+  --base-button-flow-opacity: 0.55;
+  --base-button-flow-play-state: running;
+
+  color: #fff;
+  background: linear-gradient(
+    90deg,
+    var(--color-secondary) 0%,
+    var(--color-secondary-soft) 50%,
+    var(--color-secondary) 100%
+  );
+  border-color: var(--color-secondary);
   box-shadow: var(--shadow-md);
   transform: translateX(var(--base-button-translate-x)) translateY(-2px);
 }
@@ -301,7 +331,7 @@
   opacity: 0.5;
 }
 
-.base-button.base-button--primary:disabled::before {
+.base-button:disabled::before {
   animation: none;
   will-change: auto;
 }
@@ -328,7 +358,7 @@
     transform: translateX(var(--base-button-translate-x));
   }
 
-  .base-button.base-button--primary::before {
+  .base-button::before {
     animation: none;
     will-change: auto;
   }

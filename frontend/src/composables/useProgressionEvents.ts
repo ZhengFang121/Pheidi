@@ -1,7 +1,7 @@
 import { computed, nextTick, readonly, ref } from 'vue'
 
 import type { ProgressionEvent } from '@/types/progressionEvent'
-import type { RunRecordProgression } from '@/types/runnerProgress'
+import type { RunnerLevel, RunRecordProgression } from '@/types/runnerProgress'
 
 interface QueuedProgressionEvent {
   id: number
@@ -14,6 +14,14 @@ const eventQueue = ref<QueuedProgressionEvent[]>([])
 
 let nextEventId = 1
 let returnFocusTarget: HTMLElement | null = null
+
+const runnerLevelNames: Record<RunnerLevel, string> = {
+  1: '啟程者',
+  2: '習跑者',
+  3: '冒險者',
+  4: '挑戰者',
+  5: '菲迪同行者',
+}
 
 const currentQueueItem = computed(() => eventQueue.value[0] ?? null)
 const isProgressionActive = computed(() => currentQueueItem.value !== null)
@@ -45,6 +53,7 @@ export const toProgressionEvents = ({
     events.push({
       type: 'level',
       fromLevel: levelUp.from,
+      fromName: runnerLevelNames[levelUp.from],
       toLevel: levelUp.to,
       toName: levelUp.name,
     })

@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { ArrowRight, Sparkles } from '@lucide/vue'
+import { Sparkles } from '@lucide/vue'
 import gsap from 'gsap'
 
 import BadgeImage from '@/components/badges/BadgeImage.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 import type { ProgressionEvent } from '@/types/progressionEvent'
+
+const BADGE_BACK_IMAGE_PATH = '/images/badges/badge-back.png'
+const IMAGE_PRELOAD_TIMEOUT = 3500
 
 const props = defineProps<{
   event: ProgressionEvent
@@ -23,20 +27,26 @@ const content = ref<HTMLElement | null>(null)
 const eyebrow = ref<HTMLElement | null>(null)
 const visual = ref<HTMLElement | null>(null)
 const visualRing = ref<HTMLElement | null>(null)
-const previousLevel = ref<HTMLElement | null>(null)
+const flipper = ref<HTMLElement | null>(null)
+const highlight = ref<HTMLElement | null>(null)
 const title = ref<HTMLElement | null>(null)
 const description = ref<HTMLElement | null>(null)
-const continueButton = ref<HTMLButtonElement | null>(null)
+const continueButton = ref<HTMLElement | null>(null)
 
 const isReducedMotion = ref(false)
-const isTransitioning = ref(false)
+const isTransitioning = ref(true)
+const frontImagePath = ref('')
+const frontImageName = ref('')
 
+let animationContext: gsap.Context | undefined
 let entranceTimeline: gsap.core.Timeline | undefined
 let exitTween: gsap.core.Tween | undefined
+let reducedMotionQuery: MediaQueryList | undefined
+let preloadRequestId = 0
 let hasEntered = false
 let originalBodyOverflow = ''
 
-const eventTypeLabel = computed(() => (props.event.type === 'badge' ? '成就解鎖' : '階段提升'))
+const eventTypeLabel = computed(() => (props.event.type === 'badge' ? '獲得新徽章' : '階段提升'))
 
 const eventTitle = computed(() =>
   props.event.type === 'badge'
@@ -56,7 +66,7 @@ const previousLevelLabel = computed(() => {
   return `Lv.${props.event.fromLevel}${props.event.fromName ? ` ${props.event.fromName}` : ''}`
 })
 
-const buttonLabel = computed(() => (props.event.type === 'level' ? '繼續旅程' : '繼續'))
+const buttonLabel = '繼續'
 
 const announcement = computed(() => {
   const progress =
@@ -67,103 +77,290 @@ const announcement = computed(() => {
   return `${eventTypeLabel.value}${progress}：${eventTitle.value}。${eventDescription.value}`
 })
 
-const getAnimatedElements = () =>
-  [
-    eyebrow.value,
-    visual.value,
-    visualRing.value,
-    previousLevel.value,
-    title.value,
-    description.value,
-    continueButton.value,
-  ].filter((element): element is HTMLElement => Boolean(element))
+const levelImagePath = (level: number) => `/images/badges/level-${level}.png`
 
-const focusContinueButton = () => {
-  continueButton.value?.focus({ preventScroll: true })
-}
-
-const playEntrance = () => {
-  if (!overlay.value || !content.value) return
-
-  entranceTimeline?.kill()
-  exitTween?.kill()
-  isTransitioning.value = true
-
-  const elements = getAnimatedElements()
-
-  gsap.killTweensOf([overlay.value, content.value, ...elements])
-  gsap.set(elements, { clearProps: 'all' })
-
-  if (isReducedMotion.value) {
-    gsap.set(elements, { autoAlpha: 0 })
-
-    entranceTimeline = gsap.timeline({
-      onComplete: () => {
-        isTransitioning.value = false
-        focusContinueButton()
-      },
-    })
-
-    if (!hasEntered) {
-      entranceTimeline.fromTo(
-        overlay.value,
-        { autoAlpha: 0 },
-        { autoAlpha: 1, duration: 0.12, ease: 'none' },
-      )
-    }
-
-    entranceTimeline.to(elements, { autoAlpha: 1, duration: 0.14, ease: 'none' })
-    hasEntered = true
+const setInitialFrontImage = () => {
+  if (props.event.type === 'badge') {
+    frontImagePath.value = props.event.imagePath
+    frontImageName.value = props.event.name
     return
   }
 
-  gsap.set([eyebrow.value, title.value, description.value, continueButton.value], {
-    autoAlpha: 0,
-    y: 10,
-  })
-  gsap.set(visual.value, { autoAlpha: 0, scale: 0.76 })
-  gsap.set(visualRing.value, { autoAlpha: 0, scale: 0.82 })
+  frontImagePath.value = levelImagePath(props.event.fromLevel)
+  frontImageName.value = previousLevelLabel.value
+}
 
-  if (previousLevel.value) {
-    gsap.set(previousLevel.value, { autoAlpha: 1, y: 0 })
+const showNewLevelFront = () => {
+  if (props.event.type !== 'level') return
+
+  frontImagePath.value = levelImagePath(props.event.toLevel)
+  frontImageName.value = `Lv.${props.event.toLevel} ${props.event.toName}`
+}
+
+const getPreloadPaths = () => {
+  const paths = [BADGE_BACK_IMAGE_PATH]
+
+  if (props.event.type === 'badge') {
+    paths.push(props.event.imagePath)
+  } else {
+    paths.push(levelImagePath(props.event.fromLevel), levelImagePath(props.event.toLevel))
   }
 
+  return [...new Set(paths)]
+}
+
+const preloadImage = (path: string) =>
+  new Promise<void>((resolve) => {
+    const image = new Image()
+    let timeoutId = 0
+
+    const finish = () => {
+      window.clearTimeout(timeoutId)
+      image.onload = null
+      image.onerror = null
+      resolve()
+    }
+
+    image.onload = finish
+    image.onerror = finish
+    timeoutId = window.setTimeout(finish, IMAGE_PRELOAD_TIMEOUT)
+    image.src = path
+
+    if (image.complete) finish()
+  })
+
+const focusContinueButton = () => {
+  continueButton.value?.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true })
+}
+
+const completeEntrance = () => {
+  isTransitioning.value = false
+  focusContinueButton()
+}
+
+const addHighlightSweep = (timeline: gsap.core.Timeline, position: number, peakOpacity: number) => {
+  if (!highlight.value) return
+
+  timeline
+    .set(
+      highlight.value,
+      {
+        opacity: 0,
+        visibility: 'visible',
+        xPercent: -270,
+        yPercent: -16,
+        rotation: 20,
+      },
+      position,
+    )
+    .to(
+      highlight.value,
+      {
+        opacity: peakOpacity,
+        xPercent: 0,
+        yPercent: 0,
+        duration: 0.31,
+        ease: 'power2.inOut',
+      },
+      position,
+    )
+    .to(
+      highlight.value,
+      {
+        opacity: 0,
+        xPercent: 270,
+        yPercent: 16,
+        duration: 0.31,
+        ease: 'power2.inOut',
+      },
+      position + 0.31,
+    )
+    .set(
+      highlight.value,
+      {
+        opacity: 0,
+        visibility: 'hidden',
+        xPercent: -270,
+        yPercent: -16,
+        rotation: 20,
+      },
+      position + 0.62,
+    )
+}
+
+const createBadgeTimeline = () => {
+  if (!overlay.value || !visual.value || !flipper.value) return
+
   entranceTimeline = gsap.timeline({
-    defaults: { ease: 'power2.out' },
-    onComplete: () => {
-      isTransitioning.value = false
-      focusContinueButton()
-    },
+    defaults: { ease: 'power3.out' },
+    onComplete: completeEntrance,
   })
 
   if (!hasEntered) {
     entranceTimeline.fromTo(
       overlay.value,
       { autoAlpha: 0 },
-      { autoAlpha: 1, duration: 0.24, ease: 'power1.out' },
+      { autoAlpha: 1, duration: 0.28, ease: 'power1.out' },
+      0,
     )
   }
 
-  entranceTimeline.to(eyebrow.value, { autoAlpha: 1, y: 0, duration: 0.24 }, hasEntered ? 0 : 0.12)
+  entranceTimeline
+    .to(eyebrow.value, { autoAlpha: 1, y: 0, duration: 0.3 }, 0.12)
+    .to(visualRing.value, { autoAlpha: 0.68, scale: 1, duration: 0.52 }, 0.24)
+    .to(visual.value, { autoAlpha: 1, duration: 0.2, ease: 'power1.out' }, 0.2)
+    .to(
+      flipper.value,
+      {
+        rotationY: 0,
+        rotationZ: 0,
+        scale: 1,
+        duration: 1.18,
+        ease: 'power3.out',
+      },
+      0.2,
+    )
+    .to(flipper.value, { scale: 1.07, duration: 0.14, ease: 'power2.out' }, 1.28)
+    .to(flipper.value, { scale: 1, duration: 0.2, ease: 'power2.inOut' }, 1.42)
+    .to(title.value, { autoAlpha: 1, y: 0, duration: 0.42 }, 1.48)
+    .to(description.value, { autoAlpha: 1, y: 0, duration: 0.38 }, 1.62)
+    .to(continueButton.value, { autoAlpha: 1, y: 0, duration: 0.32 }, 1.9)
 
-  if (props.event.type === 'level' && previousLevel.value) {
-    entranceTimeline
-      .to(previousLevel.value, { autoAlpha: 0, y: -16, duration: 0.26 }, 0.28)
-      .to(visualRing.value, { autoAlpha: 0.72, scale: 1, duration: 0.42, ease: 'power2.out' }, 0.36)
-      .to(visual.value, { autoAlpha: 1, scale: 1, duration: 0.48, ease: 'back.out(1.45)' }, 0.36)
-      .to(title.value, { autoAlpha: 1, y: 0, duration: 0.26 }, 0.6)
-      .to(description.value, { autoAlpha: 1, y: 0, duration: 0.26 }, 0.69)
-      .to(continueButton.value, { autoAlpha: 1, y: 0, duration: 0.22 }, 0.8)
-  } else {
-    entranceTimeline
-      .to(visualRing.value, { autoAlpha: 0.72, scale: 1, duration: 0.42, ease: 'power2.out' }, 0.18)
-      .to(visual.value, { autoAlpha: 1, scale: 1, duration: 0.48, ease: 'back.out(1.45)' }, 0.18)
-      .to(title.value, { autoAlpha: 1, y: 0, duration: 0.26 }, 0.5)
-      .to(description.value, { autoAlpha: 1, y: 0, duration: 0.26 }, 0.59)
-      .to(continueButton.value, { autoAlpha: 1, y: 0, duration: 0.22 }, 0.72)
+  addHighlightSweep(entranceTimeline, 1.62, 0.72)
+}
+
+const createLevelTimeline = () => {
+  if (!overlay.value || !visual.value || !flipper.value) return
+
+  entranceTimeline = gsap.timeline({
+    defaults: { ease: 'power3.out' },
+    onComplete: completeEntrance,
+  })
+
+  if (!hasEntered) {
+    entranceTimeline.fromTo(
+      overlay.value,
+      { autoAlpha: 0 },
+      { autoAlpha: 1, duration: 0.28, ease: 'power1.out' },
+      0,
+    )
   }
 
+  entranceTimeline
+    .to(eyebrow.value, { autoAlpha: 1, y: 0, duration: 0.3 }, 0.12)
+    .to(visualRing.value, { autoAlpha: 0.88, scale: 1, duration: 0.52 }, 0.2)
+    .to(visual.value, { autoAlpha: 1, scale: 1, duration: 0.42 }, 0.18)
+    .to(flipper.value, { rotationY: 180, duration: 0.72, ease: 'power3.inOut' }, 0.76)
+    .call(showNewLevelFront, [], 1.48)
+    .to(flipper.value, { rotationY: 360, duration: 0.72, ease: 'power3.inOut' }, 1.68)
+    .to(flipper.value, { scale: 1.08, duration: 0.14, ease: 'power2.out' }, 2.34)
+    .to(flipper.value, { scale: 1, duration: 0.2, ease: 'power2.inOut' }, 2.48)
+    .to(title.value, { autoAlpha: 1, y: 0, duration: 0.4 }, 2.4)
+    .to(description.value, { autoAlpha: 1, y: 0, duration: 0.36 }, 2.54)
+    .to(continueButton.value, { autoAlpha: 1, y: 0, duration: 0.3 }, 2.76)
+
+  addHighlightSweep(entranceTimeline, 2.68, 0.78)
+}
+
+const createReducedMotionTimeline = () => {
+  if (!overlay.value || !visual.value || !flipper.value) return
+
+  entranceTimeline = gsap.timeline({ onComplete: completeEntrance })
+
+  if (!hasEntered) {
+    entranceTimeline.fromTo(
+      overlay.value,
+      { autoAlpha: 0 },
+      { autoAlpha: 1, duration: 0.14, ease: 'none' },
+      0,
+    )
+  }
+
+  entranceTimeline
+    .to(eyebrow.value, { autoAlpha: 1, y: 0, duration: 0.14, ease: 'none' }, 0.08)
+    .to(visualRing.value, { autoAlpha: 0.6, scale: 1, duration: 0.16, ease: 'none' }, 0.1)
+    .to(visual.value, { autoAlpha: 1, scale: 1, duration: 0.18, ease: 'none' }, 0.12)
+
+  if (props.event.type === 'level') {
+    entranceTimeline
+      .to(visual.value, { autoAlpha: 0, duration: 0.12, ease: 'none' }, 0.46)
+      .set(flipper.value, { rotationY: 180 })
+      .to(visual.value, { autoAlpha: 1, duration: 0.1, ease: 'none' })
+      .to(visual.value, { autoAlpha: 0, duration: 0.1, ease: 'none' }, '+=0.12')
+      .call(showNewLevelFront)
+      .set(flipper.value, { rotationY: 360 })
+      .to(visual.value, { autoAlpha: 1, duration: 0.16, ease: 'none' })
+  }
+
+  entranceTimeline
+    .to(title.value, { autoAlpha: 1, y: 0, duration: 0.16, ease: 'none' }, '>-0.04')
+    .to(description.value, { autoAlpha: 1, y: 0, duration: 0.14, ease: 'none' }, '<0.06')
+    .to(continueButton.value, { autoAlpha: 1, y: 0, duration: 0.14, ease: 'none' }, '>-0.02')
+}
+
+const playEntrance = () => {
+  if (!overlay.value || !content.value || !visual.value || !flipper.value) return
+
+  animationContext?.revert()
+  entranceTimeline?.kill()
+  exitTween?.kill()
+
+  animationContext = gsap.context(() => {
+    gsap.set(content.value, { autoAlpha: 1, y: 0 })
+    gsap.set([eyebrow.value, title.value, description.value, continueButton.value], {
+      autoAlpha: 0,
+      y: 14,
+    })
+    gsap.set(visualRing.value, { autoAlpha: 0, scale: 0.84 })
+    gsap.set(highlight.value, {
+      opacity: 0,
+      visibility: 'hidden',
+      xPercent: -270,
+      yPercent: -16,
+      rotation: 20,
+    })
+
+    if (props.event.type === 'badge' && !isReducedMotion.value) {
+      gsap.set(visual.value, { autoAlpha: 0 })
+      gsap.set(flipper.value, { rotationY: -630, rotationZ: -4, scale: 0.35 })
+    } else {
+      gsap.set(visual.value, { autoAlpha: 0, scale: isReducedMotion.value ? 0.88 : 0.82 })
+      gsap.set(flipper.value, { rotationY: 0, rotationZ: 0, scale: 1 })
+    }
+
+    if (isReducedMotion.value) {
+      createReducedMotionTimeline()
+    } else if (props.event.type === 'level') {
+      createLevelTimeline()
+    } else {
+      createBadgeTimeline()
+    }
+  }, overlay.value)
+
   hasEntered = true
+}
+
+const prepareAndPlayEntrance = async () => {
+  const requestId = ++preloadRequestId
+  isTransitioning.value = true
+  setInitialFrontImage()
+
+  await nextTick()
+
+  animationContext?.revert()
+  entranceTimeline?.kill()
+  exitTween?.kill()
+
+  if (content.value) {
+    gsap.set(content.value, { autoAlpha: 0, y: 0 })
+  }
+
+  await Promise.all(getPreloadPaths().map(preloadImage))
+
+  if (requestId !== preloadRequestId || !overlay.value) return
+
+  await nextTick()
+  playEntrance()
 }
 
 const handleContinue = () => {
@@ -195,29 +392,36 @@ const handleDocumentKeydown = (event: KeyboardEvent) => {
   }
 }
 
+const handleReducedMotionChange = (event: MediaQueryListEvent) => {
+  isReducedMotion.value = event.matches
+}
+
 watch(
   () => props.eventKey,
-  async () => {
+  () => {
     if (!hasEntered) return
-
-    await nextTick()
-    gsap.set(content.value, { clearProps: 'all' })
-    playEntrance()
+    void prepareAndPlayEntrance()
   },
   { flush: 'post' },
 )
 
 onMounted(() => {
-  isReducedMotion.value = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+  isReducedMotion.value = reducedMotionQuery.matches
+  reducedMotionQuery.addEventListener('change', handleReducedMotionChange)
+
   originalBodyOverflow = document.body.style.overflow
   document.body.style.overflow = 'hidden'
   document.addEventListener('keydown', handleDocumentKeydown)
-  playEntrance()
+  void prepareAndPlayEntrance()
 })
 
 onBeforeUnmount(() => {
+  preloadRequestId += 1
+  animationContext?.revert()
   entranceTimeline?.kill()
   exitTween?.kill()
+  reducedMotionQuery?.removeEventListener('change', handleReducedMotionChange)
   document.body.style.overflow = originalBodyOverflow
   document.removeEventListener('keydown', handleDocumentKeydown)
 })
@@ -228,24 +432,12 @@ onBeforeUnmount(() => {
     <section
       ref="overlay"
       class="progression-overlay"
+      :class="`progression-overlay--${event.type}`"
       role="dialog"
       aria-modal="true"
       aria-labelledby="progression-event-title"
       aria-describedby="progression-event-description"
     >
-      <div
-        class="progression-overlay__glow progression-overlay__glow--primary"
-        aria-hidden="true"
-      />
-      <div
-        class="progression-overlay__glow progression-overlay__glow--secondary"
-        aria-hidden="true"
-      />
-
-      <div class="progression-overlay__track" aria-hidden="true">
-        <span v-for="index in 4" :key="index" />
-      </div>
-
       <article
         ref="content"
         class="progression-event base-card base-card--glass"
@@ -269,52 +461,56 @@ onBeforeUnmount(() => {
           class="progression-event__visual-stage"
           :class="`progression-event__visual-stage--${event.type}`"
         >
-          <p
-            v-if="event.type === 'level'"
-            ref="previousLevel"
-            class="progression-event__previous-level"
-          >
-            {{ previousLevelLabel }}
-          </p>
-
+          <span class="progression-overlay__glow" aria-hidden="true" />
           <span ref="visualRing" class="progression-event__ring" aria-hidden="true" />
 
-          <div
-            ref="visual"
-            class="progression-event__seal"
-            :class="`progression-event__seal--${event.type}`"
-            aria-hidden="true"
-          >
-            <template v-if="event.type === 'badge'">
-              <BadgeImage
-                class="progression-event__badge-image"
-                :name="event.name"
-                :image-path="event.imagePath"
-                :unlocked="true"
-              />
-            </template>
+          <div ref="visual" class="progression-event__badge-scene" aria-hidden="true">
+            <div ref="flipper" class="progression-event__badge-flipper">
+              <div class="progression-event__badge-face progression-event__badge-front">
+                <BadgeImage
+                  class="progression-event__badge-image"
+                  :name="frontImageName"
+                  :image-path="frontImagePath"
+                  :unlocked="true"
+                />
+              </div>
 
-            <template v-else>
-              <span>Lv.</span>
-              <strong>{{ event.toLevel }}</strong>
-            </template>
+              <div class="progression-event__badge-face progression-event__badge-back">
+                <img
+                  :src="BADGE_BACK_IMAGE_PATH"
+                  alt=""
+                  width="512"
+                  height="512"
+                  decoding="async"
+                />
+              </div>
+            </div>
+
+            <span ref="highlight" class="progression-event__badge-highlight" />
           </div>
         </div>
 
         <div class="progression-event__copy">
-          <h2 id="progression-event-title" ref="title">{{ eventTitle }}</h2>
+          <h2 id="progression-event-title" ref="title">
+            <span v-if="event.type === 'level'" class="progression-event__level-title">
+              <span class="progression-event__level-number">Lv.{{ event.toLevel }}</span>
+              <span class="progression-event__level-name">{{ event.toName }}</span>
+            </span>
+            <template v-else>{{ eventTitle }}</template>
+          </h2>
           <p id="progression-event-description" ref="description">{{ eventDescription }}</p>
         </div>
 
-        <button
-          ref="continueButton"
-          type="button"
-          class="progression-event__button"
-          @click="handleContinue"
-        >
-          {{ buttonLabel }}
-          <ArrowRight :size="18" :stroke-width="2.2" aria-hidden="true" />
-        </button>
+        <div ref="continueButton" class="progression-event__button-wrap">
+          <BaseButton
+            class="progression-event__continue-button"
+            :label="buttonLabel"
+            icon="pi pi-arrow-right"
+            icon-pos="right"
+            :disabled="isTransitioning"
+            @click="handleContinue"
+          />
+        </div>
       </article>
     </section>
   </Teleport>
@@ -322,6 +518,11 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .progression-overlay {
+  --progression-accent: var(--color-secondary);
+  --progression-accent-soft: var(--color-secondary-soft);
+  --progression-accent-pale: var(--color-secondary-pale);
+  --progression-badge-size: clamp(9.25rem, 32vw, 11rem);
+
   position: fixed;
   z-index: 3000;
   inset: 0;
@@ -336,96 +537,38 @@ onBeforeUnmount(() => {
 
   background:
     radial-gradient(
-      circle at 50% 42%,
-      color-mix(in srgb, var(--color-surface) 94%, transparent) 0 26%,
-      transparent 58%
+      circle at 50% 43%,
+      color-mix(in srgb, var(--progression-accent-pale) 48%, transparent) 0 14%,
+      transparent 46%
     ),
-    linear-gradient(
-      145deg,
-      color-mix(in srgb, var(--color-primary-pale) 74%, var(--color-background)),
-      color-mix(in srgb, var(--color-accent-pale) 50%, var(--color-background))
-    );
+    color-mix(in srgb, var(--color-primary-soft) 60%, transparent);
+}
+
+.progression-overlay--level {
+  --progression-accent: var(--color-primary);
+  --progression-accent-soft: var(--color-primary-soft);
+  --progression-accent-pale: var(--color-primary-pale);
 }
 
 .progression-overlay__glow {
   position: absolute;
-
-  width: min(42vw, 560px);
-  aspect-ratio: 1;
-
-  border-radius: 50%;
-  filter: blur(12px);
-  opacity: 0.34;
-  pointer-events: none;
-}
-
-.progression-overlay__glow--primary {
-  top: -18%;
-  right: -8%;
-
-  background: radial-gradient(circle, var(--color-primary-soft), transparent 68%);
-}
-
-.progression-overlay__glow--secondary {
-  bottom: -24%;
-  left: -8%;
-
-  background: radial-gradient(circle, var(--color-secondary-soft), transparent 68%);
-}
-
-.progression-overlay__track {
-  position: absolute;
   top: 50%;
   left: 50%;
+  z-index: 0;
 
-  width: min(72vw, 800px);
-  aspect-ratio: 2.2;
-
-  border: 1px solid color-mix(in srgb, var(--color-primary) 22%, transparent);
-  border-radius: 50%;
-  transform: translate(-50%, -50%) rotate(-7deg);
-  pointer-events: none;
-}
-
-.progression-overlay__track::before {
-  position: absolute;
-  inset: var(--space-3);
-
-  border: 1px dashed color-mix(in srgb, var(--color-secondary) 30%, transparent);
-  border-radius: inherit;
-
-  content: '';
-}
-
-.progression-overlay__track span {
-  position: absolute;
-
-  width: 6px;
+  width: 100%;
   aspect-ratio: 1;
 
-  background: var(--color-surface);
-  border: 2px solid var(--color-primary);
-  border-radius: 50%;
-}
-
-.progression-overlay__track span:nth-child(1) {
-  top: 8%;
-  left: 22%;
-}
-
-.progression-overlay__track span:nth-child(2) {
-  top: 21%;
-  right: 12%;
-}
-
-.progression-overlay__track span:nth-child(3) {
-  right: 24%;
-  bottom: 4%;
-}
-
-.progression-overlay__track span:nth-child(4) {
-  bottom: 15%;
-  left: 10%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--progression-accent-soft) 58%, transparent),
+    transparent 67%
+  );
+  border-radius: var(--radius-full);
+  filter: blur(var(--space-3));
+  opacity: 0.62;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
 }
 
 .progression-event {
@@ -433,7 +576,7 @@ onBeforeUnmount(() => {
   z-index: 1;
 
   display: grid;
-  width: min(100%, 560px);
+  width: min(100%, 35rem);
   padding: var(--space-6) var(--space-7);
   justify-items: center;
 
@@ -458,7 +601,7 @@ onBeforeUnmount(() => {
 
 .progression-event__header {
   display: flex;
-  min-height: 28px;
+  min-height: 1.75rem;
   align-items: center;
   justify-content: center;
   gap: var(--space-3);
@@ -470,7 +613,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: var(--space-2);
 
-  color: var(--color-primary);
+  color: var(--progression-accent);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-bold);
   letter-spacing: var(--letter-spacing-wide);
@@ -484,7 +627,7 @@ onBeforeUnmount(() => {
   font-weight: var(--font-weight-bold);
   letter-spacing: var(--letter-spacing-base);
 
-  background: var(--color-primary-pale);
+  background: var(--progression-accent-pale);
   border-radius: var(--radius-full);
 }
 
@@ -492,136 +635,124 @@ onBeforeUnmount(() => {
   position: relative;
 
   display: grid;
-  width: 228px;
-  min-height: 228px;
+  width: calc(var(--progression-badge-size) + var(--space-5));
+  min-height: calc(var(--progression-badge-size) + var(--space-5));
   margin: var(--space-3) 0;
   place-items: center;
 }
 
 .progression-event__ring {
   position: absolute;
-  inset: 16px;
+  z-index: 0;
+  inset: var(--space-2);
 
-  border: 1px solid color-mix(in srgb, var(--color-primary) 48%, transparent);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   box-shadow:
-    0 0 0 12px color-mix(in srgb, var(--color-primary-pale) 42%, transparent),
-    0 0 52px color-mix(in srgb, var(--color-primary) 24%, transparent);
+    0 var(--space-2) var(--space-8) color-mix(in srgb, var(--progression-accent) 24%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--progression-accent) 36%, transparent);
 }
 
-.progression-event__ring::before,
-.progression-event__ring::after {
-  position: absolute;
+.progression-event__badge-scene {
+  position: relative;
+  z-index: 1;
 
-  width: 9px;
+  width: var(--progression-badge-size);
   aspect-ratio: 1;
+  overflow: hidden;
 
-  background: var(--color-surface);
-  border: 2px solid var(--color-primary);
-  border-radius: 50%;
-
-  content: '';
+  border-radius: var(--radius-full);
+  perspective: 68rem;
 }
 
-.progression-event__ring::before {
-  top: 19px;
-  right: 15px;
-}
-
-.progression-event__ring::after {
-  bottom: 13px;
-  left: 27px;
-}
-
-.progression-event__seal {
+.progression-event__badge-flipper {
   position: relative;
 
+  width: 100%;
+  height: 100%;
+
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.progression-event__badge-face {
+  position: absolute;
+  inset: 0;
+
   display: grid;
-  width: 148px;
-  aspect-ratio: 1;
+  overflow: hidden;
   place-items: center;
 
-  color: var(--color-dark);
-
-  background:
-    radial-gradient(circle at 35% 28%, var(--color-surface), transparent 28%),
-    linear-gradient(145deg, var(--color-accent-pale), var(--color-secondary-pale));
-  border: 2px solid color-mix(in srgb, var(--color-accent) 38%, var(--color-surface));
-  border-radius: 50%;
-  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-full);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
 }
 
-.progression-event__seal::after {
-  position: absolute;
-  inset: 10px;
-
-  border: 1px dashed color-mix(in srgb, var(--color-dark) 32%, transparent);
-  border-radius: inherit;
-
-  content: '';
+.progression-event__badge-front {
+  transform: rotateY(0deg) translateZ(1px);
 }
 
-.progression-event__seal--badge {
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-.progression-event__seal--badge::after {
-  display: none;
+.progression-event__badge-back {
+  transform: rotateY(180deg) translateZ(1px);
 }
 
 .progression-event__badge-image {
-  --badge-image-size: 148px;
+  --badge-image-size: var(--progression-badge-size);
 }
 
-.progression-event__seal--level {
-  align-content: center;
-  gap: 0;
-
-  color: var(--color-dark);
-
-  background:
-    radial-gradient(circle at 35% 28%, var(--color-surface), transparent 28%),
-    linear-gradient(145deg, var(--color-primary-pale), var(--color-secondary-soft));
-  border-color: color-mix(in srgb, var(--color-primary) 48%, var(--color-surface));
+.progression-event__badge-back img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
-.progression-event__seal--level span {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--letter-spacing-base);
-  line-height: 1;
-}
-
-.progression-event__seal--level strong {
-  font-size: 4.5rem;
-  letter-spacing: -0.04em;
-  line-height: 0.95;
-}
-
-.progression-event__previous-level {
+.progression-event__badge-highlight {
   position: absolute;
-  z-index: 2;
+  z-index: 3;
+  top: -40%;
+  left: 29%;
 
-  margin: 0;
-  padding: var(--space-2) var(--space-4);
+  width: 42%;
+  height: 180%;
 
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-bold);
-
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  box-shadow: var(--shadow-sm);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--color-surface) 24%, transparent) 24%,
+    color-mix(in srgb, var(--color-surface) 96%, transparent) 50%,
+    color-mix(in srgb, var(--color-accent-pale) 44%, transparent) 72%,
+    transparent 100%
+  );
+  filter: blur(1px);
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transform: translate3d(-270%, -16%, 0) rotate(20deg);
+  transform-origin: center;
 }
 
 .progression-event__copy {
   display: grid;
   justify-items: center;
   gap: var(--space-2);
+}
+
+.progression-event__level-title {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.progression-event__level-number {
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.progression-event__level-name {
+  letter-spacing: var(--letter-spacing-base);
 }
 
 .progression-event__copy h2 {
@@ -642,46 +773,13 @@ onBeforeUnmount(() => {
   line-height: var(--line-height-base);
 }
 
-.progression-event__button {
-  display: inline-flex;
-  min-width: 160px;
-  min-height: 48px;
+.progression-event__button-wrap {
   margin-top: var(--space-5);
-  padding: var(--space-3) var(--space-5);
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
+}
 
-  color: var(--color-dark);
-  font-family: inherit;
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--letter-spacing-base);
-
-  cursor: pointer;
-
-  background: var(--color-primary);
-  border: 0;
+.progression-event__button-wrap :deep(.progression-event__continue-button) {
+  min-width: calc(var(--space-8) + var(--space-8) + var(--space-6));
   border-radius: var(--radius-full);
-  box-shadow: var(--shadow-md);
-
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.progression-event__button:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-
-.progression-event__button:active {
-  transform: translateY(0) scale(0.98);
-}
-
-.progression-event__button:focus-visible {
-  outline: 3px solid var(--color-accent-soft);
-  outline-offset: 3px;
 }
 
 @media (max-width: 600px) {
@@ -689,29 +787,12 @@ onBeforeUnmount(() => {
     padding: var(--space-4);
   }
 
-  .progression-overlay__track {
-    width: 112vw;
-  }
-
   .progression-event {
     padding: var(--space-5) var(--space-4);
   }
 
-  .progression-event__visual-stage {
-    width: 196px;
-    min-height: 196px;
-  }
-
-  .progression-event__seal {
-    width: 128px;
-  }
-
-  .progression-event__badge-image {
-    --badge-image-size: 128px;
-  }
-
-  .progression-event__ring {
-    inset: 12px;
+  .progression-overlay {
+    --progression-badge-size: min(58vw, 11rem);
   }
 }
 
@@ -720,28 +801,22 @@ onBeforeUnmount(() => {
     padding-block: var(--space-4);
   }
 
+  .progression-overlay {
+    --progression-badge-size: min(42vw, 7.25rem);
+  }
+
   .progression-event__visual-stage {
-    width: 174px;
-    min-height: 174px;
     margin-block: var(--space-2);
   }
 
-  .progression-event__seal {
-    width: 116px;
-  }
-
-  .progression-event__badge-image {
-    --badge-image-size: 116px;
-  }
-
-  .progression-event__button {
+  .progression-event__button-wrap {
     margin-top: var(--space-4);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .progression-event__button {
-    transition: none;
+  .progression-event__badge-flipper {
+    will-change: auto;
   }
 }
 </style>
