@@ -1,4 +1,5 @@
 import type { Pagination } from '@/types/api'
+import type { RunnerLevel } from '@/types/runnerProgress'
 
 export type ArticleCategory = 'learning' | 'equipment' | 'nutrition' | 'events'
 
@@ -100,6 +101,12 @@ export interface AdminArticleListResponse {
   message: string
   articles: AdminArticle[]
   pagination: Pagination
+}
+
+export interface AcademyLockedResponse {
+  message: string
+  requiredLevel: RunnerLevel
+  category: ArticleCategory
 }
 
 export interface AdminArticleStatistics {

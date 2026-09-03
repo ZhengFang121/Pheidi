@@ -1,5 +1,15 @@
 <template>
   <section class="layout-container academy-page">
+    <Toast
+      group="academy-lock"
+      position="top-right"
+      class="academy-lock-toast"
+      :style="{
+        right: 'var(--layout-gutter)',
+        width: 'min(23rem, calc(100vw - (var(--layout-gutter) * 2)))',
+      }"
+    />
+
     <header class="academy-heading">
       <p class="academy-eyebrow">RUNNER ACADEMY</p>
 
@@ -20,7 +30,12 @@
           class="search-input"
         />
 
-        <Button type="submit" label="搜尋" :loading="isLoading" />
+        <Button
+          type="submit"
+          label="搜尋"
+          :loading="isLoading"
+          :disabled="!runnerProgress"
+        />
 
         <Button
           v-if="activeSearch"
@@ -28,11 +43,12 @@
           label="清除"
           severity="secondary"
           outlined
+          :disabled="!runnerProgress"
           @click="clearSearch"
         />
       </form>
 
-      <div class="category-filter" aria-label="文章分類">
+      <div v-if="runnerProgress" class="category-filter" aria-label="文章分類">
         <Button
           v-for="option in categoryOptions"
           :key="option.label"
@@ -40,32 +56,50 @@
           :label="option.label"
           :outlined="activeCategory !== option.value"
           :severity="activeCategory === option.value ? undefined : 'secondary'"
+          :aria-disabled="isCategoryLocked(option.value) || undefined"
+          :aria-label="getCategoryAriaLabel(option.value, option.label)"
           size="small"
+          class="category-button"
+          :class="{ 'is-locked': isCategoryLocked(option.value) }"
           @click="handleCategoryChange(option.value)"
+        >
+          <template v-if="isCategoryLocked(option.value)" #icon>
+            <Lock class="category-lock-icon" aria-hidden="true" />
+          </template>
+        </Button>
+      </div>
+
+      <div v-else class="category-filter category-filter-loading" aria-label="文章分類載入中">
+        <Skeleton
+          v-for="index in 5"
+          :key="index"
+          width="4.5rem"
+          height="2.25rem"
+          border-radius="var(--radius-sm)"
         />
       </div>
     </div>
 
-    <Message v-if="errorMessage" severity="error" :closable="false">
+    <Message v-if="pageErrorMessage" severity="error" :closable="false">
       <div class="error-content">
-        <span>{{ errorMessage }}</span>
+        <span>{{ pageErrorMessage }}</span>
 
         <Button
           type="button"
           label="重新載入"
           severity="secondary"
           size="small"
-          @click="loadArticles()"
+          @click="loadPageData"
         />
       </div>
     </Message>
 
-    <div v-if="isLoading" class="article-grid" aria-label="文章載入中">
+    <div v-if="pageIsLoading" class="article-grid" aria-label="文章載入中">
       <Skeleton v-for="index in 6" :key="index" height="24rem" border-radius="var(--radius-lg)" />
     </div>
 
-    <div v-else-if="articles.length" class="article-grid">
-      <BaseCard v-for="article in articles" :key="article.id" as="article" class="article-card">
+    <div v-else-if="visibleArticles.length" class="article-grid">
+      <BaseCard v-for="article in visibleArticles" :key="article.id" as="article" class="article-card">
         <div class="article-cover">
           <img
             v-if="article.coverImageUrl"
@@ -120,7 +154,7 @@
       </BaseCard>
     </div>
 
-    <BaseCard v-else class="empty-state">
+    <BaseCard v-else-if="runnerProgress && !pageErrorMessage" class="empty-state">
       <BookOpen class="empty-icon" aria-hidden="true" />
 
       <h2>目前沒有符合條件的文章</h2>
@@ -129,7 +163,7 @@
     </BaseCard>
 
     <Paginator
-      v-if="pagination.totalPages > 1"
+      v-if="runnerProgress && !pageErrorMessage && pagination.totalPages > 1"
       :first="first"
       :rows="pagination.limit"
       :total-records="pagination.total"
@@ -143,8 +177,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { BookOpen } from '@lucide/vue'
+import { computed, onMounted } from 'vue'
+import { BookOpen, Lock } from '@lucide/vue'
 
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
@@ -152,13 +186,28 @@ import Message from 'primevue/message'
 import Paginator from 'primevue/paginator'
 import Skeleton from 'primevue/skeleton'
 import Tag from 'primevue/tag'
+import Toast from 'primevue/toast'
+import { useToast } from 'primevue/usetoast'
 
 import BaseCard from '@/components/base/BaseCard.vue'
-import { articleCategoryOptions, getArticleCategoryLabel } from '@/constants/article'
 import { useArticleList } from '@/composables/useArticleList'
+import { useRunnerProgress } from '@/composables/useRunnerProgress'
+import {
+  articleCategoryOptions,
+  canAccessAcademyCategory,
+  getAcademyCategoryUnlockDetail,
+  getArticleCategoryLabel,
+} from '@/constants/article'
+import type { ArticleCategory } from '@/types/article'
 import { formatLongDate } from '@/utils/date'
 
-const categoryOptions = [
+interface AcademyCategoryOption {
+  label: string
+  value: ArticleCategory | null
+}
+
+const toast = useToast()
+const categoryOptions: AcademyCategoryOption[] = [
   {
     label: '全部',
     value: null,
@@ -178,15 +227,66 @@ const {
   loadArticles,
   searchArticles: handleSearch,
   clearSearch,
-  changeCategory: handleCategoryChange,
+  changeCategory,
   changePage: handlePageChange,
 } = useArticleList()
 
+const {
+  runnerProgress,
+  isRunnerProgressLoading,
+  runnerProgressError,
+  loadRunnerProgress,
+} = useRunnerProgress()
+
 const getCategoryLabel = getArticleCategoryLabel
 const formatDate = formatLongDate
+const pageIsLoading = computed(() => isLoading.value || isRunnerProgressLoading.value)
+const pageErrorMessage = computed(() => runnerProgressError.value || errorMessage.value)
+const visibleArticles = computed(() => {
+  const level = runnerProgress.value?.currentLevel.level
+
+  if (!level) return []
+
+  return articles.value.filter(({ category }) => canAccessAcademyCategory(level, category))
+})
+
+const isCategoryLocked = (category: ArticleCategory | null) => {
+  if (!category) return false
+
+  const level = runnerProgress.value?.currentLevel.level
+
+  return level ? !canAccessAcademyCategory(level, category) : true
+}
+
+const getCategoryAriaLabel = (category: ArticleCategory | null, label: string) => {
+  return isCategoryLocked(category) ? `${label}，尚未解鎖` : label
+}
+
+const handleCategoryChange = async (category: ArticleCategory | null) => {
+  if (category && isCategoryLocked(category)) {
+    toast.add({
+      group: 'academy-lock',
+      severity: 'info',
+      summary: `${getArticleCategoryLabel(category)}尚未解鎖`,
+      detail: getAcademyCategoryUnlockDetail(category),
+      life: 4000,
+    })
+    return
+  }
+
+  await changeCategory(category)
+}
+
+const loadPageData = async () => {
+  await loadRunnerProgress()
+
+  if (runnerProgress.value) {
+    await loadArticles()
+  }
+}
 
 onMounted(() => {
-  void loadArticles()
+  void loadPageData()
 })
 </script>
 
@@ -248,6 +348,34 @@ onMounted(() => {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--space-2);
+}
+
+.category-filter-loading {
+  min-height: calc(var(--space-6) + var(--space-1));
+}
+
+.category-button.is-locked {
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  opacity: 0.65;
+}
+
+.category-lock-icon {
+  width: var(--space-4);
+  height: var(--space-4);
+}
+
+:global(.academy-lock-toast .p-toast-message-info) {
+  border-color: var(--color-primary-soft);
+  color: var(--color-text);
+  background: var(--color-primary-pale);
+  background: color-mix(in srgb, var(--color-primary-pale) 88%, transparent);
+}
+
+:global(.academy-lock-toast .p-toast-message-info .p-toast-message-icon),
+:global(.academy-lock-toast .p-toast-message-info .p-toast-summary),
+:global(.academy-lock-toast .p-toast-message-info .p-toast-close-button) {
+  color: var(--color-primary);
 }
 
 .error-content {

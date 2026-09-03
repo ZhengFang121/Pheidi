@@ -1,6 +1,12 @@
 import type { Router } from 'express'
 
+import {
+  canAccessAcademyCategory,
+  getMinimumLevelForAcademyCategory,
+  getUnlockedAcademyCategories,
+} from '../constants/academyAccess.js'
 import Article, { ARTICLE_CATEGORIES, type ArticleCategory } from '../models/Article.js'
+import { ensureRunnerProgress } from '../services/runnerProgressService.js'
 import { parsePositiveInteger } from '../utils/query.js'
 import { escapeRegularExpression } from '../utils/regex.js'
 
@@ -17,7 +23,7 @@ type ArticleSearchCondition = {
 
 type PublicArticleListFilter = {
   status: 'published'
-  category?: ArticleCategory
+  category?: ArticleCategory | { $in: ArticleCategory[] }
   $or?: Array<{
     title?: ArticleSearchCondition
     summary?: ArticleSearchCondition
@@ -31,6 +37,13 @@ const isArticleCategory = (value: unknown): value is ArticleCategory => {
 // 文章列表
 router.get('/', async (req, res) => {
   try {
+    if (!req.user) {
+      res.status(401).json({
+        message: '請先登入',
+      })
+      return
+    }
+
     const page = parsePositiveInteger(req.query.page, defaultPage)
 
     const requestedLimit = parsePositiveInteger(req.query.limit, defaultLimit)
@@ -46,6 +59,18 @@ router.get('/', async (req, res) => {
     if (category && !isArticleCategory(category)) {
       res.status(400).json({
         message: '文章分類篩選條件不正確',
+      })
+      return
+    }
+
+    const progression = await ensureRunnerProgress(req.user.userId)
+    const currentLevel = progression.currentLevel
+
+    if (isArticleCategory(category) && !canAccessAcademyCategory(currentLevel, category)) {
+      res.status(403).json({
+        message: '此跑者學院內容尚未解鎖',
+        requiredLevel: getMinimumLevelForAcademyCategory(category),
+        category,
       })
       return
     }
@@ -73,9 +98,9 @@ router.get('/', async (req, res) => {
       ]
     }
 
-    if (isArticleCategory(category)) {
-      filter.category = category
-    }
+    filter.category = isArticleCategory(category)
+      ? category
+      : { $in: getUnlockedAcademyCategories(currentLevel) }
 
     const [articles, total] = await Promise.all([
       Article.find(filter)
@@ -122,6 +147,13 @@ router.get('/', async (req, res) => {
 // 單篇文章
 router.get('/:slug', async (req, res) => {
   try {
+    if (!req.user) {
+      res.status(401).json({
+        message: '請先登入',
+      })
+      return
+    }
+
     const { slug } = req.params
 
     if (!slug || !slugPattern.test(slug)) {
@@ -144,6 +176,17 @@ router.get('/:slug', async (req, res) => {
     if (!article) {
       res.status(404).json({
         message: '找不到指定的文章',
+      })
+      return
+    }
+
+    const progression = await ensureRunnerProgress(req.user.userId)
+
+    if (!canAccessAcademyCategory(progression.currentLevel, article.category)) {
+      res.status(403).json({
+        message: '此跑者學院內容尚未解鎖',
+        requiredLevel: getMinimumLevelForAcademyCategory(article.category),
+        category: article.category,
       })
       return
     }

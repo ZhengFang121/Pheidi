@@ -31,6 +31,16 @@
       />
     </div>
 
+    <BaseCard v-else-if="lockedCategory" class="locked-state">
+      <Lock class="locked-icon" aria-hidden="true" />
+
+      <h1>這篇內容尚未解鎖</h1>
+
+      <p>{{ getUnlockDetail(lockedCategory) }}</p>
+
+      <BaseButton label="返回跑者學院" @click="returnToAcademy" />
+    </BaseCard>
+
     <Message
       v-else-if="errorMessage"
       severity="error"
@@ -107,29 +117,42 @@
 </template>
 
 <script setup lang="ts">
+import { isAxiosError } from 'axios'
 import { ref } from 'vue'
-import { useRoute } from 'vue-router'
-import { ArrowLeft, BookOpen } from '@lucide/vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ArrowLeft, BookOpen, Lock } from '@lucide/vue'
 
 import Button from 'primevue/button'
 import Message from 'primevue/message'
 import Skeleton from 'primevue/skeleton'
 import Tag from 'primevue/tag'
 
-import { getArticleCategoryLabel } from '@/constants/article'
+import BaseButton from '@/components/base/BaseButton.vue'
+import BaseCard from '@/components/base/BaseCard.vue'
+import {
+  canAccessAcademyCategory,
+  getAcademyCategoryUnlockDetail,
+  getArticleCategoryLabel,
+  isArticleCategory,
+} from '@/constants/article'
 import { getArticleBySlug } from '@/services/articles'
-import type { ArticleDetail } from '@/types/article'
+import { getRunnerProgress } from '@/services/runnerProgress'
+import type { AcademyLockedResponse, ArticleCategory, ArticleDetail } from '@/types/article'
 import { getApiErrorMessage, hasApiErrorStatus } from '@/utils/apiError'
 import { formatLongDate } from '@/utils/date'
 
 const route = useRoute()
+const router = useRouter()
 
 const article = ref<ArticleDetail | null>(null)
+const lockedCategory = ref<ArticleCategory | null>(null)
 const isLoading = ref(false)
 const errorMessage = ref('')
 
 const getCategoryLabel = getArticleCategoryLabel
+const getUnlockDetail = getAcademyCategoryUnlockDetail
 const formatDate = formatLongDate
+const returnToAcademy = () => router.push({ name: 'academy' })
 
 const loadArticle = async () => {
   const slug = typeof route.params.slug === 'string' ? route.params.slug : ''
@@ -142,13 +165,33 @@ const loadArticle = async () => {
   isLoading.value = true
   errorMessage.value = ''
   article.value = null
+  lockedCategory.value = null
 
   try {
-    const response = await getArticleBySlug(slug)
+    const progressResponse = await getRunnerProgress()
+    const articleResponse = await getArticleBySlug(slug)
 
-    article.value = response.article
+    if (
+      !canAccessAcademyCategory(
+        progressResponse.runnerProgress.currentLevel.level,
+        articleResponse.article.category,
+      )
+    ) {
+      lockedCategory.value = articleResponse.article.category
+      return
+    }
+
+    article.value = articleResponse.article
   } catch (error: unknown) {
-    if (hasApiErrorStatus(error, 404)) {
+    if (hasApiErrorStatus(error, 403) && isAxiosError<AcademyLockedResponse>(error)) {
+      const category = error.response?.data.category
+
+      if (isArticleCategory(category)) {
+        lockedCategory.value = category
+      } else {
+        errorMessage.value = '此跑者學院內容尚未解鎖'
+      }
+    } else if (hasApiErrorStatus(error, 404)) {
       errorMessage.value = '找不到這篇文章，文章可能尚未發布或已不存在'
     } else {
       errorMessage.value = getApiErrorMessage(error, '無法取得文章，請稍後再試')
@@ -192,6 +235,36 @@ void loadArticle()
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+}
+
+.locked-state {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 640px;
+  margin-inline: auto;
+  padding: var(--space-8) var(--space-5);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.locked-state h1,
+.locked-state p {
+  margin: 0;
+}
+
+.locked-state h1 {
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-heading);
+}
+
+.locked-icon {
+  width: var(--space-7);
+  height: var(--space-7);
+  color: var(--color-primary);
 }
 
 .article-header {
