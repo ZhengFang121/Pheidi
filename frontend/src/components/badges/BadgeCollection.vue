@@ -48,8 +48,10 @@ const openBadgeDialog = (definition: BadgeDefinition, unlockedAt: string | null)
       modal
       header="徽章詳情"
       :draggable="false"
+      :pt="{ mask: { class: 'badge-detail-dialog-mask' } }"
       :style="{ width: '30rem' }"
       :breakpoints="{ '600px': 'calc(100vw - 32px)' }"
+      class="badge-detail-dialog"
       @hide="selectedBadge = null"
     >
       <article v-if="selectedBadge" class="badge-dialog">

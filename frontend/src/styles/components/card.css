@@ -97,8 +97,9 @@
   }
 }
 
-/* 跑步紀錄 Dialog */
-.p-dialog-mask.p-overlay-mask.run-record-dialog-mask {
+/* 徽章詳情與跑步紀錄 Dialog */
+.p-dialog-mask.p-overlay-mask.run-record-dialog-mask,
+.p-dialog-mask.p-overlay-mask.badge-detail-dialog-mask {
   background:
     radial-gradient(
       circle at 50% 43%,
@@ -108,13 +109,8 @@
     color-mix(in srgb, var(--color-primary-soft) 60%, transparent) !important;
 }
 
-.p-dialog.p-component.run-record-dialog {
-  display: flex;
-  flex-direction: column;
-  width: min(44rem, calc(100vw - var(--space-6)));
-  max-height: calc(100dvh - var(--space-7));
-  overflow: hidden;
-  border-radius: var(--radius-xl);
+.p-dialog.p-component.run-record-dialog,
+.p-dialog.p-component.badge-detail-dialog {
   background-image:
     linear-gradient(to bottom, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0) 100%),
     radial-gradient(
@@ -123,6 +119,20 @@
       transparent 44%
     ),
     linear-gradient(to left top, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 50%);
+}
+
+.p-dialog.p-component.badge-detail-dialog {
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+}
+
+.p-dialog.p-component.run-record-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(44rem, calc(100vw - var(--space-6)));
+  max-height: calc(100dvh - var(--space-7));
+  overflow: hidden;
+  border-radius: var(--radius-xl);
   color: var(--color-text);
   font-family: var(--font-family-base);
   letter-spacing: var(--letter-spacing-base);
