@@ -528,7 +528,7 @@ const navigationItems = ref<NavigationItem[]>([
   min-height: 44px;
   padding: var(--space-2) var(--space-3);
 
-  color: var(--color-primary);
+  color: var(--color-dark-light);
   text-decoration: none;
 
   border-radius: var(--radius-full);
@@ -594,15 +594,19 @@ const navigationItems = ref<NavigationItem[]>([
 }
 
 @media (max-width: 768px) {
+  .logo-link {
+    min-height: 44px;
+  }
+
   .root-menu-link {
     --base-icon-action-expanded-width: 116px;
-    --base-icon-action-size: 42px;
+    --base-icon-action-size: 44px;
     gap: var(--space-1);
     padding-inline: var(--space-2);
   }
 
   .header-action-button {
-    --base-icon-action-size: 42px;
+    --base-icon-action-size: 44px;
   }
 }
 
@@ -627,8 +631,8 @@ const navigationItems = ref<NavigationItem[]>([
   }
 
   .logo-link {
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    height: 44px;
     overflow: hidden;
   }
 
@@ -639,7 +643,7 @@ const navigationItems = ref<NavigationItem[]>([
 
   .root-menu-link,
   .header-action-button {
-    --base-icon-action-size: 38px;
+    --base-icon-action-size: 44px;
   }
 
   :deep(.main-menu .p-menubar-root-list),

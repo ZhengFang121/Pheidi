@@ -14,10 +14,12 @@
           maxlength="100"
           placeholder="輸入文章標題"
           :invalid="Boolean(fieldErrors.title)"
+          :aria-invalid="Boolean(fieldErrors.title) || undefined"
+          :aria-describedby="fieldErrors.title ? 'article-title-error' : undefined"
           fluid
         />
 
-        <small v-if="fieldErrors.title" class="field-error">
+        <small v-if="fieldErrors.title" id="article-title-error" class="field-error">
           {{ fieldErrors.title }}
         </small>
       </div>
@@ -31,12 +33,18 @@
           maxlength="120"
           placeholder="beginner-running-guide"
           :invalid="Boolean(fieldErrors.slug)"
+          :aria-invalid="Boolean(fieldErrors.slug) || undefined"
+          :aria-describedby="
+            fieldErrors.slug ? 'article-slug-hint article-slug-error' : 'article-slug-hint'
+          "
           fluid
         />
 
-        <small class="field-hint"> 只能使用小寫英文字母、數字與連字號。 </small>
+        <small id="article-slug-hint" class="field-hint">
+          只能使用小寫英文字母、數字與連字號。
+        </small>
 
-        <small v-if="fieldErrors.slug" class="field-error">
+        <small v-if="fieldErrors.slug" id="article-slug-error" class="field-error">
           {{ fieldErrors.slug }}
         </small>
       </div>
@@ -64,11 +72,13 @@
           maxlength="300"
           placeholder="簡短說明文章內容，最多 300 個字元"
           :invalid="Boolean(fieldErrors.summary)"
+          :aria-invalid="Boolean(fieldErrors.summary) || undefined"
+          :aria-describedby="fieldErrors.summary ? 'article-summary-error' : undefined"
           fluid
         />
 
         <div class="field-footer">
-          <small v-if="fieldErrors.summary" class="field-error">
+          <small v-if="fieldErrors.summary" id="article-summary-error" class="field-error">
             {{ fieldErrors.summary }}
           </small>
 

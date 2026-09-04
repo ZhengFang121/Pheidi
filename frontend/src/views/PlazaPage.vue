@@ -55,6 +55,10 @@
                 class="composer-textarea"
               />
 
+              <Message v-if="postSubmitErrorMessage" severity="error" :closable="false" aria-live="polite">
+                {{ postSubmitErrorMessage }}
+              </Message>
+
               <input
                 ref="postImageInput"
                 type="file"
@@ -638,6 +642,7 @@ const postImagePreviewUrl = ref('')
 const uploadedPostImageUrl = ref('')
 const uploadedPostImagePublicId = ref('')
 const postImageErrorMessage = ref('')
+const postSubmitErrorMessage = ref('')
 const isUploadingPostImage = ref(false)
 const activeCommentPostId = ref<string | null>(null)
 const commentContent = ref('')
@@ -827,7 +832,7 @@ async function handleSubmitPost() {
 
   if (!content || isSubmittingPost.value) return
 
-  feedErrorMessage.value = ''
+  postSubmitErrorMessage.value = ''
   postImageErrorMessage.value = ''
   isSubmittingPost.value = true
 
@@ -865,7 +870,7 @@ async function handleSubmitPost() {
     postContent.value = ''
     clearPostImage()
   } catch (error: unknown) {
-    feedErrorMessage.value = getApiErrorMessage(error, '發布貼文失敗，請稍後再試。')
+    postSubmitErrorMessage.value = getApiErrorMessage(error, '發布貼文失敗，請稍後再試。')
   } finally {
     isSubmittingPost.value = false
   }
@@ -1081,7 +1086,7 @@ onBeforeUnmount(() => {
 .plaza-eyebrow {
   margin: 0 0 var(--space-2);
 
-  color: var(--color-primary);
+  color: var(--color-dark-light);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--letter-spacing-wide);
@@ -1123,11 +1128,11 @@ onBeforeUnmount(() => {
 }
 
 .plaza-tabs :deep(.p-tab:hover) {
-  color: var(--color-accent);
+  color: var(--color-dark);
 }
 
 .plaza-tabs :deep(.p-tab-active) {
-  color: var(--color-primary);
+  color: var(--color-dark);
 }
 
 .plaza-tabs :deep(.p-tablist-active-bar) {
@@ -1285,7 +1290,7 @@ onBeforeUnmount(() => {
 }
 
 .character-count--warning {
-  color: var(--color-accent);
+  color: var(--color-dark);
   font-weight: var(--font-weight-medium);
 }
 
@@ -1310,7 +1315,7 @@ onBeforeUnmount(() => {
 .feed-eyebrow {
   margin: 0 0 var(--space-1);
 
-  color: var(--color-primary);
+  color: var(--color-dark-light);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--letter-spacing-wide);
@@ -1441,7 +1446,7 @@ onBeforeUnmount(() => {
 }
 
 .post-action:hover {
-  color: var(--color-accent);
+  color: var(--color-dark);
   background: var(--color-accent-pale);
 }
 
@@ -1460,12 +1465,12 @@ onBeforeUnmount(() => {
 }
 
 .post-action:focus-visible {
-  outline: 3px solid var(--color-accent-soft);
+  outline: 3px solid var(--color-dark-light);
   outline-offset: 2px;
 }
 
 .post-action--liked {
-  color: var(--color-accent);
+  color: var(--color-dark);
 }
 
 .post-action svg {
@@ -1476,7 +1481,7 @@ onBeforeUnmount(() => {
 }
 
 .post-action--active {
-  color: var(--color-primary);
+  color: var(--color-dark);
   background: var(--color-primary-pale);
 }
 
@@ -1658,7 +1663,7 @@ onBeforeUnmount(() => {
 
 .comment-like-button:hover,
 .comment-like-button--liked {
-  color: var(--color-accent);
+  color: var(--color-dark);
 }
 
 .comment-like-button:hover {
@@ -1696,7 +1701,7 @@ onBeforeUnmount(() => {
 .event-eyebrow {
   margin: 0 0 var(--space-1);
 
-  color: var(--color-primary);
+  color: var(--color-dark-light);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--letter-spacing-wide);
@@ -1776,7 +1781,7 @@ onBeforeUnmount(() => {
 }
 
 .event-month {
-  color: var(--color-primary);
+  color: var(--color-dark);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--letter-spacing-wide);
@@ -1837,7 +1842,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: var(--space-2);
 
-  color: var(--color-primary);
+  color: var(--color-dark-light);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
 }

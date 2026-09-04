@@ -306,7 +306,7 @@ onMounted(() => {
 .academy-eyebrow {
   margin: 0 0 var(--space-2);
 
-  color: var(--color-primary);
+  color: var(--color-dark-light);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--letter-spacing-wide);
@@ -375,7 +375,7 @@ onMounted(() => {
 :global(.academy-lock-toast .p-toast-message-info .p-toast-message-icon),
 :global(.academy-lock-toast .p-toast-message-info .p-toast-summary),
 :global(.academy-lock-toast .p-toast-message-info .p-toast-close-button) {
-  color: var(--color-primary);
+  color: var(--color-dark);
 }
 
 .error-content {
@@ -493,7 +493,7 @@ onMounted(() => {
   align-items: center;
   gap: var(--space-2);
 
-  color: var(--color-primary);
+  color: var(--color-dark-light);
   font-weight: var(--font-weight-medium);
   text-decoration: none;
 
@@ -501,11 +501,11 @@ onMounted(() => {
 }
 
 .read-more:hover {
-  color: var(--color-accent);
+  color: var(--color-dark);
 }
 
 .read-more:focus-visible {
-  outline: 3px solid var(--color-primary-soft);
+  outline: 3px solid var(--color-dark-light);
   outline-offset: 4px;
   border-radius: var(--radius-sm);
 }

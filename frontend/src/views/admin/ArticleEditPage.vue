@@ -170,7 +170,7 @@ onMounted(() => {
 .page-eyebrow {
   margin: 0 0 var(--space-1);
 
-  color: var(--color-primary);
+  color: var(--color-dark-light);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--letter-spacing-wide);

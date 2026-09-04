@@ -94,7 +94,7 @@ import grasslandUrl from '@/assets/images/grassland.png'
   margin: 0;
   padding: 0 var(--space-3);
 
-  color: var(--color-secondary-pale);
+  color: var(--color-dark);
   text-align: center;
   letter-spacing: var(--letter-spacing-wide);
   font-size: var(--font-size-sm);

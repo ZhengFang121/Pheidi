@@ -409,7 +409,7 @@ async function handlePasswordSubmit() {
 }
 .page-eyebrow {
   margin: 0 0 var(--space-1);
-  color: var(--color-primary);
+  color: var(--color-dark-light);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--letter-spacing-wide);
@@ -487,7 +487,7 @@ async function handlePasswordSubmit() {
   align-items: center;
   width: 100%;
   padding: var(--space-3) var(--space-4);
-  color: var(--color-primary);
+  color: var(--color-dark-light);
   background: transparent;
   border: 0;
   border-radius: var(--radius-md);

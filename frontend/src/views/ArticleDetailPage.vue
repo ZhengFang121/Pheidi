@@ -217,13 +217,13 @@ void loadArticle()
 
   margin-bottom: var(--space-6);
 
-  color: var(--color-primary);
+  color: var(--color-dark-light);
   font-weight: var(--font-weight-medium);
   text-decoration: none;
 }
 
 .back-link:hover {
-  color: var(--color-accent);
+  color: var(--color-dark);
 }
 
 .back-icon {
@@ -385,7 +385,7 @@ void loadArticle()
 }
 
 .article-body :deep(a) {
-  color: var(--color-primary);
+  color: var(--color-dark-light);
 }
 
 .article-body :deep(blockquote) {

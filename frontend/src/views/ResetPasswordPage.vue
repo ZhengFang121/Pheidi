@@ -156,6 +156,10 @@ const handleSubmit = async (event: FormSubmitEvent) => {
           autocomplete="new-password"
           placeholder="請輸入新密碼"
           :feedback="false"
+          :invalid="$form.password?.invalid"
+          :input-props="{
+            'aria-describedby': $form.password?.invalid ? 'new-password-error' : undefined,
+          }"
           toggle-mask
           fluid
         />
@@ -173,7 +177,13 @@ const handleSubmit = async (event: FormSubmitEvent) => {
           </span>
         </div>
 
-        <Message v-if="$form.password?.invalid" severity="error" size="small" variant="simple">
+        <Message
+          v-if="$form.password?.invalid"
+          id="new-password-error"
+          severity="error"
+          size="small"
+          variant="simple"
+        >
           {{ $form.password.error?.message }}
         </Message>
       </div>
@@ -187,12 +197,19 @@ const handleSubmit = async (event: FormSubmitEvent) => {
           autocomplete="new-password"
           placeholder="請再次輸入新密碼"
           :feedback="false"
+          :invalid="$form.confirmPassword?.invalid"
+          :input-props="{
+            'aria-describedby': $form.confirmPassword?.invalid
+              ? 'confirm-new-password-error'
+              : undefined,
+          }"
           toggle-mask
           fluid
         />
 
         <Message
           v-if="$form.confirmPassword?.invalid"
+          id="confirm-new-password-error"
           severity="error"
           size="small"
           variant="simple"

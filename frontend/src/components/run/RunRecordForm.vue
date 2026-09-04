@@ -387,11 +387,32 @@ onBeforeUnmount(() => {
         <legend class="form-field__label">跑步時長</legend>
 
         <div class="run-duration-grid">
-          <InputNumber v-model="durationHours" :min="0" :max="99" suffix=" 小時" fluid />
+          <InputNumber
+            v-model="durationHours"
+            :min="0"
+            :max="99"
+            suffix=" 小時"
+            aria-label="跑步時長小時"
+            fluid
+          />
 
-          <InputNumber v-model="durationMinutes" :min="0" :max="59" suffix=" 分" fluid />
+          <InputNumber
+            v-model="durationMinutes"
+            :min="0"
+            :max="59"
+            suffix=" 分"
+            aria-label="跑步時長分鐘"
+            fluid
+          />
 
-          <InputNumber v-model="durationSeconds" :min="0" :max="59" suffix=" 秒" fluid />
+          <InputNumber
+            v-model="durationSeconds"
+            :min="0"
+            :max="59"
+            suffix=" 秒"
+            aria-label="跑步時長秒"
+            fluid
+          />
         </div>
       </fieldset>
 
@@ -680,7 +701,7 @@ onBeforeUnmount(() => {
   --base-button-flow-play-state: paused;
 
   border-color: var(--color-primary-light);
-  color: var(--color-primary);
+  color: var(--color-dark);
   background: var(--color-primary-pale);
 }
 
@@ -690,20 +711,20 @@ onBeforeUnmount(() => {
   --base-button-flow-play-state: paused;
 
   border-color: var(--color-primary);
-  color: var(--color-primary);
+  color: var(--color-dark);
   background: var(--color-primary-soft);
 }
 
 .run-upload-actions :deep(.run-remove-image-button.p-button) {
   border-color: transparent;
-  color: var(--color-accent);
+  color: var(--color-dark);
   background: var(--color-accent-pale);
 }
 
 .run-upload-actions :deep(.run-remove-image-button.p-button:hover:not(:disabled)),
 .run-upload-actions :deep(.run-remove-image-button.p-button:active:not(:disabled)) {
   border-color: transparent;
-  color: var(--color-accent);
+  color: var(--color-dark);
   background: var(--color-accent-soft);
 }
 
@@ -750,7 +771,7 @@ onBeforeUnmount(() => {
   background: transparent;
   box-shadow: none;
   font-family: var(--font-family-base);
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   letter-spacing: var(--letter-spacing-base);
 }
 
@@ -773,7 +794,7 @@ onBeforeUnmount(() => {
 
 .run-record-form :deep(.p-datepicker-dropdown:hover),
 .run-record-form :deep(.p-select-dropdown:hover) {
-  color: var(--color-primary);
+  color: var(--color-dark);
   background: var(--color-primary-pale);
 }
 
@@ -785,7 +806,7 @@ onBeforeUnmount(() => {
   padding: 0 0 0 var(--space-4);
   color: var(--color-text);
   font-family: var(--font-family-base);
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   letter-spacing: var(--letter-spacing-base);
 }
 
@@ -840,7 +861,7 @@ onBeforeUnmount(() => {
   background: transparent;
   box-shadow: none;
   font-family: var(--font-family-base);
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   letter-spacing: var(--letter-spacing-base);
 }
 
@@ -850,7 +871,7 @@ onBeforeUnmount(() => {
 }
 
 .run-record-form :deep(.p-selectbutton .p-togglebutton.p-togglebutton-checked) {
-  color: var(--color-primary);
+  color: var(--color-dark);
   background: transparent;
 }
 
@@ -860,7 +881,7 @@ onBeforeUnmount(() => {
 }
 
 .run-record-form :deep(.p-selectbutton .p-togglebutton:focus-visible) {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-dark-light);
   outline-offset: -3px;
 }
 

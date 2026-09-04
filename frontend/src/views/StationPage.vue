@@ -712,7 +712,7 @@ watch(
 .station-eyebrow {
   margin: 0 0 var(--space-2);
 
-  color: var(--color-primary);
+  color: var(--color-dark-light);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--letter-spacing-wide);
@@ -782,7 +782,7 @@ watch(
 .station-day-eyebrow {
   margin: 0 0 var(--space-1);
 
-  color: var(--color-primary);
+  color: var(--color-dark-light);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--letter-spacing-wide);
@@ -881,17 +881,17 @@ watch(
 }
 
 .station-record-panel :deep(.p-accordionheader:hover) {
-  color: var(--color-primary);
+  color: var(--color-dark);
   background: var(--color-primary-pale);
 }
 
 .station-record-panel :deep(.p-accordionheader:focus-visible) {
-  outline: 3px solid var(--color-accent);
+  outline: 3px solid var(--color-dark-light);
   outline-offset: -3px;
 }
 
 .station-record-panel :deep(.p-accordionheader[aria-expanded='true']) {
-  color: var(--color-primary);
+  color: var(--color-dark);
   background: color-mix(in srgb, var(--color-primary-pale) 62%, transparent);
 }
 
@@ -970,7 +970,7 @@ watch(
 }
 
 .station-record-time {
-  color: var(--color-primary);
+  color: var(--color-dark-light);
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
   font-variant-numeric: tabular-nums;
@@ -1122,7 +1122,7 @@ watch(
 
 .station-weekday:nth-child(6),
 .station-weekday:nth-child(7) {
-  color: var(--color-accent);
+  color: var(--color-dark-light);
 }
 
 .station-date-grid {

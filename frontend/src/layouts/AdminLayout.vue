@@ -304,7 +304,7 @@ const closeMobileDrawer = () => {
   height: 40px;
 
   color: var(--color-dark);
-  font-size: var(--font-size-h3);
+  font-size: var(--font-size-md);
   font-weight: var(--font-weight-bold);
 
   background: var(--color-primary);
@@ -327,14 +327,14 @@ const closeMobileDrawer = () => {
 }
 
 .admin-brand-title {
-  font-size: var(--font-size-h3);
+  font-size: var(--font-size-md);
   font-weight: var(--font-weight-bold);
-  letter-spacing: var(--letter-spacing-normal);
+  letter-spacing: var(--letter-spacing-base);
 }
 
 .admin-brand-subtitle {
-  font-size: var(--font-size-caption);
-  letter-spacing: var(--letter-spacing-wider);
+  font-size: var(--font-size-xs);
+  letter-spacing: var(--letter-spacing-wide);
   opacity: 0.7;
 }
 
@@ -349,7 +349,7 @@ const closeMobileDrawer = () => {
   height: 40px;
   padding: 0;
 
-  color: var(--color-primary);
+  color: var(--color-dark-light);
 
   cursor: pointer;
 
@@ -379,7 +379,7 @@ const closeMobileDrawer = () => {
 
 .sidebar-toggle-button:focus-visible,
 .mobile-menu-button:focus-visible {
-  outline: 3px solid var(--color-primary-soft);
+  outline: 3px solid var(--color-dark-light);
   outline-offset: 2px;
 }
 
@@ -416,7 +416,7 @@ const closeMobileDrawer = () => {
 
   overflow: hidden;
 
-  color: var(--color-primary);
+  color: var(--color-dark-light);
   text-decoration: none;
   white-space: nowrap;
 
@@ -441,7 +441,7 @@ const closeMobileDrawer = () => {
 
 .admin-navigation-link:focus-visible,
 .back-to-site-link:focus-visible {
-  outline: 3px solid var(--color-primary-soft);
+  outline: 3px solid var(--color-dark-light);
   outline-offset: 2px;
 }
 
@@ -545,15 +545,15 @@ const closeMobileDrawer = () => {
 .admin-header-eyebrow {
   margin: 0 0 var(--space-1);
 
-  color: var(--color-primary);
-  font-size: var(--font-size-caption);
-  letter-spacing: var(--letter-spacing-wider);
+  color: var(--color-dark-light);
+  font-size: var(--font-size-xs);
+  letter-spacing: var(--letter-spacing-wide);
 }
 
 .admin-header-title {
   margin: 0;
 
-  font-size: var(--font-size-h2);
+  font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-heading);
 }
@@ -569,7 +569,7 @@ const closeMobileDrawer = () => {
 }
 
 .mobile-menu-button:hover {
-  color: white;
+  color: var(--color-surface);
   background: var(--color-primary);
 }
 
@@ -602,13 +602,13 @@ const closeMobileDrawer = () => {
 .mobile-navigation-link:hover,
 .mobile-navigation-link.router-link-exact-active,
 .mobile-back-to-site-link:hover {
-  color: var(--color-primary);
+  color: var(--color-dark);
   background: var(--color-primary-pale);
 }
 
 .mobile-navigation-link:focus-visible,
 .mobile-back-to-site-link:focus-visible {
-  outline: 3px solid var(--color-primary-soft);
+  outline: 3px solid var(--color-dark-light);
   outline-offset: 2px;
 }
 
@@ -627,12 +627,12 @@ const closeMobileDrawer = () => {
 }
 
 :global(.admin-mobile-drawer .p-drawer-header) {
-  color: var(--color-primary);
+  color: var(--color-dark);
   background: var(--color-primary-pale);
 }
 
 :global(.admin-mobile-drawer .p-drawer-close-button) {
-  color: var(--color-primary);
+  color: var(--color-dark);
 }
 
 :global(.admin-mobile-drawer .p-drawer-content) {
@@ -670,7 +670,7 @@ const closeMobileDrawer = () => {
   }
 
   .admin-header-title {
-    font-size: var(--font-size-h3);
+    font-size: var(--font-size-md);
   }
 
   .admin-content {

@@ -242,7 +242,7 @@ onMounted(() => {
 .panel-eyebrow {
   margin: 0 0 var(--space-1);
 
-  color: var(--color-primary);
+  color: var(--color-dark-light);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--letter-spacing-wide);
@@ -304,7 +304,7 @@ onMounted(() => {
 }
 
 .management-card:focus-visible {
-  outline: 3px solid var(--color-primary-soft);
+  outline: 3px solid var(--color-dark-light);
   outline-offset: 2px;
 }
 
@@ -370,7 +370,7 @@ onMounted(() => {
 .management-card-eyebrow {
   margin: 0 0 var(--space-1);
 
-  color: var(--color-primary);
+  color: var(--color-dark-light);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--letter-spacing-wide);
@@ -445,7 +445,7 @@ onMounted(() => {
   margin: 0;
 
   color: var(--color-text);
-  font-size: var(--font-size-h3);
+  font-size: var(--font-size-md);
   font-weight: var(--font-weight-bold);
 }
 
@@ -454,13 +454,13 @@ onMounted(() => {
   align-items: center;
   gap: var(--space-1);
 
-  color: var(--color-primary);
+  color: var(--color-dark-light);
   font-weight: var(--font-weight-medium);
   text-decoration: none;
 }
 
 .view-all-link:hover {
-  color: var(--color-accent);
+  color: var(--color-dark);
 }
 
 .view-all-icon {

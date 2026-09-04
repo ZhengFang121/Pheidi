@@ -15,7 +15,7 @@
 
 .account-card .p-inputtext {
   padding-block: 0;
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   line-height: normal;
 }
 
@@ -26,7 +26,7 @@
 .account-card .p-inputtext.p-invalid,
 .account-card .p-inputtext.p-invalid:enabled:hover {
   border-color: var(--color-accent);
-  color: var(--color-accent);
+  color: var(--color-dark);
 }
 
 .account-card .p-inputtext.p-invalid:enabled:focus {
@@ -35,7 +35,7 @@
 }
 
 .account-card .p-inputtext.p-invalid::placeholder {
-  color: var(--color-accent);
+  color: var(--color-dark-light);
   opacity: 1;
 }
 
@@ -46,7 +46,7 @@
 .account-card .p-message.p-message-error,
 .account-card .p-message.p-message-error .p-message-icon,
 .account-card .p-message.p-message-error .p-message-text {
-  color: var(--color-accent);
+  color: var(--color-dark);
 }
 
 .account-card .p-password-toggle-mask-icon {
@@ -107,7 +107,7 @@
 }
 
 .account-link:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-dark-light);
   outline-offset: 2px;
 }
 

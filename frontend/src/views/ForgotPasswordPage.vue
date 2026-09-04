@@ -101,10 +101,18 @@ const handleSubmit = async (event: FormSubmitEvent) => {
           type="email"
           autocomplete="email"
           placeholder="runner@example.com"
+          :aria-invalid="$form.email?.invalid || undefined"
+          :aria-describedby="$form.email?.invalid ? 'forgot-password-email-error' : undefined"
           fluid
         />
 
-        <Message v-if="$form.email?.invalid" severity="error" size="small" variant="simple">
+        <Message
+          v-if="$form.email?.invalid"
+          id="forgot-password-email-error"
+          severity="error"
+          size="small"
+          variant="simple"
+        >
           {{ $form.email.error?.message }}
         </Message>
       </div>

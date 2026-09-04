@@ -284,9 +284,17 @@ const handleRegister = async (event: FormSubmitEvent) => {
                 type="email"
                 autocomplete="email"
                 placeholder="runner@example.com"
+                :aria-invalid="$form.email?.invalid || undefined"
+                :aria-describedby="$form.email?.invalid ? 'login-email-error' : undefined"
                 fluid
               />
-              <Message v-if="$form.email?.invalid" severity="error" size="small" variant="simple">
+              <Message
+                v-if="$form.email?.invalid"
+                id="login-email-error"
+                severity="error"
+                size="small"
+                variant="simple"
+              >
                 {{ $form.email.error?.message }}
               </Message>
             </div>
@@ -300,11 +308,16 @@ const handleRegister = async (event: FormSubmitEvent) => {
                 autocomplete="current-password"
                 placeholder="請輸入密碼"
                 :feedback="false"
+                :invalid="$form.password?.invalid"
+                :input-props="{
+                  'aria-describedby': $form.password?.invalid ? 'login-password-error' : undefined,
+                }"
                 toggle-mask
                 fluid
               />
               <Message
                 v-if="$form.password?.invalid"
+                id="login-password-error"
                 severity="error"
                 size="small"
                 variant="simple"
@@ -388,10 +401,13 @@ const handleRegister = async (event: FormSubmitEvent) => {
                 autocomplete="nickname"
                 placeholder="請輸入跑者名稱"
                 :maxlength="20"
+                :aria-invalid="$form.username?.invalid || undefined"
+                :aria-describedby="$form.username?.invalid ? 'register-username-error' : undefined"
                 fluid
               />
               <Message
                 v-if="$form.username?.invalid"
+                id="register-username-error"
                 severity="error"
                 size="small"
                 variant="simple"
@@ -409,9 +425,17 @@ const handleRegister = async (event: FormSubmitEvent) => {
                 type="email"
                 autocomplete="email"
                 placeholder="runner@example.com"
+                :aria-invalid="$form.email?.invalid || undefined"
+                :aria-describedby="$form.email?.invalid ? 'register-email-error' : undefined"
                 fluid
               />
-              <Message v-if="$form.email?.invalid" severity="error" size="small" variant="simple">
+              <Message
+                v-if="$form.email?.invalid"
+                id="register-email-error"
+                severity="error"
+                size="small"
+                variant="simple"
+              >
                 {{ $form.email.error?.message }}
               </Message>
             </div>
@@ -425,6 +449,12 @@ const handleRegister = async (event: FormSubmitEvent) => {
                 autocomplete="new-password"
                 placeholder="請設定密碼"
                 :feedback="false"
+                :invalid="$form.password?.invalid"
+                :input-props="{
+                  'aria-describedby': $form.password?.invalid
+                    ? 'register-password-error'
+                    : undefined,
+                }"
                 toggle-mask
                 fluid
               />
@@ -444,6 +474,7 @@ const handleRegister = async (event: FormSubmitEvent) => {
 
               <Message
                 v-if="$form.password?.invalid"
+                id="register-password-error"
                 severity="error"
                 size="small"
                 variant="simple"
@@ -461,11 +492,18 @@ const handleRegister = async (event: FormSubmitEvent) => {
                 autocomplete="new-password"
                 placeholder="請再次輸入密碼"
                 :feedback="false"
+                :invalid="$form.confirmPassword?.invalid"
+                :input-props="{
+                  'aria-describedby': $form.confirmPassword?.invalid
+                    ? 'register-confirm-password-error'
+                    : undefined,
+                }"
                 toggle-mask
                 fluid
               />
               <Message
                 v-if="$form.confirmPassword?.invalid"
+                id="register-confirm-password-error"
                 severity="error"
                 size="small"
                 variant="simple"
@@ -476,7 +514,19 @@ const handleRegister = async (event: FormSubmitEvent) => {
 
             <div class="form-field">
               <div class="terms-option">
-                <Checkbox input-id="agree-to-terms" name="agreeToTerms" binary />
+                <Checkbox
+                  input-id="agree-to-terms"
+                  name="agreeToTerms"
+                  binary
+                  :invalid="$form.agreeToTerms?.invalid"
+                  :pt="{
+                    input: {
+                      'aria-describedby': $form.agreeToTerms?.invalid
+                        ? 'agree-to-terms-error'
+                        : undefined,
+                    },
+                  }"
+                />
 
                 <label for="agree-to-terms">
                   我已閱讀並同意
@@ -493,6 +543,7 @@ const handleRegister = async (event: FormSubmitEvent) => {
 
               <Message
                 v-if="$form.agreeToTerms?.invalid"
+                id="agree-to-terms-error"
                 severity="error"
                 size="small"
                 variant="simple"
@@ -576,7 +627,7 @@ const handleRegister = async (event: FormSubmitEvent) => {
   padding: 0 var(--space-4);
   border: 0;
   border-radius: var(--radius-full);
-  color: var(--color-primary);
+  color: var(--color-dark-light);
   background: transparent;
   font-family: var(--font-family-base);
   font-size: inherit;
@@ -595,7 +646,7 @@ const handleRegister = async (event: FormSubmitEvent) => {
 }
 
 .segmented-control__option:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-dark-light);
   outline-offset: -3px;
 }
 

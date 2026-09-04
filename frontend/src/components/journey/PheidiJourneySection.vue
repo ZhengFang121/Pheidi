@@ -84,7 +84,7 @@ const formatDistance = (distance: number) =>
 .pheidi-journey__header p {
   margin: 0 0 var(--space-2);
 
-  color: var(--color-primary);
+  color: var(--color-dark-light);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
   letter-spacing: var(--letter-spacing-wide);
@@ -155,7 +155,7 @@ const formatDistance = (distance: number) =>
 }
 
 .pheidi-journey__card--eligible .pheidi-journey__status {
-  color: var(--color-accent);
+  color: var(--color-dark);
   background: var(--color-surface);
 }
 
