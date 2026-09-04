@@ -20,6 +20,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   continue: []
+  error: []
 }>()
 
 const overlay = ref<HTMLElement | null>(null)
@@ -345,22 +346,29 @@ const prepareAndPlayEntrance = async () => {
   isTransitioning.value = true
   setInitialFrontImage()
 
-  await nextTick()
+  try {
+    await nextTick()
 
-  animationContext?.revert()
-  entranceTimeline?.kill()
-  exitTween?.kill()
+    animationContext?.revert()
+    entranceTimeline?.kill()
+    exitTween?.kill()
 
-  if (content.value) {
-    gsap.set(content.value, { autoAlpha: 0, y: 0 })
+    if (content.value) {
+      gsap.set(content.value, { autoAlpha: 0, y: 0 })
+    }
+
+    await Promise.all(getPreloadPaths().map(preloadImage))
+
+    if (requestId !== preloadRequestId || !overlay.value) return
+
+    await nextTick()
+    playEntrance()
+  } catch (error: unknown) {
+    if (requestId !== preloadRequestId) return
+
+    console.error('Failed to play progression animation:', error)
+    emit('error')
   }
-
-  await Promise.all(getPreloadPaths().map(preloadImage))
-
-  if (requestId !== preloadRequestId || !overlay.value) return
-
-  await nextTick()
-  playEntrance()
 }
 
 const handleContinue = () => {
@@ -369,15 +377,20 @@ const handleContinue = () => {
   isTransitioning.value = true
   const target = props.hasFollowingEvent ? content.value : overlay.value
 
-  exitTween = gsap.to(target, {
-    autoAlpha: 0,
-    y: isReducedMotion.value || !props.hasFollowingEvent ? 0 : -12,
-    duration: isReducedMotion.value ? 0.1 : 0.18,
-    ease: 'power1.in',
-    onComplete: () => {
-      emit('continue')
-    },
-  })
+  try {
+    exitTween = gsap.to(target, {
+      autoAlpha: 0,
+      y: isReducedMotion.value || !props.hasFollowingEvent ? 0 : -12,
+      duration: isReducedMotion.value ? 0.1 : 0.18,
+      ease: 'power1.in',
+      onComplete: () => {
+        emit('continue')
+      },
+    })
+  } catch (error: unknown) {
+    console.error('Failed to finish progression animation:', error)
+    emit('error')
+  }
 }
 
 const handleDocumentKeydown = (event: KeyboardEvent) => {

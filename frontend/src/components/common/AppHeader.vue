@@ -132,6 +132,8 @@
       modal
       header="今日跑步打卡"
       :draggable="false"
+      :closable="!isRunRecordSubmitting"
+      :close-on-escape="!isRunRecordSubmitting"
       :pt="{ mask: { class: 'run-record-dialog-mask' } }"
       class="run-record-dialog"
     >
@@ -139,6 +141,7 @@
         v-if="isCheckInDialogVisible"
         @submitted="handleRunRecordSubmitted"
         @cancel="isCheckInDialogVisible = false"
+        @submitting-change="isRunRecordSubmitting = $event"
       />
     </Dialog>
   </header>
@@ -189,6 +192,7 @@ const accountMenuWidth = ref<string>()
 
 const isAccountMenuVisible = ref(false)
 const isCheckInDialogVisible = ref(false)
+const isRunRecordSubmitting = ref(false)
 
 function toggleAccountMenu(event: MouseEvent) {
   if (event.currentTarget instanceof HTMLElement) {

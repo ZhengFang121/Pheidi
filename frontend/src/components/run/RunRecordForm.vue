@@ -34,6 +34,7 @@ const { enqueueProgressionEvents } = useProgressionEvents()
 const emit = defineEmits<{
   submitted: [runRecord: RunRecord]
   cancel: []
+  submittingChange: [submitting: boolean]
 }>()
 
 const runLocationOptions = [...RUN_LOCATION_OPTIONS]
@@ -272,6 +273,7 @@ const handleSubmit = async () => {
   }
 
   submitting.value = true
+  emit('submittingChange', true)
 
   try {
     let imageUrl = uploadedImageUrl.value
@@ -300,15 +302,14 @@ const handleSubmit = async () => {
       ? await updateRunRecord(props.runRecord.id, payload)
       : await createRunRecord(payload)
 
-    if (!isEditMode.value) {
-      enqueueProgressionEvents(toProgressionEvents(response.progression))
-    }
+    await enqueueProgressionEvents(toProgressionEvents(response.progression))
 
     emit('submitted', response.runRecord)
   } catch (error: unknown) {
     submitError.value = getApiErrorMessage(error, '跑步紀錄儲存失敗，請稍後再試。')
   } finally {
     submitting.value = false
+    emit('submittingChange', false)
   }
 }
 

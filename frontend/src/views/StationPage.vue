@@ -61,6 +61,7 @@ const errorMessage = ref('')
 const actionErrorMessage = ref('')
 const editingRunRecord = ref<RunRecord | null>(null)
 const isEditDialogVisible = ref(false)
+const isRunRecordSubmitting = ref(false)
 const deletingRunRecordId = ref<string | null>(null)
 const activeRunRecordPanel = ref<string | null>(null)
 
@@ -394,6 +395,8 @@ watch(
       modal
       header="編輯跑步紀錄"
       :draggable="false"
+      :closable="!isRunRecordSubmitting"
+      :close-on-escape="!isRunRecordSubmitting"
       :pt="{ mask: { class: 'run-record-dialog-mask' } }"
       class="run-record-dialog"
       @hide="editingRunRecord = null"
@@ -404,6 +407,7 @@ watch(
         :run-record="editingRunRecord"
         @submitted="handleRunRecordUpdated"
         @cancel="closeEditDialog"
+        @submitting-change="isRunRecordSubmitting = $event"
       />
     </Dialog>
 

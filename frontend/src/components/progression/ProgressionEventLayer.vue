@@ -1,8 +1,13 @@
 <script setup lang="ts">
+import { onBeforeUnmount } from 'vue'
+
 import ProgressionEventOverlay from '@/components/progression/ProgressionEventOverlay.vue'
 import { useProgressionEvents } from '@/composables/useProgressionEvents'
 
-const { currentQueueItem, hasFollowingEvent, advanceProgressionEvent } = useProgressionEvents()
+const { currentQueueItem, hasFollowingEvent, advanceProgressionEvent, clearProgressionEvents } =
+  useProgressionEvents()
+
+onBeforeUnmount(clearProgressionEvents)
 </script>
 
 <template>
@@ -14,5 +19,6 @@ const { currentQueueItem, hasFollowingEvent, advanceProgressionEvent } = useProg
     :badge-total="currentQueueItem.badgeTotal"
     :has-following-event="hasFollowingEvent"
     @continue="advanceProgressionEvent"
+    @error="clearProgressionEvents"
   />
 </template>

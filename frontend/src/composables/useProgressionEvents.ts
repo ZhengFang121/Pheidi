@@ -8,6 +8,7 @@ interface QueuedProgressionEvent {
   event: ProgressionEvent
   badgeIndex?: number
   badgeTotal?: number
+  completeBatch?: () => void
 }
 
 const eventQueue = ref<QueuedProgressionEvent[]>([])
@@ -63,8 +64,8 @@ export const toProgressionEvents = ({
 }
 
 export const useProgressionEvents = () => {
-  const enqueueProgressionEvents = (events: ProgressionEvent[]) => {
-    if (!events.length) return
+  const enqueueProgressionEvents = (events: ProgressionEvent[]): Promise<void> => {
+    if (!events.length) return Promise.resolve()
 
     if (!eventQueue.value.length) {
       returnFocusTarget =
@@ -74,30 +75,44 @@ export const useProgressionEvents = () => {
     const badgeTotal = events.filter((event) => event.type === 'badge').length
     let badgeIndex = 0
 
-    const queuedEvents = events.map<QueuedProgressionEvent>((event) => {
-      if (event.type === 'badge') badgeIndex += 1
+    return new Promise((resolve) => {
+      const queuedEvents = events.map<QueuedProgressionEvent>((event, index) => {
+        if (event.type === 'badge') badgeIndex += 1
 
-      return {
-        id: nextEventId++,
-        event,
-        ...(event.type === 'badge' && badgeTotal > 1
-          ? {
-              badgeIndex,
-              badgeTotal,
-            }
-          : {}),
-      }
+        return {
+          id: nextEventId++,
+          event,
+          ...(event.type === 'badge' && badgeTotal > 1
+            ? {
+                badgeIndex,
+                badgeTotal,
+              }
+            : {}),
+          ...(index === events.length - 1 ? { completeBatch: resolve } : {}),
+        }
+      })
+
+      eventQueue.value.push(...queuedEvents)
     })
-
-    eventQueue.value.push(...queuedEvents)
   }
 
   const advanceProgressionEvent = () => {
-    eventQueue.value.shift()
+    const completedEvent = eventQueue.value.shift()
+    completedEvent?.completeBatch?.()
 
     if (!eventQueue.value.length) {
       void restoreFocus()
     }
+  }
+
+  const clearProgressionEvents = () => {
+    const completeBatches = eventQueue.value.flatMap(({ completeBatch }) =>
+      completeBatch ? [completeBatch] : [],
+    )
+
+    eventQueue.value = []
+    completeBatches.forEach((completeBatch) => completeBatch())
+    void restoreFocus()
   }
 
   return {
@@ -106,5 +121,6 @@ export const useProgressionEvents = () => {
     hasFollowingEvent: computed(() => eventQueue.value.length > 1),
     enqueueProgressionEvents,
     advanceProgressionEvent,
+    clearProgressionEvents,
   }
 }
