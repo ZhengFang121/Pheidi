@@ -20,6 +20,16 @@ const forgotPasswordLimiter = rateLimit({
     message: '申請次數過多，請 15 分鐘後再試',
   },
 })
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 15,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  message: {
+    message: '登入嘗試次數過多，請 15 分鐘後再試',
+  },
+})
 
 export const registerUserHandlers = (router: Router) => {
 router.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
@@ -129,7 +139,7 @@ router.post('/reset-password', async (req, res) => {
   }
 })
 
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body
 

@@ -1,6 +1,8 @@
 import 'dotenv/config'
 import cors from 'cors'
 import express from 'express'
+import { rateLimit } from 'express-rate-limit'
+import helmet from 'helmet'
 import { connectDatabase } from './configs/database.js'
 
 import adminRoutes from './routes/adminRoutes.js'
@@ -24,6 +26,12 @@ if (process.env.NODE_ENV === 'production') {
 
 const port = Number(process.env.PORT) || 3000
 const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 300,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+})
 
 app.use(
   cors({
@@ -31,7 +39,9 @@ app.use(
   }),
 )
 
+app.use(helmet())
 app.use(express.json())
+app.use('/api', apiLimiter)
 
 app.get('/', (_req, res) => {
   res.json({
