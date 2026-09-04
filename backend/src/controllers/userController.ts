@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto'
 import type { Router } from 'express'
 import jwt from 'jsonwebtoken'
+import mongoose from 'mongoose'
 
 import { authenticateToken } from '../middleware/authMiddleware.js'
 import User from '../models/User.js'
@@ -98,9 +99,9 @@ router.post('/reset-password', async (req, res) => {
 
     const user = await User.findOne({
       passwordResetTokenHash: tokenHash,
-      passwordResetExpiresAt: {
+      passwordResetExpiresAt: mongoose.trusted({
         $gt: new Date(),
-      },
+      }),
     }).select('+passwordResetTokenHash +passwordResetExpiresAt')
 
     if (!user) {
@@ -250,7 +251,7 @@ router.patch('/me', authenticateToken, async (req, res) => {
 
     const emailOwner = await User.findOne({
       email: normalizedEmail,
-      _id: { $ne: req.user.userId },
+      _id: mongoose.trusted({ $ne: req.user.userId }),
     })
 
     if (emailOwner) {

@@ -1,3 +1,5 @@
+import mongoose from 'mongoose'
+
 import {
   BADGE_DEFINITIONS,
   getBadgeStorageKeys,
@@ -171,9 +173,9 @@ export const unlockEligibleBadges = async (userId: string): Promise<UnlockedBadg
         const result = await UserBadge.updateOne(
           {
             user: userId,
-            badgeKey: {
+            badgeKey: mongoose.trusted({
               $in: getBadgeStorageKeys(badgeKey),
-            },
+            }),
           },
           {
             $setOnInsert: {

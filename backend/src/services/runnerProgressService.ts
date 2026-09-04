@@ -1,4 +1,4 @@
-import { Types } from 'mongoose'
+import mongoose, { Types } from 'mongoose'
 
 import { resolveBadgeKey } from '../constants/badges.js'
 import { RUNNER_LEVELS, type RunnerLevel } from '../constants/runnerLevels.js'
@@ -149,9 +149,9 @@ export const refreshRunnerProgress = async (
     const upgradedProgress = await RunnerProgress.findOneAndUpdate(
       {
         user: userId,
-        currentLevel: {
+        currentLevel: mongoose.trusted({
           $lt: eligibleLevel,
-        },
+        }),
       },
       {
         $max: {

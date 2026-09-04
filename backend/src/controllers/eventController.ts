@@ -1,5 +1,5 @@
 import type { Router } from 'express'
-import { isValidObjectId, Types } from 'mongoose'
+import mongoose, { isValidObjectId, Types } from 'mongoose'
 
 import Event, { type IEvent } from '../models/Event.js'
 import User from '../models/User.js'
@@ -68,8 +68,8 @@ export const registerEventHandlers = (router: Router) => {
   router.get('/', async (req, res) => {
     try {
       const events = await Event.find({
-        endAt: { $gt: new Date() },
-        createdBy: { $exists: true },
+        endAt: mongoose.trusted({ $gt: new Date() }),
+        createdBy: mongoose.trusted({ $exists: true }),
       })
         .select(eventListFields)
         .populate('createdBy', 'username')
@@ -97,7 +97,10 @@ export const registerEventHandlers = (router: Router) => {
         return
       }
 
-      const event = await Event.findOne({ _id: eventId, createdBy: { $exists: true } })
+      const event = await Event.findOne({
+        _id: eventId,
+        createdBy: mongoose.trusted({ $exists: true }),
+      })
         .select(eventDetailFields)
         .populate('createdBy', 'username')
         .lean()
@@ -164,7 +167,10 @@ export const registerEventHandlers = (router: Router) => {
         return
       }
 
-      const event = await Event.findOne({ _id: eventId, createdBy: { $exists: true } })
+      const event = await Event.findOne({
+        _id: eventId,
+        createdBy: mongoose.trusted({ $exists: true }),
+      })
 
       if (!event) {
         res.status(404).json({ message: '找不到這個活動' })
@@ -227,9 +233,10 @@ export const registerEventHandlers = (router: Router) => {
         return
       }
 
-      const event = await Event.findOne({ _id: eventId, createdBy: { $exists: true } }).select(
-        'createdBy',
-      )
+      const event = await Event.findOne({
+        _id: eventId,
+        createdBy: mongoose.trusted({ $exists: true }),
+      }).select('createdBy')
 
       if (!event) {
         res.status(404).json({ message: '找不到這個活動' })
@@ -269,15 +276,15 @@ export const registerEventHandlers = (router: Router) => {
       const event = await Event.findOneAndUpdate(
         {
           _id: eventId,
-          createdBy: { $exists: true },
-          endAt: { $gt: new Date() },
-          participants: { $ne: userId },
-          $expr: {
+          createdBy: mongoose.trusted({ $exists: true }),
+          endAt: mongoose.trusted({ $gt: new Date() }),
+          participants: mongoose.trusted({ $ne: userId }),
+          $expr: mongoose.trusted({
             $lt: [
               { $size: { $ifNull: ['$participants', []] } },
               { $ifNull: ['$capacity', 2_147_483_647] },
             ],
-          },
+          }),
         },
         { $addToSet: { participants: userId } },
         { new: true },
@@ -289,7 +296,7 @@ export const registerEventHandlers = (router: Router) => {
       if (!event) {
         const currentEvent = await Event.findOne({
           _id: eventId,
-          createdBy: { $exists: true },
+          createdBy: mongoose.trusted({ $exists: true }),
         }).select('endAt capacity participants')
 
         if (!currentEvent) {
@@ -333,7 +340,11 @@ export const registerEventHandlers = (router: Router) => {
 
       const userId = new Types.ObjectId(req.user!.userId)
       const event = await Event.findOneAndUpdate(
-        { _id: eventId, createdBy: { $exists: true }, participants: userId },
+        {
+          _id: eventId,
+          createdBy: mongoose.trusted({ $exists: true }),
+          participants: userId,
+        },
         { $pull: { participants: userId } },
         { new: true },
       )
@@ -342,7 +353,10 @@ export const registerEventHandlers = (router: Router) => {
         .lean()
 
       if (!event) {
-        const eventExists = await Event.exists({ _id: eventId, createdBy: { $exists: true } })
+        const eventExists = await Event.exists({
+          _id: eventId,
+          createdBy: mongoose.trusted({ $exists: true }),
+        })
 
         res.status(eventExists ? 409 : 404).json({
           message: eventExists ? '你尚未參加這個活動' : '找不到這個活動',

@@ -1,4 +1,5 @@
 import type { Router } from 'express'
+import mongoose from 'mongoose'
 
 import Article from '../models/Article.js'
 import Comment from '../models/Comment.js'
@@ -20,9 +21,9 @@ const getUserStatistics = async () => {
     User.countDocuments({ role: 'player' }),
     User.countDocuments({ role: 'admin' }),
     User.countDocuments({
-      createdAt: {
+      createdAt: mongoose.trusted({
         $gte: sevenDaysAgo,
-      },
+      }),
     }),
   ])
 
@@ -127,16 +128,16 @@ router.get('/users', async (req, res) => {
       ? {
           $or: [
             {
-              username: {
+              username: mongoose.trusted({
                 $regex: escapedSearch,
                 $options: 'i',
-              },
+              }),
             },
             {
-              email: {
+              email: mongoose.trusted({
                 $regex: escapedSearch,
                 $options: 'i',
-              },
+              }),
             },
           ],
         }

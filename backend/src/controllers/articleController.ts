@@ -1,4 +1,5 @@
 import type { Router } from 'express'
+import mongoose from 'mongoose'
 import sanitizeHtml from 'sanitize-html'
 
 import Article, {
@@ -247,22 +248,22 @@ router.get('/', async (req, res) => {
 
       filter.$or = [
         {
-          title: {
+          title: mongoose.trusted({
             $regex: escapedSearch,
             $options: 'i',
-          },
+          }),
         },
         {
-          slug: {
+          slug: mongoose.trusted({
             $regex: escapedSearch,
             $options: 'i',
-          },
+          }),
         },
         {
-          summary: {
+          summary: mongoose.trusted({
             $regex: escapedSearch,
             $options: 'i',
-          },
+          }),
         },
       ]
     }

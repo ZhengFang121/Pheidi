@@ -7,6 +7,8 @@ export const connectDatabase = async () => {
     throw new Error('找不到 MONGODB_URI 環境變數')
   }
 
+  mongoose.set('sanitizeFilter', true)
+
   await mongoose.connect(mongodbUri)
 
   console.log('MongoDB connected successfully')

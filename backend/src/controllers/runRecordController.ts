@@ -1,5 +1,5 @@
 import type { Router } from 'express'
-import { isValidObjectId } from 'mongoose'
+import mongoose, { isValidObjectId } from 'mongoose'
 
 import { BADGE_DEFINITION_BY_KEY } from '../constants/badges.js'
 import { getRunnerLevelDefinition } from '../constants/runnerLevels.js'
@@ -519,10 +519,10 @@ export const registerRunRecordHandlers = (router: Router) => {
 
       const runRecords = await RunRecord.find({
         user: req.user.userId,
-        runDate: {
+        runDate: mongoose.trusted({
           $gte: startDate,
           $lt: endDate,
-        },
+        }),
       })
         .select(
           '_id runDate distance duration locationType mood weather images missionId createdAt updatedAt',

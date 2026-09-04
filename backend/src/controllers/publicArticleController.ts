@@ -1,4 +1,5 @@
 import type { Router } from 'express'
+import mongoose from 'mongoose'
 
 import {
   canAccessAcademyCategory,
@@ -84,23 +85,23 @@ router.get('/', async (req, res) => {
 
       filter.$or = [
         {
-          title: {
+          title: mongoose.trusted({
             $regex: escapedSearch,
             $options: 'i',
-          },
+          }),
         },
         {
-          summary: {
+          summary: mongoose.trusted({
             $regex: escapedSearch,
             $options: 'i',
-          },
+          }),
         },
       ]
     }
 
     filter.category = isArticleCategory(category)
       ? category
-      : { $in: getUnlockedAcademyCategories(currentLevel) }
+      : mongoose.trusted({ $in: getUnlockedAcademyCategories(currentLevel) })
 
     const [articles, total] = await Promise.all([
       Article.find(filter)
