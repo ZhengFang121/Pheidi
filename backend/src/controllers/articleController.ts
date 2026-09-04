@@ -70,7 +70,7 @@ const isValidImageUrl = (value: string) => {
   }
 }
 
-const sanitizeArticleContent = (content: string) => {
+export const sanitizeArticleContent = (content: string) => {
   return sanitizeHtml(content, {
     allowedTags: [
       'p',
