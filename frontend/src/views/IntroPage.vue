@@ -8,7 +8,12 @@ type IntroScene = {
   text?: string
   tone?: 'primary' | 'runner'
   showDaily?: boolean
-  layers: Array<{ image: string; alt?: string; className: string }>
+  layers: Array<{
+    image: string
+    alt?: string
+    className: string
+    usesFallingAnchor?: boolean
+  }>
 }
 
 const imagePath = (fileName: string) => `/images/intro/${fileName}`
@@ -32,7 +37,7 @@ const scenes: IntroScene[] = [
   },
   {
     id: 3,
-    text: '許多人聽聞後紛紛踏上追尋菲迪的旅程 …',
+    text: '許多人聽聞後紛紛踏上追尋菲迪的跑者之旅 …',
     showDaily: true,
     layers: [
       { image: imagePath('working.png'), alt: '跑者一邊看著手機一邊前進', className: 'working' },
@@ -59,7 +64,11 @@ const scenes: IntroScene[] = [
   {
     id: 7,
     layers: [
-      { image: imagePath('falling-2.1.png'), alt: '硬幣往黑暗深處落下', className: 'coins' },
+      {
+        image: imagePath('falling-2.1.png'),
+        alt: '硬幣往黑暗深處落下',
+        className: 'coins falling-sequence-anchor',
+      },
     ],
   },
   {
@@ -68,7 +77,8 @@ const scenes: IntroScene[] = [
       {
         image: imagePath('falling-2.2.png'),
         alt: '跑者掉入光束中',
-        className: 'falling-two falling-sequence falling-sequence--start',
+        className: 'falling-two falling-sequence-image falling-sequence--start',
+        usesFallingAnchor: true,
       },
     ],
   },
@@ -78,12 +88,8 @@ const scenes: IntroScene[] = [
       {
         image: imagePath('falling-2.2.png'),
         alt: '跑者開始往下墜落',
-        className: 'falling-two falling-sequence falling-sequence--start',
-      },
-      {
-        image: imagePath('falling-2.4.png'),
-        alt: '跑者落到光束底部',
-        className: 'falling-two falling-sequence falling-sequence--end',
+        className: 'falling-two falling-sequence-image falling-sequence--start',
+        usesFallingAnchor: true,
       },
     ],
   },
@@ -114,7 +120,7 @@ const scenes: IntroScene[] = [
   },
   {
     id: 14,
-    text: '「嘿，新手跑者\n對! 就是你」',
+    text: '「嘿，新手跑者，跑來追尋我吧！」',
     layers: [
       { image: imagePath('look-2.png'), alt: '跑者聽著菲迪說話', className: 'look-two' },
       { image: imagePath('pheidi.png'), alt: '傳奇跑者菲迪', className: 'pheidi' },
@@ -122,7 +128,7 @@ const scenes: IntroScene[] = [
   },
   {
     id: 15,
-    text: '「來追尋我吧！\n我的追隨者 - 阿里會陪你開始伴你成長的!\n開始來追尋我吧 …」',
+    text: '「阿里會陪你開始伴你成長的!\n開始跑來追尋我吧 …」',
     layers: [
       { image: imagePath('look-2.png'), alt: '跑者聽著菲迪的邀請', className: 'look-two' },
       { image: imagePath('pheidi.png'), alt: '傳奇跑者菲迪', className: 'pheidi' },
@@ -163,7 +169,7 @@ const todayDisplay = ref('')
 const todayDateTime = ref('')
 const currentStep = ref(0)
 const isChanging = ref(false)
-const touchStartY = ref(0)
+const touchStartY = ref<number | null>(null)
 const mainPage = ref<HTMLElement | null>(null)
 const mouseWheel = ref<HTMLElement | null>(null)
 const storyText = ref<HTMLElement | null>(null)
@@ -178,6 +184,7 @@ let portalTimeline: gsap.core.Timeline | undefined
 let fallingSequenceTimeline: gsap.core.Timeline | undefined
 let sceneElevenTimeline: gsap.core.Timeline | undefined
 let pheidiEnterTween: gsap.core.Tween | undefined
+let pheidiExitTween: gsap.core.Tween | undefined
 let endLoginTween: gsap.core.Tween | undefined
 let sceneTransitionAnimation: gsap.core.Animation | undefined
 let directNavigationFrame: number | undefined
@@ -185,6 +192,9 @@ const preloadedImages: HTMLImageElement[] = []
 let prefersReducedMotion = false
 let isDirectNavigation = false
 let isInstantLandingReturn = false
+let wheelNeedsQuiet = false
+let lastWheelAt = -Infinity
+const wheelQuietPeriod = 250
 
 const textEnterFrom = { autoAlpha: 0, y: 16 }
 const textEnterTo = {
@@ -198,6 +208,9 @@ const portalScenePause = 300
 
 const totalSteps = scenes.length
 const currentScene = computed(() => scenes[currentStep.value - 1] ?? scenes[0])
+const progressSteps = computed(() =>
+  scenes.map((scene, index) => ({ scene, step: index + 1 })).filter(({ scene }) => scene.id !== 10),
+)
 const isDarkScene = computed(
   () => currentStep.value > 0 && currentScene.value.id >= 7 && currentScene.value.id <= 16,
 )
@@ -220,14 +233,18 @@ function updateToday() {
 }
 
 function cancelStoryAnimations() {
+  touchStartY.value = null
   if (changeStepTimer !== undefined) window.clearTimeout(changeStepTimer)
   if (portalSequenceTimer !== undefined) window.clearTimeout(portalSequenceTimer)
   sceneTransitionAnimation?.progress(1)
   sceneTransitionAnimation = undefined
   portalTimeline?.kill()
   fallingSequenceTimeline?.kill()
+  fallingSequenceTimeline = undefined
   sceneElevenTimeline?.kill()
   pheidiEnterTween?.kill()
+  pheidiExitTween?.kill()
+  pheidiExitTween = undefined
   endLoginTween?.kill()
   if (portalTransition.value) gsap.set(portalTransition.value, { autoAlpha: 0 })
   isChanging.value = false
@@ -258,9 +275,37 @@ async function goToStep(targetStep: number) {
 }
 
 function changeStep(direction: 1 | -1) {
-  if (isChanging.value) return
+  if (isChanging.value || isDirectNavigation) return
+  if (direction === 1 && currentStep.value === getStepBySceneId(7)) {
+    playFallingSequence()
+    return
+  }
   const nextStep = Math.min(Math.max(currentStep.value + direction, 0), totalSteps)
   if (nextStep === currentStep.value) return
+
+  if (direction === 1 && currentScene.value.id === 15) {
+    wheelNeedsQuiet = true
+    const pheidiImage = mainPage.value?.querySelector('.pheidi')
+    if (pheidiImage && !prefersReducedMotion) {
+      if (changeStepTimer !== undefined) window.clearTimeout(changeStepTimer)
+      isChanging.value = true
+      touchStartY.value = null
+      pheidiExitTween?.kill()
+      // 保留 Scene 15 的 DOM，等菲迪完全淡出後才讓 Vue 切幕。
+      pheidiExitTween = gsap.to(pheidiImage, {
+        autoAlpha: 0,
+        delay: 0.12,
+        duration: 0.7,
+        ease: 'power2.out',
+        onComplete: () => {
+          pheidiExitTween = undefined
+          currentStep.value = nextStep
+          isChanging.value = false
+        },
+      })
+      return
+    }
+  }
 
   const isReturningFromFirstScene = currentStep.value === 1 && nextStep === 0
   if (isReturningFromFirstScene) {
@@ -287,6 +332,19 @@ function changeStep(direction: 1 | -1) {
   changeStepTimer = window.setTimeout(() => {
     isChanging.value = false
   }, 700)
+}
+
+function playFallingSequence() {
+  if (isChanging.value) return
+  if (changeStepTimer !== undefined) window.clearTimeout(changeStepTimer)
+  fallingSequenceTimeline?.kill()
+  fallingSequenceTimeline = undefined
+  isChanging.value = true
+  // 動畫結束後，舊的 wheel 慣性與播放中開始的 swipe 都不能帶到下一幕。
+  wheelNeedsQuiet = true
+  touchStartY.value = null
+  currentStep.value = getStepBySceneId(prefersReducedMotion ? 11 : 8)
+  if (prefersReducedMotion) isChanging.value = false
 }
 
 function continuePortalSequenceToSceneFive() {
@@ -473,7 +531,7 @@ function animateScrollHint() {
 }
 
 function preloadIntroImages() {
-  for (const fileName of ['falling-2.4.png', 'running-2.png']) {
+  for (const fileName of ['falling-2.2.png', 'look-1.png', 'running-2.png']) {
     const image = new Image()
     image.src = imagePath(fileName)
     void image.decode().catch(() => undefined)
@@ -482,10 +540,18 @@ function preloadIntroImages() {
 }
 
 function handleWheel(event: WheelEvent) {
+  const now = performance.now()
+  const hasWheelSettled = now - lastWheelAt >= wheelQuietPeriod
+  lastWheelAt = now
+  if (wheelNeedsQuiet) {
+    if (isChanging.value || !hasWheelSettled) return
+    wheelNeedsQuiet = false
+  }
   if (Math.abs(event.deltaY) >= 10) changeStep(event.deltaY > 0 ? 1 : -1)
 }
 
 function handleKeydown(event: KeyboardEvent) {
+  if (wheelNeedsQuiet && currentScene.value.id === 11 && event.repeat) return
   if (['ArrowDown', 'PageDown', ' '].includes(event.key)) {
     event.preventDefault()
     changeStep(1)
@@ -497,11 +563,13 @@ function handleKeydown(event: KeyboardEvent) {
 }
 
 function handleTouchStart(event: TouchEvent) {
-  touchStartY.value = event.touches[0]?.clientY ?? 0
+  touchStartY.value = isChanging.value ? null : (event.touches[0]?.clientY ?? null)
 }
 
 function handleTouchEnd(event: TouchEvent) {
+  if (touchStartY.value === null) return
   const distance = touchStartY.value - (event.changedTouches[0]?.clientY ?? touchStartY.value)
+  touchStartY.value = null
   if (Math.abs(distance) >= 50) changeStep(distance > 0 ? 1 : -1)
 }
 
@@ -515,7 +583,11 @@ onMounted(() => {
   animateScrollHint()
 })
 
-watch(currentStep, async (step, previousStep) => {
+watch(currentStep, async (step, previousStep, onCleanup) => {
+  let cancelled = false
+  onCleanup(() => {
+    cancelled = true
+  })
   const sceneId = scenes[step - 1]?.id ?? scenes[0].id
   const previousSceneId = previousStep > 0 ? (scenes[previousStep - 1]?.id ?? 0) : 0
   const isDirectStoryChange =
@@ -523,6 +595,7 @@ watch(currentStep, async (step, previousStep) => {
 
   animateBackground(sceneId, isDirectNavigation || isDirectStoryChange)
   await nextTick()
+  if (cancelled || !mainPage.value) return
 
   if (isDirectNavigation) {
     animateScrollHint()
@@ -548,7 +621,7 @@ watch(currentStep, async (step, previousStep) => {
     continuePortalSequenceToSceneFive()
   }
 
-  if (sceneId === 10 && previousSceneId === 8) {
+  if (sceneId === 8 && previousSceneId === 7) {
     if (changeStepTimer !== undefined) window.clearTimeout(changeStepTimer)
     isChanging.value = true
 
@@ -559,16 +632,12 @@ watch(currentStep, async (step, previousStep) => {
     }
 
     const sequenceStart = mainPage.value?.querySelector('.falling-sequence--start')
-    const sequenceEnd = mainPage.value?.querySelector('.falling-sequence--end')
 
-    if (sequenceStart && sequenceEnd) {
-      const fallingSequenceImages = [sequenceStart, sequenceEnd]
-      const viewportHeight = window.innerHeight
-
+    if (sequenceStart) {
       fallingSequenceTimeline?.kill()
-      gsap.set(fallingSequenceImages, { y: 0 })
-      gsap.set(sequenceStart, { autoAlpha: 1 })
-      gsap.set(sequenceEnd, { autoAlpha: 0 })
+      const bounds = sequenceStart.getBoundingClientRect()
+      // 讓圖片頂端也越過 viewport 底部，再多留圖片高度 10% 的緩衝。
+      const fallDistance = Math.max(0, window.innerHeight - bounds.top) + bounds.height * 0.1
 
       fallingSequenceTimeline = gsap
         .timeline({
@@ -576,16 +645,16 @@ watch(currentStep, async (step, previousStep) => {
             currentStep.value = getStepBySceneId(11)
           },
         })
-        .to(fallingSequenceImages, { y: viewportHeight * 0.9, duration: 2.6, ease: 'power1.in' }, 0)
-        .to(sequenceStart, { autoAlpha: 0, duration: 1, ease: 'sine.inOut' }, 0.55)
-        .to(sequenceEnd, { autoAlpha: 1, duration: 1, ease: 'sine.inOut' }, 0.55)
+        .set(sequenceStart, { autoAlpha: 1 }, 0)
+        .to({}, { duration: 0.3 })
+        .to(sequenceStart, { y: fallDistance, duration: 0.7, ease: 'power3.in' })
     } else {
       currentStep.value = getStepBySceneId(11)
       isChanging.value = false
     }
   }
 
-  if (sceneId === 11 && [10, 12].includes(previousSceneId) && !prefersReducedMotion) {
+  if (sceneId === 11 && [8, 10, 12].includes(previousSceneId) && !prefersReducedMotion) {
     if (changeStepTimer !== undefined) window.clearTimeout(changeStepTimer)
     isChanging.value = true
     const sceneElevenContent = mainPage.value?.querySelectorAll('.look-one, .story-text')
@@ -635,6 +704,11 @@ watch(currentStep, async (step, previousStep) => {
     }
   }
 
+  if (sceneId === 15 && previousSceneId === 16) {
+    const pheidiImage = mainPage.value?.querySelector('.pheidi')
+    if (pheidiImage) gsap.set(pheidiImage, { autoAlpha: 1 })
+  }
+
   if (sceneId === 18) {
     const endLogin = mainPage.value?.querySelector('.end-login')
 
@@ -676,6 +750,7 @@ onBeforeUnmount(() => {
   pheidiEnterTween?.kill()
   endLoginTween?.kill()
   sceneTransitionAnimation?.kill()
+  pheidiExitTween?.kill()
   preloadedImages.splice(0)
   gsap.killTweensOf(mainPage.value)
   window.removeEventListener('keydown', handleKeydown)
@@ -690,6 +765,7 @@ onBeforeUnmount(() => {
     @wheel.prevent="handleWheel"
     @touchstart.passive="handleTouchStart"
     @touchend.passive="handleTouchEnd"
+    @touchcancel.passive="touchStartY = null"
   >
     <h1 class="sr-only">跑者菲迪 Pheidi the Runner</h1>
 
@@ -742,14 +818,18 @@ onBeforeUnmount(() => {
         </p>
 
         <div class="story-visual">
-          <img
-            v-for="layer in currentScene.layers"
-            :key="layer.image"
-            :src="layer.image"
-            :alt="layer.alt ?? ''"
-            class="story-layer"
-            :class="layer.className"
-          />
+          <template v-for="layer in currentScene.layers" :key="layer.image">
+            <div v-if="layer.usesFallingAnchor" class="story-layer falling-sequence-anchor">
+              <img :src="layer.image" :alt="layer.alt ?? ''" :class="layer.className" />
+            </div>
+            <img
+              v-else
+              :src="layer.image"
+              :alt="layer.alt ?? ''"
+              class="story-layer"
+              :class="layer.className"
+            />
+          </template>
         </div>
 
         <RouterLink v-if="currentStep === totalSteps" v-slot="{ navigate }" to="/login" custom>
@@ -791,14 +871,14 @@ onBeforeUnmount(() => {
 
     <nav v-if="currentStep > 0" class="scene-progress" aria-label="故事分鏡導覽">
       <button
-        v-for="step in totalSteps"
-        :key="step"
+        v-for="progress in progressSteps"
+        :key="progress.scene.id"
         type="button"
         class="progress-dot"
-        :class="{ 'progress-dot--active': step === currentStep }"
-        :aria-label="`前往故事第 ${scenes[step - 1]?.id} 幕`"
-        :aria-current="step === currentStep ? 'step' : undefined"
-        @click="goToStep(step)"
+        :class="{ 'progress-dot--active': progress.step === currentStep }"
+        :aria-label="`前往故事第 ${progress.scene.id} 幕`"
+        :aria-current="progress.step === currentStep ? 'step' : undefined"
+        @click="goToStep(progress.step)"
       ></button>
     </nav>
   </main>
@@ -806,6 +886,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .intro-page {
+  --intro-bottom-offset: clamp(var(--space-5), 3vw, var(--space-7));
   --story-art-size: min(64vw, 44svh);
   --story-art-top: 61%;
   --story-text-size: clamp(var(--font-size-sm), 1.25vw, var(--font-size-md));
@@ -825,7 +906,7 @@ onBeforeUnmount(() => {
   font-family: var(--font-family-base);
   font-weight: var(--font-weight-regular);
   line-height: var(--line-height-base);
-  letter-spacing: var(--letter-spacing-base);
+  letter-spacing: var(--letter-spacing-wide);
   touch-action: pan-y;
 }
 
@@ -865,7 +946,7 @@ onBeforeUnmount(() => {
 .corner-logo-button,
 .corner-tagline {
   position: absolute;
-  bottom: clamp(var(--space-5), 3vw, var(--space-7));
+  bottom: var(--intro-bottom-offset);
   z-index: 2;
   width: clamp(64px, 6vw, 100px);
   height: auto;
@@ -938,7 +1019,7 @@ onBeforeUnmount(() => {
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-heading);
-  letter-spacing: var(--letter-spacing-base);
+  letter-spacing: var(--letter-spacing-wide);
 }
 
 .daily-header__date {
@@ -974,7 +1055,7 @@ onBeforeUnmount(() => {
   font-size: var(--story-text-size);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-base);
-  letter-spacing: var(--letter-spacing-base);
+  letter-spacing: var(--letter-spacing-wide);
   text-align: center;
   white-space: pre-line;
   text-wrap: balance;
@@ -1005,14 +1086,15 @@ onBeforeUnmount(() => {
   transform: translate(-50%, -50%);
 }
 
-.coins,
-.falling-sequence {
+.falling-sequence-anchor {
   top: 30%;
 }
 
-.falling-sequence--end {
-  visibility: hidden;
-  opacity: 0;
+.falling-sequence-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .light {
@@ -1067,7 +1149,7 @@ onBeforeUnmount(() => {
   --base-button-translate-x: -50%;
 
   position: absolute;
-  top: 17vh;
+  bottom: var(--intro-bottom-offset);
   left: 50%;
   z-index: 4;
   visibility: hidden;
@@ -1177,6 +1259,7 @@ onBeforeUnmount(() => {
 
 @media (max-width: 640px) {
   .intro-page {
+    --intro-bottom-offset: 20px;
     --scroll-mouse-height: 38px;
     --scroll-text-size: 0.6875rem;
 
@@ -1194,7 +1277,6 @@ onBeforeUnmount(() => {
   }
   .corner-logo-button,
   .corner-tagline {
-    bottom: 20px;
     width: 64px;
   }
   .corner-logo-button {
@@ -1229,9 +1311,6 @@ onBeforeUnmount(() => {
   .light {
     width: 126svh;
     height: 126svh;
-  }
-  .end-login {
-    top: 15vh;
   }
   .scroll-hint {
     bottom: var(--space-5);
