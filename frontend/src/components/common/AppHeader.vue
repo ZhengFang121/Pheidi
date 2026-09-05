@@ -97,14 +97,69 @@
                 </template>
               </BaseIconAction>
 
+              <BaseIconAction
+                type="button"
+                label="導覽選單"
+                class="header-action-button mobile-menu-button"
+                data-progression-return-focus
+                aria-label="開啟導覽選單"
+                aria-haspopup="true"
+                aria-controls="mobile-navigation-menu"
+                :aria-expanded="isMobileMenuVisible"
+                @click="toggleMobileMenu"
+              >
+                <template #icon>
+                  <MenuIcon class="header-action-icon" />
+                </template>
+                <template #label>
+                  <span class="menu-label-stack">
+                    <span class="menu-label">導覽選單</span>
+                    <span class="menu-label-en">Navigation</span>
+                  </span>
+                </template>
+              </BaseIconAction>
+
+              <Menu
+                id="mobile-navigation-menu"
+                ref="mobileMenu"
+                :model="mobileMenuItems"
+                :style="{ width: mobileMenuWidth }"
+                popup
+                class="account-menu mobile-navigation-menu"
+                aria-label="導覽選單"
+                @show="handleMobileMenuShow"
+                @hide="isMobileMenuVisible = false"
+              >
+                <template #item="{ item, props }">
+                  <a
+                    v-ripple
+                    v-bind="props.action"
+                    :href="item.route ? router.resolve(item.route).href : undefined"
+                    :aria-current="isMobileRouteActive(item.route) ? 'page' : undefined"
+                    class="base-button base-button--primary account-menu-link"
+                    :class="{ 'is-active': isMobileRouteActive(item.route) }"
+                    @click.prevent
+                  >
+                    <component
+                      :is="item.lucideIcon"
+                      v-if="item.lucideIcon"
+                      class="account-menu-icon"
+                      aria-hidden="true"
+                    />
+                    <span class="account-menu-label">{{ item.label }}</span>
+                  </a>
+                </template>
+              </Menu>
+
               <!-- 玩家下拉選單 -->
               <Menu
+                id="account-navigation-menu"
                 ref="accountMenu"
                 :model="accountItems"
                 :style="{ width: accountMenuWidth }"
                 popup
                 class="account-menu"
-                @show="isAccountMenuVisible = true"
+                @show="handleAccountMenuShow"
                 @hide="isAccountMenuVisible = false"
               >
                 <template #item="{ item, props }">
@@ -152,9 +207,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import type { Component } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import type { MenuItem } from 'primevue/menuitem'
 import Dialog from 'primevue/dialog'
 import Menu from 'primevue/menu'
@@ -166,6 +221,7 @@ import {
   LayoutDashboard,
   LibraryBig,
   LogOut,
+  Menu as MenuIcon,
   NotebookPen,
   Send,
   Settings,
@@ -188,11 +244,81 @@ interface AccountMenuItem extends MenuItem {
 }
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const toast = useToast()
 
 const accountMenu = ref<InstanceType<typeof Menu> | null>(null)
 const accountMenuWidth = ref<string>()
+const mobileMenu = ref<InstanceType<typeof Menu> | null>(null)
+const mobileMenuWidth = ref<string>()
+const isMobileMenuVisible = ref(false)
+let accountMenuTrigger: HTMLElement | null = null
+let mobileMenuTrigger: HTMLElement | null = null
+let mobileBreakpoint: MediaQueryList | undefined
+
+function getExpandedWidth(trigger: HTMLElement) {
+  return window
+    .getComputedStyle(trigger)
+    .getPropertyValue('--base-icon-action-expanded-width')
+    .trim()
+}
+
+function setMenuWidth(trigger: HTMLElement, menuWidth: typeof accountMenuWidth) {
+  menuWidth.value = getExpandedWidth(trigger) || `${trigger.offsetWidth}px`
+}
+
+function alignMenuToTrigger(trigger: HTMLElement | null, menuId: string) {
+  const menu = document.getElementById(menuId)
+  if (!trigger || !menu) return
+
+  const triggerRect = trigger.getBoundingClientRect()
+  const expandedWidth = Number.parseFloat(getExpandedWidth(trigger)) || triggerRect.width
+  const triggerCenter = triggerRect.right - expandedWidth / 2
+  const menuWidth = menu.getBoundingClientRect().width
+
+  menu.style.left = `${triggerCenter - menuWidth / 2 + window.scrollX}px`
+}
+
+function toggleMobileMenu(event: MouseEvent) {
+  if (event.currentTarget instanceof HTMLElement) {
+    mobileMenuTrigger = event.currentTarget
+    setMenuWidth(event.currentTarget, mobileMenuWidth)
+  }
+  mobileMenu.value?.toggle(event)
+}
+
+async function handleMobileMenuShow() {
+  isMobileMenuVisible.value = true
+  await nextTick()
+  alignMenuToTrigger(mobileMenuTrigger, 'mobile-navigation-menu')
+}
+
+function closeNavigationMenus() {
+  accountMenu.value?.hide()
+  mobileMenu.value?.hide()
+}
+
+onMounted(() => {
+  // 與下方窄版 CSS 使用相同斷點，避免切換版面後留下 popup。
+  mobileBreakpoint = window.matchMedia('(max-width: 900px)')
+  mobileBreakpoint.addEventListener('change', closeNavigationMenus)
+})
+
+onUnmounted(() => {
+  mobileBreakpoint?.removeEventListener('change', closeNavigationMenus)
+})
+
+function isMobileRouteActive(target?: string) {
+  return !!target && (route.path === target || route.path.startsWith(`${target}/`))
+}
+
+async function openMobileCheckIn() {
+  mobileMenu.value?.hide()
+  await nextTick()
+  mobileMenuTrigger?.focus()
+  isCheckInDialogVisible.value = true
+}
 
 const isAccountMenuVisible = ref(false)
 const isCheckInDialogVisible = ref(false)
@@ -200,15 +326,17 @@ const isRunRecordSubmitting = ref(false)
 
 function toggleAccountMenu(event: MouseEvent) {
   if (event.currentTarget instanceof HTMLElement) {
-    const expandedWidth = window
-      .getComputedStyle(event.currentTarget)
-      .getPropertyValue('--base-icon-action-expanded-width')
-      .trim()
-
-    accountMenuWidth.value = expandedWidth || `${event.currentTarget.offsetWidth}px`
+    accountMenuTrigger = event.currentTarget
+    setMenuWidth(event.currentTarget, accountMenuWidth)
   }
 
   accountMenu.value?.toggle(event)
+}
+
+async function handleAccountMenuShow() {
+  isAccountMenuVisible.value = true
+  await nextTick()
+  alignMenuToTrigger(accountMenuTrigger, 'account-navigation-menu')
 }
 
 function handleRunRecordSubmitted() {
@@ -249,16 +377,11 @@ const accountItems = computed<AccountMenuItem[]>(() => {
     })
   }
 
-  items.push(
-    {
-      separator: true,
-    },
-    {
-      label: '登出',
-      lucideIcon: LogOut,
-      command: handleLogout,
-    },
-  )
+  items.push({
+    label: '登出帳號',
+    lucideIcon: LogOut,
+    command: handleLogout,
+  })
 
   return items
 })
@@ -282,6 +405,17 @@ const navigationItems = ref<NavigationItem[]>([
     lucideIcon: Send,
     route: '/plaza',
   },
+])
+
+const mobileMenuItems = computed<NavigationItem[]>(() => [
+  ...navigationItems.value.map((item) => ({
+    ...item,
+    command: () => {
+      if (item.route) router.push(item.route)
+    },
+  })),
+  { label: '跑步打卡', lucideIcon: NotebookPen, command: openMobileCheckIn },
+  ...accountItems.value,
 ])
 </script>
 
@@ -329,7 +463,7 @@ const navigationItems = ref<NavigationItem[]>([
   position: static;
   display: flex;
   justify-content: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
   margin: 0;
   justify-self: center;
 }
@@ -382,17 +516,28 @@ const navigationItems = ref<NavigationItem[]>([
 }
 
 /* 主選單 */
-.root-menu-link {
-  --base-icon-action-expanded-width: 180px;
+.root-menu-link,
+.header-action-button {
+  --base-icon-action-expanded-width: 168px;
+  --header-action-gap: var(--space-3);
 
   justify-content: center;
-  gap: var(--space-2);
   width: var(--base-icon-action-expanded-width);
-  max-width: var(--base-icon-action-expanded-width);
+  flex-shrink: 0;
   padding-inline: var(--space-3);
 }
 
-.root-menu-link.is-active {
+.root-menu-link {
+  max-width: var(--base-icon-action-expanded-width);
+}
+
+.root-menu-link,
+.header-action-button:is(:hover, :focus-visible, :active, [aria-expanded='true']) {
+  gap: var(--header-action-gap);
+}
+
+.root-menu-link.is-active,
+.header-action-button[aria-expanded='true'] {
   color: var(--color-surface) !important;
   background: linear-gradient(
     90deg,
@@ -421,7 +566,9 @@ const navigationItems = ref<NavigationItem[]>([
 .menu-label-stack {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 2px;
+  text-align: left;
 }
 
 .menu-label {
@@ -429,7 +576,7 @@ const navigationItems = ref<NavigationItem[]>([
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   line-height: var(--line-height-tight);
-  letter-spacing: var(--letter-spacing-wide);
+  letter-spacing: calc(var(--letter-spacing-wide) + var(--letter-spacing-tight));
   white-space: nowrap;
 }
 
@@ -446,22 +593,20 @@ const navigationItems = ref<NavigationItem[]>([
 .header-actions {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
 }
 
-.header-action-button {
-  --base-icon-action-expanded-width: 164px;
+.mobile-menu-button {
+  display: none;
 }
 
-.header-action-button:hover,
-.header-action-button:active,
-.header-action-button[aria-expanded='true'] {
-  background: linear-gradient(
-    90deg,
-    var(--color-secondary) 0%,
-    var(--color-secondary-soft) 50%,
-    var(--color-secondary) 100%
-  );
+:global(.mobile-navigation-menu.p-menu) {
+  max-height: calc(100dvh - var(--app-header-height) - var(--space-4));
+  overflow-y: auto;
+}
+
+:global(.mobile-navigation-menu .account-menu-label) {
+  white-space: nowrap;
 }
 
 .header-action-icon,
@@ -473,23 +618,31 @@ const navigationItems = ref<NavigationItem[]>([
 
 /* 玩家下拉選單 */
 :global(.account-menu.p-menu) {
+  box-sizing: content-box;
   min-width: 0;
   max-width: calc(100vw - var(--space-4));
-  margin-inline-start: calc(-1 * var(--space-3));
   padding: var(--space-2);
   border-radius: var(--radius-md);
 }
 
-:global(.account-menu .p-menu-item-content),
-:global(.account-menu .p-menu-item:not(.p-disabled) > .p-menu-item-content:hover),
-:global(.account-menu .p-menu-item[data-p-focused='true'] > .p-menu-item-content) {
+:global(.account-menu.p-menu .p-menu-item > .p-menu-item-content) {
   color: inherit;
-  background: transparent;
+  background: transparent !important;
+  border-radius: var(--radius-full);
+  overflow: visible;
+}
+
+:global(.account-menu .p-menu-list) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0;
 }
 
 :global(.account-menu-link) {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
 
   width: 100%;
@@ -499,13 +652,11 @@ const navigationItems = ref<NavigationItem[]>([
   text-decoration: none;
 
   border-radius: var(--radius-full);
-
-  transition:
-    color 200ms ease,
-    background 200ms ease;
 }
 
-:global(.account-menu-link:hover),
+:global(.account-menu .account-menu-link:hover),
+:global(.account-menu .account-menu-link:active),
+:global(.mobile-navigation-menu .account-menu-link.is-active),
 :global(.account-menu .p-menu-item[data-p-focused='true'] .account-menu-link) {
   color: var(--color-surface);
   background: linear-gradient(
@@ -514,6 +665,17 @@ const navigationItems = ref<NavigationItem[]>([
     var(--color-secondary-soft) 50%,
     var(--color-secondary) 100%
   );
+  background-size: 220% 100%;
+}
+
+:global(.account-menu .account-menu-link:focus-visible),
+:global(
+  .account-menu:has(.p-menu-list:focus-visible)
+    .p-menu-item[data-p-focused='true']
+    .account-menu-link
+) {
+  outline: 3px solid var(--color-dark-light);
+  outline-offset: var(--space-1);
 }
 
 :global(.account-menu-icon) {
@@ -533,7 +695,13 @@ const navigationItems = ref<NavigationItem[]>([
 
 /* 平板尺寸 */
 @media (max-width: 1100px) {
-  .root-menu-link {
+  :deep(.main-menu .p-menubar-root-list),
+  .header-actions {
+    gap: var(--space-2);
+  }
+
+  .root-menu-link,
+  .header-action-button {
     --base-icon-action-expanded-width: 140px;
   }
 
@@ -551,15 +719,18 @@ const navigationItems = ref<NavigationItem[]>([
     gap: var(--space-2);
   }
 
-  .root-menu-link {
+  .root-menu-link,
+  .header-action-button {
     --base-icon-action-expanded-width: 128px;
+    --header-action-gap: var(--space-2);
   }
 
   :deep(.main-menu .p-menubar-root-list) {
     gap: var(--space-1);
   }
 
-  .root-menu-link .menu-label-en {
+  .root-menu-link .menu-label-en,
+  .header-action-button .menu-label-en {
     display: none;
   }
 }
@@ -569,21 +740,27 @@ const navigationItems = ref<NavigationItem[]>([
     min-height: 44px;
   }
 
-  .root-menu-link {
+  .root-menu-link,
+  .header-action-button {
     --base-icon-action-expanded-width: 116px;
+    --header-action-gap: var(--space-1);
     --base-icon-action-size: 44px;
-    gap: var(--space-1);
     padding-inline: var(--space-2);
   }
 
-  .header-action-button {
-    --base-icon-action-size: 44px;
+  .menu-label {
+    letter-spacing: var(--letter-spacing-wide);
+  }
+
+  :global(.account-menu .account-menu-link) {
+    gap: var(--space-1);
+    padding-inline: var(--space-2);
   }
 }
 
 @media (max-width: 640px) {
   .root-menu-link {
-    gap: 0;
+    --header-action-gap: 0px;
     width: var(--base-icon-action-size);
     max-width: var(--base-icon-action-size);
     padding-inline: calc((var(--base-icon-action-size) - 24px) / 2);
@@ -620,6 +797,29 @@ const navigationItems = ref<NavigationItem[]>([
   :deep(.main-menu .p-menubar-root-list),
   .header-actions {
     gap: var(--space-1);
+  }
+}
+
+/* 窄版僅保留 Logo 與一顆共用 BaseIconAction 的導覽入口。 */
+@media (max-width: 900px) {
+  :deep(.main-menu.p-menubar) {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  :deep(.main-menu .p-menubar-root-list),
+  .check-in-button,
+  .avatar-button {
+    display: none;
+  }
+
+  .header-action-button.mobile-menu-button {
+    --base-icon-action-expanded-width: 140px;
+    --header-action-gap: var(--space-2);
+    display: inline-flex;
+  }
+
+  .mobile-menu-button .menu-label-en {
+    display: block;
   }
 }
 </style>
