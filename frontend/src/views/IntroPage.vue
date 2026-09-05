@@ -703,9 +703,11 @@ onBeforeUnmount(() => {
 
     <section v-if="currentStep === 0" key="landing" class="intro-content">
       <img src="/logo-1.svg" alt="跑者菲迪 Pheidi the Runner" class="intro-logo" />
-      <RouterLink v-slot="{ navigate }" to="/login" custom>
-        <BaseButton label="LOGIN" class="intro-login" @click="navigate" />
-      </RouterLink>
+      <div class="hero-actions">
+        <RouterLink v-slot="{ navigate }" to="/login" custom>
+          <BaseButton label="LOGIN" class="intro-login" @click="navigate" />
+        </RouterLink>
+      </div>
     </section>
 
     <Transition
@@ -808,10 +810,13 @@ onBeforeUnmount(() => {
   --story-art-top: 61%;
   --story-text-size: clamp(var(--font-size-sm), 1.25vw, var(--font-size-md));
   --story-text-top: 29vh;
+  --scroll-mouse-height: 42px;
+  --scroll-text-size: var(--font-size-xs);
 
   position: relative;
   display: grid;
   place-items: center;
+  height: 100dvh;
   min-height: 100svh;
   padding: var(--space-4);
   overflow: hidden;
@@ -833,13 +838,28 @@ onBeforeUnmount(() => {
 
 .intro-content {
   gap: clamp(var(--space-7), 7vh, 4.5rem);
-  transform: translateY(-4vh);
+  transform: translateY(3vh);
 }
 
 .intro-logo {
-  width: clamp(300px, 30vw, 400px);
+  width: clamp(240px, min(30vw, 48svh), 400px);
   height: auto;
   transform: translateX(-20%);
+}
+
+.hero-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(var(--space-6), 9vh, calc(var(--space-8) + var(--space-6)));
+}
+
+.hero-actions::after {
+  padding-top: calc(var(--scroll-mouse-height) + var(--space-3));
+  visibility: hidden;
+  font-size: var(--scroll-text-size);
+  line-height: var(--line-height-tight);
+  content: '\00a0';
 }
 
 .corner-logo-button,
@@ -1073,7 +1093,7 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: center;
   width: 28px;
-  height: 42px;
+  height: var(--scroll-mouse-height);
   padding-top: 5px;
   border: 2px solid currentcolor;
   border-radius: var(--radius-full);
@@ -1088,7 +1108,7 @@ onBeforeUnmount(() => {
 
 .scroll-text {
   font-family: var(--font-family-base);
-  font-size: var(--font-size-xs);
+  font-size: var(--scroll-text-size);
   font-weight: var(--font-weight-regular);
   line-height: var(--line-height-tight);
   letter-spacing: var(--letter-spacing-wide);
@@ -1157,14 +1177,20 @@ onBeforeUnmount(() => {
 
 @media (max-width: 640px) {
   .intro-page {
+    --scroll-mouse-height: 38px;
+    --scroll-text-size: 0.6875rem;
+
     padding: var(--space-3);
   }
   .intro-content {
-    gap: 40px;
-    transform: translateY(-7vh);
+    gap: var(--space-5);
+    transform: none;
   }
   .intro-logo {
-    width: min(260px, 72vw);
+    width: min(260px, 72vw, 46svh);
+  }
+  .hero-actions {
+    gap: var(--space-4);
   }
   .corner-logo-button,
   .corner-tagline {
@@ -1213,11 +1239,7 @@ onBeforeUnmount(() => {
   }
   .mouse-icon {
     width: 26px;
-    height: 38px;
     padding-top: var(--space-1);
-  }
-  .scroll-text {
-    font-size: 0.6875rem;
   }
   .scene-progress {
     right: var(--space-4);
@@ -1229,6 +1251,17 @@ onBeforeUnmount(() => {
   }
   .progress-dot--active {
     height: 20px;
+  }
+}
+
+@media (min-width: 641px) and (max-height: 832px) {
+  .intro-content {
+    gap: clamp(var(--space-5), 4vh, var(--space-6));
+    transform: none;
+  }
+
+  .hero-actions {
+    gap: clamp(var(--space-4), 3vh, var(--space-5));
   }
 }
 
