@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { LockKeyhole, Mail, Route, Sparkles } from '@lucide/vue'
-import Button from 'primevue/button'
 import Skeleton from 'primevue/skeleton'
 
+import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
 import type { RunnerStats } from '@/types/runnerProgress'
 
@@ -61,7 +61,7 @@ const formatDistance = (distance: number) =>
         </div>
 
         <!-- TODO: 第二階段串接 PheidiJourney -->
-        <Button
+        <BaseButton
           v-if="eligible"
           type="button"
           label="打開邀請函"

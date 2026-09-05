@@ -10,15 +10,11 @@
       </div>
 
       <div class="page-actions">
-        <Button type="button" label="新增文章" @click="goToCreateArticle" />
+        <BaseButton type="button" label="新增文章" @click="goToCreateArticle" />
       </div>
     </div>
 
-    <AdminStatisticsStrip
-      :items="statisticItems"
-      label="文章統計"
-      :loading="isStatisticsLoading"
-    />
+    <AdminStatisticsStrip :items="statisticItems" label="文章統計" :loading="isStatisticsLoading" />
 
     <Message v-if="statisticsErrorMessage" severity="error" :closable="false">
       {{ statisticsErrorMessage }}
@@ -69,14 +65,13 @@
         </div>
 
         <div class="filter-actions">
-          <Button type="submit" label="搜尋" :loading="isLoading" />
+          <BaseButton type="submit" label="搜尋" :loading="isLoading" />
 
-          <Button
+          <BaseButton
             v-if="hasActiveFilters"
             type="button"
             label="清除"
-            severity="secondary"
-            outlined
+            variant="outline"
             @click="clearFilters"
           />
         </div>
@@ -164,12 +159,11 @@
         <Column header="操作" style="width: 300px">
           <template #body="{ data }">
             <div class="article-actions">
-              <Button
+              <BaseButton
                 type="button"
                 label="編輯"
                 icon="pi pi-pencil"
-                severity="secondary"
-                outlined
+                variant="outline"
                 size="small"
                 class="article-action-button"
                 @click="goToEditArticle(data.id)"
@@ -223,6 +217,7 @@ import Tag from 'primevue/tag'
 import { useConfirm } from 'primevue/useconfirm'
 
 import AdminStatisticsStrip from '@/components/admin/AdminStatisticsStrip.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
 import {
   articleCategoryOptions as categoryOptions,
@@ -365,10 +360,7 @@ const deleteArticle = async (article: AdminArticle) => {
     const targetPage =
       articles.value.length === 1 && pagination.page > 1 ? pagination.page - 1 : pagination.page
 
-    await Promise.all([
-      loadArticles(targetPage, pagination.limit),
-      loadArticleStatistics(),
-    ])
+    await Promise.all([loadArticles(targetPage, pagination.limit), loadArticleStatistics()])
   } catch (error: unknown) {
     errorMessage.value = getApiErrorMessage(error, '無法刪除文章，請稍後再試')
   } finally {

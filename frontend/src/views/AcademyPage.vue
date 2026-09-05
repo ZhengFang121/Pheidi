@@ -30,19 +30,13 @@
           class="search-input"
         />
 
-        <Button
-          type="submit"
-          label="搜尋"
-          :loading="isLoading"
-          :disabled="!runnerProgress"
-        />
+        <BaseButton type="submit" label="搜尋" :loading="isLoading" :disabled="!runnerProgress" />
 
-        <Button
+        <BaseButton
           v-if="activeSearch"
           type="button"
           label="清除"
-          severity="secondary"
-          outlined
+          variant="outline"
           :disabled="!runnerProgress"
           @click="clearSearch"
         />
@@ -84,10 +78,10 @@
       <div class="error-content">
         <span>{{ pageErrorMessage }}</span>
 
-        <Button
+        <BaseButton
           type="button"
           label="重新載入"
-          severity="secondary"
+          variant="secondary"
           size="small"
           @click="loadPageData"
         />
@@ -99,7 +93,12 @@
     </div>
 
     <div v-else-if="visibleArticles.length" class="article-grid">
-      <BaseCard v-for="article in visibleArticles" :key="article.id" as="article" class="article-card">
+      <BaseCard
+        v-for="article in visibleArticles"
+        :key="article.id"
+        as="article"
+        class="article-card"
+      >
         <div class="article-cover">
           <img
             v-if="article.coverImageUrl"
@@ -142,12 +141,12 @@
                   slug: article.slug,
                 },
               }"
-              class="read-more"
+              class="base-button base-button--primary read-more"
               :aria-label="`閱讀文章：${article.title}`"
             >
-              閱讀文章
+              <span class="base-button__content">閱讀文章</span>
 
-              <i class="pi pi-arrow-right" aria-hidden="true" />
+              <i class="pi pi-arrow-right base-button__content" aria-hidden="true" />
             </RouterLink>
           </div>
         </div>
@@ -189,6 +188,7 @@ import Tag from 'primevue/tag'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
 
+import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
 import { useArticleList } from '@/composables/useArticleList'
 import { useRunnerProgress } from '@/composables/useRunnerProgress'
@@ -231,12 +231,8 @@ const {
   changePage: handlePageChange,
 } = useArticleList()
 
-const {
-  runnerProgress,
-  isRunnerProgressLoading,
-  runnerProgressError,
-  loadRunnerProgress,
-} = useRunnerProgress()
+const { runnerProgress, isRunnerProgressLoading, runnerProgressError, loadRunnerProgress } =
+  useRunnerProgress()
 
 const getCategoryLabel = getArticleCategoryLabel
 const formatDate = formatLongDate
@@ -493,21 +489,7 @@ onMounted(() => {
   align-items: center;
   gap: var(--space-2);
 
-  color: var(--color-dark-light);
-  font-weight: var(--font-weight-medium);
   text-decoration: none;
-
-  transition: color 0.2s ease;
-}
-
-.read-more:hover {
-  color: var(--color-dark);
-}
-
-.read-more:focus-visible {
-  outline: 3px solid var(--color-dark-light);
-  outline-offset: 4px;
-  border-radius: var(--radius-sm);
 }
 
 .empty-state {

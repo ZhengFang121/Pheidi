@@ -1,9 +1,5 @@
 .base-button {
   --base-button-translate-x: 0%;
-  --base-button-flow-color: var(--color-primary);
-  --base-button-flow-highlight: var(--color-primary-soft);
-  --base-button-flow-opacity: 0;
-  --base-button-flow-play-state: paused;
 
   position: relative;
   isolation: isolate;
@@ -28,29 +24,8 @@
     transform 200ms ease;
 }
 
-.base-button::before {
-  position: absolute;
-  top: 50%;
-  left: 56%;
-  z-index: 1;
-  width: 160%;
-  aspect-ratio: 1;
-  content: '';
-  pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    var(--base-button-flow-color) 0%,
-    var(--base-button-flow-highlight) 50%,
-    var(--base-button-flow-color) 100%
-  );
-  border-radius: 50%;
-  opacity: var(--base-button-flow-opacity);
-  filter: blur(var(--space-2));
-  transform: translate(-50%, -50%) rotate(0deg);
-  animation: base-button-color-flow 5s linear infinite;
-  animation-play-state: var(--base-button-flow-play-state);
-  transition: opacity 200ms ease;
-  will-change: transform;
+.p-button {
+  border-radius: var(--radius-full);
 }
 
 .base-button__content {
@@ -64,6 +39,11 @@
   font-weight: inherit;
   line-height: inherit;
   letter-spacing: inherit;
+}
+
+.base-button.p-button-sm {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
 }
 
 /* Expandable icon action */
@@ -103,31 +83,9 @@
   transition:
     max-width 300ms cubic-bezier(0.16, 1, 0.3, 1),
     gap 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    background 200ms ease,
     box-shadow 200ms ease,
     transform 200ms ease;
-}
-
-.base-icon-action::before {
-  position: absolute;
-  top: 50%;
-  left: 56%;
-  z-index: 0;
-  width: 160%;
-  aspect-ratio: 1;
-  content: '';
-  pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    var(--color-primary) 0%,
-    var(--color-primary-soft) 50%,
-    var(--color-primary) 100%
-  );
-  border-radius: 50%;
-  opacity: 0.55;
-  filter: blur(var(--space-2));
-  transform: translate(-50%, -50%) rotate(0deg);
-  animation: base-button-color-flow 5s linear infinite;
-  will-change: transform;
 }
 
 .base-icon-action__icon {
@@ -165,21 +123,12 @@
     max-width: var(--base-icon-action-expanded-width);
     background: linear-gradient(
       90deg,
-      var(--color-accent) 0%,
-      var(--color-accent-soft) 50%,
-      var(--color-accent) 100%
+      var(--color-secondary) 0%,
+      var(--color-secondary-soft) 50%,
+      var(--color-secondary) 100%
     );
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
-  }
-
-  .base-icon-action:hover::before {
-    background: linear-gradient(
-      90deg,
-      var(--color-accent) 0%,
-      var(--color-accent-soft) 50%,
-      var(--color-accent) 100%
-    );
   }
 
   .base-icon-action:hover .base-icon-action__label {
@@ -193,20 +142,14 @@
   gap: var(--space-2);
   max-width: var(--base-icon-action-expanded-width);
   color: var(--color-surface) !important;
-  background: linear-gradient(
-    90deg,
-    var(--color-accent) 0%,
-    var(--color-accent-soft) 50%,
-    var(--color-accent) 100%
-  );
 }
 
-.base-icon-action:is(:focus-visible, :active, .is-active, [aria-expanded='true'])::before {
+.base-icon-action:is(:active, .is-active, [aria-expanded='true']) {
   background: linear-gradient(
     90deg,
-    var(--color-accent) 0%,
-    var(--color-accent-soft) 50%,
-    var(--color-accent) 100%
+    var(--color-secondary) 0%,
+    var(--color-secondary-soft) 50%,
+    var(--color-secondary) 100%
   );
 }
 
@@ -230,9 +173,6 @@
 /* Primary */
 
 .base-button.base-button--primary {
-  --base-button-flow-opacity: 0.55;
-  --base-button-flow-play-state: running;
-
   color: var(--color-surface);
   background: linear-gradient(
     90deg,
@@ -240,15 +180,12 @@
     var(--color-primary-soft) 50%,
     var(--color-primary) 100%
   );
+  background-size: 220% 100%;
   border: 0;
 }
 
 .base-button.base-button--primary:hover:not(:disabled),
-.base-button.base-button--primary:focus-visible:not(:disabled) {
-  --base-button-flow-color: var(--color-secondary);
-  --base-button-flow-highlight: var(--color-secondary-soft);
-  --base-button-flow-play-state: running;
-
+.base-button.base-button--primary:active:not(:disabled) {
   color: var(--color-surface);
   background: linear-gradient(
     90deg,
@@ -256,6 +193,7 @@
     var(--color-secondary-soft) 50%,
     var(--color-secondary) 100%
   );
+  background-size: 220% 100%;
   border: 0;
 }
 
@@ -270,24 +208,14 @@
   transform: translateX(var(--base-button-translate-x)) translateY(0) scale(0.97);
 }
 
-.base-button.base-button--primary:focus-visible {
+.base-button:focus-visible {
   outline: 3px solid var(--color-dark-light);
   outline-offset: var(--space-1);
 }
 
 /* Secondary */
 
-.base-button.base-button--secondary,
-.base-button.base-button--outline {
-  color: var(--color-surface);
-}
-
-.base-button--secondary:hover:not(:disabled) {
-  --base-button-flow-color: var(--color-secondary);
-  --base-button-flow-highlight: var(--color-secondary-soft);
-  --base-button-flow-opacity: 0.55;
-  --base-button-flow-play-state: running;
-
+.base-button.base-button--secondary {
   color: var(--color-surface);
   background: linear-gradient(
     90deg,
@@ -295,12 +223,40 @@
     var(--color-secondary-soft) 50%,
     var(--color-secondary) 100%
   );
+  background-size: 220% 100%;
+  border: 0;
+}
+
+.base-button.base-button--outline {
+  color: var(--color-dark);
+  background: transparent;
+  border-color: var(--color-primary);
+}
+
+.base-button--secondary:hover:not(:disabled) {
+  color: var(--color-surface);
+  background: linear-gradient(
+    90deg,
+    var(--color-secondary) 0%,
+    var(--color-secondary-soft) 50%,
+    var(--color-secondary) 100%
+  );
+  background-size: 220% 100%;
   border-color: var(--color-secondary);
   box-shadow: var(--shadow-md);
   transform: translateX(var(--base-button-translate-x)) translateY(-2px);
 }
 
 .base-button--secondary:active:not(:disabled) {
+  color: var(--color-surface);
+  background: linear-gradient(
+    90deg,
+    var(--color-secondary) 0%,
+    var(--color-secondary-soft) 50%,
+    var(--color-secondary) 100%
+  );
+  background-size: 220% 100%;
+  border-color: var(--color-secondary);
   box-shadow: var(--shadow-sm);
   transform: translateX(var(--base-button-translate-x)) translateY(0) scale(0.98);
 }
@@ -308,11 +264,6 @@
 /* Outline */
 
 .base-button--outline:hover:not(:disabled) {
-  --base-button-flow-color: var(--color-secondary);
-  --base-button-flow-highlight: var(--color-secondary-soft);
-  --base-button-flow-opacity: 0.55;
-  --base-button-flow-play-state: running;
-
   color: var(--color-surface);
   background: linear-gradient(
     90deg,
@@ -320,12 +271,22 @@
     var(--color-secondary-soft) 50%,
     var(--color-secondary) 100%
   );
+  background-size: 220% 100%;
   border-color: var(--color-secondary);
   box-shadow: var(--shadow-md);
   transform: translateX(var(--base-button-translate-x)) translateY(-2px);
 }
 
 .base-button--outline:active:not(:disabled) {
+  color: var(--color-surface);
+  background: linear-gradient(
+    90deg,
+    var(--color-secondary) 0%,
+    var(--color-secondary-soft) 50%,
+    var(--color-secondary) 100%
+  );
+  background-size: 220% 100%;
+  border-color: var(--color-secondary);
   box-shadow: var(--shadow-sm);
   transform: translateX(var(--base-button-translate-x)) translateY(0) scale(0.98);
 }
@@ -337,21 +298,6 @@
   opacity: 0.5;
 }
 
-.base-button:disabled::before {
-  animation: none;
-  will-change: auto;
-}
-
-@keyframes base-button-color-flow {
-  from {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-
-  to {
-    transform: translate(-50%, -50%) rotate(360deg);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .base-button {
     transition:
@@ -359,26 +305,17 @@
       box-shadow 200ms ease;
   }
 
-  .base-button.base-button--primary:hover:not(:disabled),
-  .base-button.base-button--primary:active:not(:disabled) {
+  .base-button:hover:not(:disabled),
+  .base-button:active:not(:disabled) {
     transform: translateX(var(--base-button-translate-x));
-  }
-
-  .base-button::before {
-    animation: none;
-    will-change: auto;
   }
 
   .base-icon-action {
     transition:
       max-width 200ms ease,
       gap 200ms ease,
+      background 200ms ease,
       box-shadow 200ms ease;
-  }
-
-  .base-icon-action::before {
-    animation: none;
-    will-change: auto;
   }
 
   .base-icon-action:hover,

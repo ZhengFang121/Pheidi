@@ -55,7 +55,12 @@
                 class="composer-textarea"
               />
 
-              <Message v-if="postSubmitErrorMessage" severity="error" :closable="false" aria-live="polite">
+              <Message
+                v-if="postSubmitErrorMessage"
+                severity="error"
+                :closable="false"
+                aria-live="polite"
+              >
                 {{ postSubmitErrorMessage }}
               </Message>
 
@@ -114,7 +119,7 @@
                   </span>
                 </div>
 
-                <Button
+                <BaseButton
                   type="submit"
                   label="發布貼文"
                   :loading="isSubmittingPost || isUploadingPostImage"
@@ -123,7 +128,7 @@
                   <template #icon>
                     <Send aria-hidden="true" />
                   </template>
-                </Button>
+                </BaseButton>
               </div>
             </BaseCard>
 
@@ -145,10 +150,10 @@
                 <div class="state-message">
                   <span>{{ feedErrorMessage }}</span>
 
-                  <Button
+                  <BaseButton
                     type="button"
                     label="重新載入"
-                    severity="secondary"
+                    variant="secondary"
                     size="small"
                     @click="loadFeed"
                   />
@@ -261,7 +266,7 @@
                           還可以輸入 {{ remainingCommentCharacters }} 個字
                         </span>
 
-                        <Button
+                        <BaseButton
                           type="submit"
                           label="送出留言"
                           size="small"
@@ -360,17 +365,15 @@
                               </span>
 
                               <div class="comment-edit-actions">
-                                <Button
+                                <BaseButton
                                   type="button"
                                   label="取消"
-                                  severity="secondary"
-                                  text
                                   size="small"
                                   :disabled="updatingCommentId === comment.id"
                                   @click="cancelEditingComment"
                                 />
 
-                                <Button
+                                <BaseButton
                                   type="button"
                                   label="儲存"
                                   size="small"
@@ -439,10 +442,10 @@
               <div class="state-message">
                 <span>{{ eventErrorMessage }}</span>
 
-                <Button
+                <BaseButton
                   type="button"
                   label="重新載入"
-                  severity="secondary"
+                  variant="secondary"
                   size="small"
                   @click="loadEvents"
                 />

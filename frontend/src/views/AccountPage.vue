@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { isAxiosError } from "axios";
-import Button from "primevue/button";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 import Password from "primevue/password";
 import { CircleUserRound, KeyRound, UserRound } from "@lucide/vue";
 
+import BaseButton from "@/components/base/BaseButton.vue";
 import BaseCard from "@/components/base/BaseCard.vue";
 import { updatePassword, updateProfile } from "@/services/auth";
 import { useAuthStore } from "@/stores/auth";
@@ -269,7 +269,7 @@ async function handlePasswordSubmit() {
             </div>
 
             <div class="form-actions">
-              <Button
+              <BaseButton
                 type="submit"
                 label="儲存變更"
                 icon="pi pi-check"
@@ -381,7 +381,7 @@ async function handlePasswordSubmit() {
             </div>
 
             <div class="form-actions">
-              <Button
+              <BaseButton
                 type="submit"
                 label="更新密碼"
                 icon="pi pi-lock"

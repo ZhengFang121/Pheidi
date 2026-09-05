@@ -183,7 +183,6 @@
       <BaseButton
         type="button"
         label="取消"
-        variant="outline"
         :disabled="isSubmitting"
         @click="emit('cancel')"
       />

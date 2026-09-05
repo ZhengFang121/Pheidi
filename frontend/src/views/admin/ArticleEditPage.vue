@@ -4,33 +4,15 @@
       <div>
         <p class="page-eyebrow">EDIT ARTICLE</p>
         <h2 class="page-title">編輯文章</h2>
-        <p class="page-description">
-          修改跑者學院文章內容，儲存後會保留目前的發布狀態。
-        </p>
+        <p class="page-description">修改跑者學院文章內容，儲存後會保留目前的發布狀態。</p>
       </div>
 
-      <Button
-        type="button"
-        label="返回文章列表"
-        severity="secondary"
-        outlined
-        @click="goBack"
-      />
+      <BaseButton type="button" label="返回文章列表" variant="outline" @click="goBack" />
     </div>
 
-    <Message
-      v-if="isLoading"
-      severity="secondary"
-      :closable="false"
-    >
-      正在載入文章資料……
-    </Message>
+    <Message v-if="isLoading" severity="secondary" :closable="false"> 正在載入文章資料…… </Message>
 
-    <Message
-      v-else-if="loadErrorMessage"
-      severity="error"
-      :closable="false"
-    >
+    <Message v-else-if="loadErrorMessage" severity="error" :closable="false">
       {{ loadErrorMessage }}
     </Message>
 
@@ -51,10 +33,10 @@ import { onMounted, ref } from 'vue'
 import { isAxiosError } from 'axios'
 import { useRoute, useRouter } from 'vue-router'
 
-import Button from 'primevue/button'
 import Message from 'primevue/message'
 
 import ArticleForm from '@/components/admin/ArticleForm.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 import { getAdminArticle, updateAdminArticle } from '@/services/adminArticles'
 import type { AdminArticleFormPayload } from '@/types/article'
 

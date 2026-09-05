@@ -4,9 +4,7 @@
       <div>
         <p class="dashboard-eyebrow">HOME</p>
         <h2 class="dashboard-title">首頁</h2>
-        <p class="dashboard-description">
-          掌握玩家、文章與廣場三個管理模組的即時概況。
-        </p>
+        <p class="dashboard-description">掌握玩家、文章與廣場三個管理模組的即時概況。</p>
       </div>
     </div>
 
@@ -14,10 +12,10 @@
       <div class="error-content">
         <span>{{ errorMessage }}</span>
 
-        <Button
+        <BaseButton
           type="button"
           label="重新載入"
-          severity="secondary"
+          variant="secondary"
           size="small"
           @click="loadDashboard"
         />
@@ -124,12 +122,13 @@ import type { Component } from 'vue'
 import { RouterLink } from 'vue-router'
 import { isAxiosError } from 'axios'
 import { ArrowRight, Files, MessageSquareText, UsersRound } from '@lucide/vue'
-import Button from 'primevue/button'
 import Column from 'primevue/column'
 import DataTable from 'primevue/datatable'
 import Message from 'primevue/message'
 import Skeleton from 'primevue/skeleton'
 import Tag from 'primevue/tag'
+
+import BaseButton from '@/components/base/BaseButton.vue'
 
 import BaseCard from '@/components/base/BaseCard.vue'
 import { getAdminDashboard } from '@/services/adminDashboard'

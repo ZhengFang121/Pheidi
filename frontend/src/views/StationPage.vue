@@ -14,6 +14,7 @@ import Skeleton from 'primevue/skeleton'
 import { useConfirm } from 'primevue/useconfirm'
 
 import BadgeCollection from '@/components/badges/BadgeCollection.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
 import PheidiJourneySection from '@/components/journey/PheidiJourneySection.vue'
 import RunRecordForm from '@/components/run/RunRecordForm.vue'
@@ -463,10 +464,10 @@ watch(
           <div class="station-error">
             <span>{{ errorMessage }}</span>
 
-            <Button
+            <BaseButton
               type="button"
               label="重新載入"
-              severity="secondary"
+              variant="secondary"
               size="small"
               @click="loadMonthRecords"
             />
@@ -630,12 +631,11 @@ watch(
                     </dl>
 
                     <div class="station-record-actions">
-                      <Button
+                      <BaseButton
                         type="button"
                         label="編輯"
                         icon="pi pi-pencil"
-                        severity="secondary"
-                        outlined
+                        variant="outline"
                         size="small"
                         :disabled="deletingRunRecordId !== null"
                         @click="openEditDialog(runRecord)"
@@ -670,11 +670,10 @@ watch(
           {{ runnerProgressError }}
         </Message>
 
-        <Button
+        <BaseButton
           type="button"
           label="重新載入成長資訊"
-          severity="secondary"
-          outlined
+          variant="outline"
           @click="loadRunnerProgress"
         />
       </BaseCard>

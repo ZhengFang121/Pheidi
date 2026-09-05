@@ -18,7 +18,7 @@ const props = withDefaults(defineProps<Props>(), {
     :is="props.as"
     :type="props.as === 'button' ? props.type : undefined"
     :aria-label="props.ariaLabel ?? props.label"
-    class="base-icon-action"
+    class="base-button base-button--primary base-icon-action"
   >
     <span class="base-icon-action__icon" aria-hidden="true">
       <slot name="icon" />

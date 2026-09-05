@@ -7,6 +7,7 @@ interface Props {
   type?: 'button' | 'submit' | 'reset'
   icon?: string
   iconPos?: 'left' | 'right' | 'top' | 'bottom'
+  size?: 'small' | 'large'
   disabled?: boolean
   loading?: boolean
   fluid?: boolean
@@ -17,6 +18,7 @@ withDefaults(defineProps<Props>(), {
   type: 'button',
   icon: '',
   iconPos: 'left',
+  size: undefined,
   disabled: false,
   loading: false,
   fluid: false,
@@ -29,6 +31,7 @@ withDefaults(defineProps<Props>(), {
     :type="type"
     :icon="icon"
     :icon-pos="iconPos"
+    :size="size"
     :disabled="disabled"
     :loading="loading"
     :fluid="fluid"

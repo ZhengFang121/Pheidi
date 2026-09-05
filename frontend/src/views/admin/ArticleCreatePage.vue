@@ -4,18 +4,10 @@
       <div>
         <p class="page-eyebrow">CREATE ARTICLE</p>
         <h2 class="page-title">新增文章</h2>
-        <p class="page-description">
-          建立跑者學院文章，儲存後會先保留為草稿。
-        </p>
+        <p class="page-description">建立跑者學院文章，儲存後會先保留為草稿。</p>
       </div>
 
-      <Button
-        type="button"
-        label="返回文章列表"
-        severity="secondary"
-        outlined
-        @click="goBack"
-      />
+      <BaseButton type="button" label="返回文章列表" variant="outline" @click="goBack" />
     </div>
 
     <ArticleForm
@@ -33,9 +25,8 @@ import { ref } from 'vue'
 import { isAxiosError } from 'axios'
 import { useRouter } from 'vue-router'
 
-import Button from 'primevue/button'
-
 import ArticleForm from '@/components/admin/ArticleForm.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 import { createAdminArticle } from '@/services/adminArticles'
 import type { AdminArticleFormPayload } from '@/types/article'
 

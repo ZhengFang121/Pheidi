@@ -8,14 +8,9 @@
         <h2 class="page-title">玩家管理</h2>
         <p class="page-description">查看跑者菲迪的玩家帳號、角色與註冊時間。</p>
       </div>
-
     </div>
 
-    <AdminStatisticsStrip
-      :items="statisticItems"
-      label="玩家統計"
-      :loading="isStatisticsLoading"
-    />
+    <AdminStatisticsStrip :items="statisticItems" label="玩家統計" :loading="isStatisticsLoading" />
 
     <Message v-if="statisticsErrorMessage" severity="error" :closable="false">
       {{ statisticsErrorMessage }}
@@ -34,14 +29,13 @@
             class="search-input"
           />
 
-          <Button type="submit" label="搜尋" :loading="isLoading" />
+          <BaseButton type="submit" label="搜尋" :loading="isLoading" />
 
-          <Button
+          <BaseButton
             v-if="activeSearch"
             type="button"
             label="清除"
-            severity="secondary"
-            outlined
+            variant="outline"
             @click="clearSearch"
           />
         </div>
@@ -137,12 +131,9 @@ import Tag from 'primevue/tag'
 import { useConfirm } from 'primevue/useconfirm'
 
 import AdminStatisticsStrip from '@/components/admin/AdminStatisticsStrip.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
-import {
-  getAdminUsers,
-  getAdminUserStatistics,
-  updateAdminUserRole,
-} from '@/services/adminUsers'
+import { getAdminUsers, getAdminUserStatistics, updateAdminUserRole } from '@/services/adminUsers'
 
 import { useAuthStore } from '@/stores/auth'
 import type { Pagination } from '@/types/api'

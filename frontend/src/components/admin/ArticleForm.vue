@@ -98,12 +98,11 @@
         />
 
         <div class="cover-actions">
-          <Button
+          <BaseButton
             type="button"
             :label="form.coverImageUrl ? '更換封面圖片' : '上傳封面圖片'"
             icon="pi pi-upload"
-            severity="secondary"
-            outlined
+            variant="outline"
             :loading="isUploadingCover"
             :disabled="isSubmitting"
             @click="openCoverImagePicker"
@@ -178,16 +177,14 @@
     </div>
 
     <div class="form-actions">
-      <Button
+      <BaseButton
         type="button"
         label="取消"
-        severity="secondary"
-        outlined
         :disabled="isSubmitting || isUploadingCover"
         @click="emit('cancel')"
       />
 
-      <Button
+      <BaseButton
         type="submit"
         :label="submitLabel"
         :loading="isSubmitting"
@@ -208,6 +205,7 @@ import Message from 'primevue/message'
 import Select from 'primevue/select'
 import Textarea from 'primevue/textarea'
 
+import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
 import { articleCategoryOptions as categoryOptions } from '@/constants/article'
 import { uploadAdminArticleCover } from '@/services/uploads'

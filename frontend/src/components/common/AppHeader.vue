@@ -108,7 +108,11 @@
                 @hide="isAccountMenuVisible = false"
               >
                 <template #item="{ item, props }">
-                  <a v-ripple v-bind="props.action" class="account-menu-link">
+                  <a
+                    v-ripple
+                    v-bind="props.action"
+                    class="base-button base-button--primary account-menu-link"
+                  >
                     <component
                       :is="item.lucideIcon"
                       v-if="item.lucideIcon"
@@ -386,21 +390,8 @@ const navigationItems = ref<NavigationItem[]>([
   width: var(--base-icon-action-expanded-width);
   max-width: var(--base-icon-action-expanded-width);
   padding-inline: var(--space-3);
-  color: var(--color-surface) !important;
-  background: linear-gradient(
-    90deg,
-    var(--color-primary) 0%,
-    var(--color-primary-soft) 50%,
-    var(--color-primary) 100%
-  );
-  transition:
-    background-color 200ms ease,
-    box-shadow 200ms ease,
-    transform 200ms ease;
 }
 
-.root-menu-link:hover,
-.root-menu-link:focus-visible,
 .root-menu-link.is-active {
   color: var(--color-surface) !important;
   background: linear-gradient(
@@ -409,17 +400,7 @@ const navigationItems = ref<NavigationItem[]>([
     var(--color-secondary-soft) 50%,
     var(--color-secondary) 100%
   );
-}
-
-.root-menu-link:hover::before,
-.root-menu-link:focus-visible::before,
-.root-menu-link.is-active::before {
-  background: linear-gradient(
-    90deg,
-    var(--color-secondary) 0%,
-    var(--color-secondary-soft) 50%,
-    var(--color-secondary) 100%
-  );
+  background-size: 220% 100%;
 }
 
 :deep(.root-menu-link .base-icon-action__label) {
@@ -473,21 +454,8 @@ const navigationItems = ref<NavigationItem[]>([
 }
 
 .header-action-button:hover,
-.header-action-button:focus-visible,
 .header-action-button:active,
 .header-action-button[aria-expanded='true'] {
-  background: linear-gradient(
-    90deg,
-    var(--color-secondary) 0%,
-    var(--color-secondary-soft) 50%,
-    var(--color-secondary) 100%
-  );
-}
-
-.header-action-button:hover::before,
-.header-action-button:focus-visible::before,
-.header-action-button:active::before,
-.header-action-button[aria-expanded='true']::before {
   background: linear-gradient(
     90deg,
     var(--color-secondary) 0%,
@@ -528,21 +496,24 @@ const navigationItems = ref<NavigationItem[]>([
   min-height: 44px;
   padding: var(--space-2) var(--space-3);
 
-  color: var(--color-dark-light);
   text-decoration: none;
 
   border-radius: var(--radius-full);
 
   transition:
     color 200ms ease,
-    background-color 200ms ease;
+    background 200ms ease;
 }
 
 :global(.account-menu-link:hover),
-:global(.account-menu-link:focus-visible),
 :global(.account-menu .p-menu-item[data-p-focused='true'] .account-menu-link) {
   color: var(--color-surface);
-  background: var(--color-secondary);
+  background: linear-gradient(
+    90deg,
+    var(--color-secondary) 0%,
+    var(--color-secondary-soft) 50%,
+    var(--color-secondary) 100%
+  );
 }
 
 :global(.account-menu-icon) {

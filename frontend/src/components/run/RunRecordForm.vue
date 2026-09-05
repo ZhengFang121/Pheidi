@@ -481,7 +481,6 @@ onBeforeUnmount(() => {
               type="button"
               :label="imagePreviewUrl ? '更換照片' : '選擇照片'"
               icon="pi pi-image"
-              variant="outline"
               class="run-upload-button"
               :disabled="submitting"
               @click="openImagePicker"
@@ -557,7 +556,6 @@ onBeforeUnmount(() => {
       <BaseButton
         type="button"
         label="取消"
-        variant="outline"
         :disabled="submitting"
         @click="emit('cancel')"
       />
@@ -694,25 +692,6 @@ onBeforeUnmount(() => {
   min-height: var(--run-control-height);
   padding-block: 0;
   border-radius: var(--radius-full);
-}
-
-.run-upload-actions :deep(.run-upload-button.base-button--outline) {
-  --base-button-flow-opacity: 0;
-  --base-button-flow-play-state: paused;
-
-  border-color: var(--color-primary-light);
-  color: var(--color-dark);
-  background: var(--color-primary-pale);
-}
-
-.run-upload-actions :deep(.run-upload-button.base-button--outline:hover:not(:disabled)),
-.run-upload-actions :deep(.run-upload-button.base-button--outline:active:not(:disabled)) {
-  --base-button-flow-opacity: 0;
-  --base-button-flow-play-state: paused;
-
-  border-color: var(--color-primary);
-  color: var(--color-dark);
-  background: var(--color-primary-soft);
 }
 
 .run-upload-actions :deep(.run-remove-image-button.p-button) {

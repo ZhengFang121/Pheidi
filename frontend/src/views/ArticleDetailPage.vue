@@ -1,34 +1,15 @@
 <template>
   <section class="layout-container article-detail-page">
-    <RouterLink
-      :to="{ name: 'academy' }"
-      class="back-link"
-    >
-      <ArrowLeft
-        class="back-icon"
-        aria-hidden="true"
-      />
+    <RouterLink :to="{ name: 'academy' }" class="back-link">
+      <ArrowLeft class="back-icon" aria-hidden="true" />
       返回跑者學院
     </RouterLink>
 
     <div v-if="isLoading" class="article-loading">
-      <Skeleton
-        width="8rem"
-        height="1.5rem"
-      />
-      <Skeleton
-        width="70%"
-        height="3.5rem"
-      />
-      <Skeleton
-        width="100%"
-        height="22rem"
-        border-radius="var(--radius-lg)"
-      />
-      <Skeleton
-        width="100%"
-        height="12rem"
-      />
+      <Skeleton width="8rem" height="1.5rem" />
+      <Skeleton width="70%" height="3.5rem" />
+      <Skeleton width="100%" height="22rem" border-radius="var(--radius-lg)" />
+      <Skeleton width="100%" height="12rem" />
     </div>
 
     <BaseCard v-else-if="lockedCategory" class="locked-state">
@@ -41,18 +22,14 @@
       <BaseButton label="返回跑者學院" @click="returnToAcademy" />
     </BaseCard>
 
-    <Message
-      v-else-if="errorMessage"
-      severity="error"
-      :closable="false"
-    >
+    <Message v-else-if="errorMessage" severity="error" :closable="false">
       <div class="error-content">
         <span>{{ errorMessage }}</span>
 
-        <Button
+        <BaseButton
           type="button"
           label="重新載入"
-          severity="secondary"
+          variant="secondary"
           size="small"
           @click="loadArticle"
         />
@@ -62,12 +39,7 @@
     <article v-else-if="article">
       <header class="article-header">
         <div class="article-meta">
-          <Tag
-            :value="
-              getCategoryLabel(article.category)
-            "
-            severity="secondary"
-          />
+          <Tag :value="getCategoryLabel(article.category)" severity="secondary" />
 
           <time :datetime="article.publishedAt">
             {{ formatDate(article.publishedAt) }}
@@ -82,9 +54,7 @@
           {{ article.summary }}
         </p>
 
-        <p class="article-author">
-          作者：{{ article.author.username }}
-        </p>
+        <p class="article-author">作者：{{ article.author.username }}</p>
       </header>
 
       <div class="article-cover">
@@ -95,22 +65,13 @@
           class="article-cover-image"
         />
 
-        <div
-          v-else
-          class="article-cover-placeholder"
-        >
-          <BookOpen
-            class="placeholder-icon"
-            aria-hidden="true"
-          />
+        <div v-else class="article-cover-placeholder">
+          <BookOpen class="placeholder-icon" aria-hidden="true" />
         </div>
       </div>
 
       <!-- eslint-disable vue/no-v-html -->
-      <div
-        class="article-body"
-        v-html="article.content"
-      />
+      <div class="article-body" v-html="article.content" />
       <!-- eslint-enable vue/no-v-html -->
     </article>
   </section>
@@ -122,7 +83,6 @@ import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, BookOpen, Lock } from '@lucide/vue'
 
-import Button from 'primevue/button'
 import Message from 'primevue/message'
 import Skeleton from 'primevue/skeleton'
 import Tag from 'primevue/tag'
@@ -206,8 +166,7 @@ void loadArticle()
 
 <style scoped>
 .article-detail-page {
-  padding-block: var(--space-7)
-    var(--space-8);
+  padding-block: var(--space-7) var(--space-8);
 }
 
 .back-link {
@@ -335,12 +294,7 @@ void loadArticle()
   height: 100%;
 
   color: var(--color-primary);
-  background:
-    linear-gradient(
-      135deg,
-      var(--color-primary-pale),
-      var(--color-secondary-pale)
-    );
+  background: linear-gradient(135deg, var(--color-primary-pale), var(--color-secondary-pale));
 }
 
 .placeholder-icon {
@@ -394,8 +348,7 @@ void loadArticle()
   color: var(--color-text-secondary);
 
   background: var(--color-primary-pale);
-  border-left: 4px solid
-    var(--color-primary);
+  border-left: 4px solid var(--color-primary);
   border-radius: var(--radius-sm);
 }
 
@@ -414,8 +367,7 @@ void loadArticle()
 
 @media (max-width: 640px) {
   .article-detail-page {
-    padding-block: var(--space-5)
-      var(--space-7);
+    padding-block: var(--space-5) var(--space-7);
   }
 
   .article-title {

@@ -10,11 +10,7 @@
       </div>
     </div>
 
-    <AdminStatisticsStrip
-      :items="statisticItems"
-      label="廣場統計"
-      :loading="isStatisticsLoading"
-    />
+    <AdminStatisticsStrip :items="statisticItems" label="廣場統計" :loading="isStatisticsLoading" />
 
     <Message v-if="statisticsErrorMessage" severity="error" :closable="false">
       {{ statisticsErrorMessage }}
@@ -68,13 +64,12 @@
               </div>
 
               <div class="filter-actions">
-                <Button type="submit" label="搜尋" :loading="isPostsLoading" />
-                <Button
+                <BaseButton type="submit" label="搜尋" :loading="isPostsLoading" />
+                <BaseButton
                   v-if="hasActivePostSearch"
                   type="button"
                   label="清除"
-                  severity="secondary"
-                  outlined
+                  variant="outline"
                   @click="clearPostSearch"
                 />
               </div>
@@ -187,13 +182,12 @@
               </div>
 
               <div class="filter-actions">
-                <Button type="submit" label="搜尋" :loading="isCommentsLoading" />
-                <Button
+                <BaseButton type="submit" label="搜尋" :loading="isCommentsLoading" />
+                <BaseButton
                   v-if="hasActiveCommentSearch"
                   type="button"
                   label="清除"
-                  severity="secondary"
-                  outlined
+                  variant="outline"
                   @click="clearCommentSearch"
                 />
               </div>
@@ -298,6 +292,7 @@ import Tag from 'primevue/tag'
 import { useConfirm } from 'primevue/useconfirm'
 
 import AdminStatisticsStrip from '@/components/admin/AdminStatisticsStrip.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
 import {
   deleteAdminPlazaComment,
