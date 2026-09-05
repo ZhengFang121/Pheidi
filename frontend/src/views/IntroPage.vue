@@ -1123,7 +1123,7 @@ onBeforeUnmount(() => {
 .scene-progress {
   position: absolute;
   top: 50%;
-  right: clamp(var(--space-5), 4vw, 3.5rem);
+  right: clamp(var(--space-5), 3vw, var(--space-7));
   z-index: 3;
   display: flex;
   flex-direction: column;
@@ -1242,7 +1242,7 @@ onBeforeUnmount(() => {
     padding-top: var(--space-1);
   }
   .scene-progress {
-    right: var(--space-4);
+    right: 20px;
     gap: 4px;
   }
   .progress-dot {
