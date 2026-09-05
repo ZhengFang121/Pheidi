@@ -793,31 +793,30 @@ onBeforeUnmount(() => {
   position: relative;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  overflow: hidden;
-  border: 1px solid var(--color-border);
+  width: 100%;
+  border: 0;
   border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--color-surface) 34%, transparent);
+  background: transparent;
 }
 
 .run-weather-selector {
-  --weather-indicator-inset: calc(var(--space-1) / 2);
-
   position: relative;
   isolation: isolate;
   overflow: hidden;
+  border: 1px solid var(--color-primary);
   border-radius: var(--radius-full);
+  background: transparent;
 }
 
 .run-weather-indicator-track {
   position: absolute;
   inset-block: 0;
-  left: 0;
-  z-index: 1;
+  inset-inline-start: 0;
+  z-index: 0;
   width: calc(100% / 3);
-  padding: var(--weather-indicator-inset);
   pointer-events: none;
   transform: translateX(var(--weather-indicator-offset, 0%));
-  transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 300ms cubic-bezier(0.2, 0, 0, 1);
 }
 
 .run-weather-active-indicator {
@@ -825,36 +824,42 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   border-radius: var(--radius-full);
-  background: var(--color-primary-pale);
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-soft));
 }
 
 .run-record-form :deep(.p-selectbutton .p-togglebutton) {
   position: relative;
-  z-index: 2;
+  z-index: 1;
   min-width: 0;
   min-height: var(--run-control-height);
   padding: 0 var(--space-2);
   border: 0;
   border-radius: var(--radius-full);
-  color: var(--color-text-secondary);
+  color: var(--color-dark-light);
   background: transparent;
   box-shadow: none;
   font-family: var(--font-family-base);
   font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
   letter-spacing: var(--letter-spacing-base);
+  transition: color 150ms ease;
 }
 
-.run-record-form :deep(.run-weather-select .p-togglebutton:hover) {
-  color: var(--color-text-secondary);
-  background: transparent;
-}
-
-.run-record-form :deep(.p-selectbutton .p-togglebutton.p-togglebutton-checked) {
+.run-record-form :deep(.run-weather-select .p-togglebutton:not(.p-togglebutton-checked):hover) {
   color: var(--color-dark);
   background: transparent;
 }
 
-.run-record-form :deep(.run-weather-select .p-togglebutton-checked .p-togglebutton-content) {
+.run-record-form :deep(.p-selectbutton .p-togglebutton.p-togglebutton-checked) {
+  color: var(--color-surface);
+  background: transparent;
+}
+
+.run-record-form :deep(.run-weather-select .p-togglebutton-content) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
   background: transparent;
   box-shadow: none;
 }
