@@ -117,7 +117,7 @@ const handleSubmit = async (event: FormSubmitEvent) => {
 <template>
   <AccountPageLayout
     title="設定新密碼"
-    description="請設定新的登入密碼，完成後即可繼續你的跑者旅程。"
+    description="請設定新的登入密碼，完成後即可繼續跑者旅程。"
   >
     <div v-if="!hasValidTokenFormat" class="account-result">
       <Message severity="error" variant="simple" aria-live="polite">

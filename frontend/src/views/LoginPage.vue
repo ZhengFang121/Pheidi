@@ -283,7 +283,7 @@ const handleRegister = async (event: FormSubmitEvent) => {
                 name="email"
                 type="email"
                 autocomplete="email"
-                placeholder="runner@example.com"
+                placeholder="pheidi@runner.com"
                 :aria-invalid="$form.email?.invalid || undefined"
                 :aria-describedby="$form.email?.invalid ? 'login-email-error' : undefined"
                 fluid

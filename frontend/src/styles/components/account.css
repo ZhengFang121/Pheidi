@@ -45,8 +45,20 @@
 
 .account-card .p-message.p-message-error,
 .account-card .p-message.p-message-error .p-message-icon,
-.account-card .p-message.p-message-error .p-message-text {
-  color: var(--color-dark);
+.account-card .p-message.p-message-error .p-message-text,
+.account-page .p-message.p-message-error,
+.account-page .p-message.p-message-error .p-message-icon,
+.account-page .p-message.p-message-error .p-message-text {
+  color: var(--color-accent);
+}
+
+.account-card .p-message.p-message-success,
+.account-card .p-message.p-message-success .p-message-icon,
+.account-card .p-message.p-message-success .p-message-text,
+.account-page .p-message.p-message-success,
+.account-page .p-message.p-message-success .p-message-icon,
+.account-page .p-message.p-message-success .p-message-text {
+  color: var(--color-success);
 }
 
 .account-card .p-password-toggle-mask-icon {
@@ -58,6 +70,14 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+}
+
+.account-result .p-message-success .p-message-content {
+  justify-content: center;
+}
+
+.account-result .p-message-success .p-message-text {
+  text-align: center;
 }
 
 .form-field {

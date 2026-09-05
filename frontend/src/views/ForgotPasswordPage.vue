@@ -68,7 +68,7 @@ const handleSubmit = async (event: FormSubmitEvent) => {
 <template>
   <AccountPageLayout
     title="忘記密碼？"
-    description="請輸入註冊時使用的電子信箱，將會寄送密碼重設連結給您。"
+    description="請輸入註冊時使用的電子信箱，將會寄送密碼重設連結。"
   >
     <template v-if="isSubmitted">
       <div class="account-result">
@@ -76,7 +76,7 @@ const handleSubmit = async (event: FormSubmitEvent) => {
           {{ successMessage }}
         </Message>
 
-        <p class="account-hint">請檢查收件匣與垃圾郵件匣。重設連結將在 30 分鐘後失效。</p>
+        <p class="account-hint">請檢查收件匣與垃圾郵件匣，重設連結將在 30 分鐘後失效。</p>
 
         <RouterLink class="account-link account-link--center" to="/login">返回登入</RouterLink>
       </div>
@@ -100,7 +100,7 @@ const handleSubmit = async (event: FormSubmitEvent) => {
           name="email"
           type="email"
           autocomplete="email"
-          placeholder="runner@example.com"
+          placeholder="pheidi@runner.com"
           :aria-invalid="$form.email?.invalid || undefined"
           :aria-describedby="$form.email?.invalid ? 'forgot-password-email-error' : undefined"
           fluid
