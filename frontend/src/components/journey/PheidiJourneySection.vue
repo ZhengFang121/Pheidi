@@ -19,8 +19,8 @@ const formatDistance = (distance: number) =>
 <template>
   <section class="pheidi-journey" aria-labelledby="pheidi-journey-title">
     <header class="pheidi-journey__header">
-      <p>RUNNER JOURNEY</p>
-      <h2 id="pheidi-journey-title">我的跑者旅程</h2>
+      <p>A LETTER FROM PHEIDI</p>
+      <h2 id="pheidi-journey-title">來自菲迪的信</h2>
     </header>
 
     <BaseCard v-if="loading" class="pheidi-journey__card" aria-label="跑者旅程載入中">

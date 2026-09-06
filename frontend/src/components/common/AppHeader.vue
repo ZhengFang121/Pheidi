@@ -189,7 +189,7 @@
       id="check-in-dialog"
       v-model:visible="isCheckInDialogVisible"
       modal
-      header="今日跑步打卡"
+      header="新增跑步紀錄"
       :draggable="false"
       :closable="!isRunRecordSubmitting"
       :close-on-escape="!isRunRecordSubmitting"

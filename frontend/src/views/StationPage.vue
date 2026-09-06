@@ -659,13 +659,13 @@ watch(
                         @click="openEditDialog(runRecord)"
                       />
 
-                      <Button
+                      <BaseButton
                         type="button"
                         label="刪除"
                         icon="pi pi-trash"
-                        severity="danger"
-                        text
+                        variant="outline"
                         size="small"
+                        class="station-record-delete-button"
                         :loading="deletingRunRecordId === runRecord.id"
                         :disabled="
                           deletingRunRecordId !== null && deletingRunRecordId !== runRecord.id
@@ -926,7 +926,10 @@ watch(
 
 .station-record-card {
   display: grid;
-  grid-template-columns: minmax(120px, 0.72fr) minmax(0, 1.28fr);
+  grid-template-columns: minmax(144px, 0.9fr) minmax(0, 1.1fr);
+  gap: var(--space-4);
+
+  padding: var(--space-4);
 
   border-top: 1px solid var(--color-border);
 }
@@ -945,6 +948,8 @@ watch(
   overflow: hidden;
 
   background: var(--color-primary-pale);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
 
 .station-record-details dd {
@@ -970,7 +975,7 @@ watch(
 
   padding: var(--space-1) var(--space-2);
 
-  color: white;
+  color: var(--color-surface);
   font-size: var(--font-size-xs);
   line-height: 1;
 
@@ -981,7 +986,6 @@ watch(
 .station-record-content {
   display: flex;
   min-width: 0;
-  padding: var(--space-4);
   flex-direction: column;
   gap: var(--space-3);
 }
@@ -1001,6 +1005,24 @@ watch(
   gap: var(--space-2);
 
   border-top: 1px solid var(--color-border);
+}
+
+.station-record-actions :deep(.station-record-delete-button.base-button--outline) {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.station-record-actions
+  :deep(.station-record-delete-button.base-button--outline:hover:not(:disabled)),
+.station-record-actions
+  :deep(.station-record-delete-button.base-button--outline:active:not(:disabled)) {
+  color: var(--color-surface);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.station-record-actions :deep(.station-record-delete-button.base-button--outline:focus-visible) {
+  outline-color: var(--color-accent);
 }
 
 .station-record-details {
@@ -1276,15 +1298,11 @@ watch(
   }
 
   .station-record-card {
-    grid-template-columns: 112px minmax(0, 1fr);
+    grid-template-columns: 144px minmax(0, 1fr);
   }
 
   .station-record-card--without-image {
     grid-template-columns: 1fr;
-  }
-
-  .station-record-image-wrapper {
-    min-height: 144px;
   }
 
   .station-record-details {
@@ -1311,11 +1329,6 @@ watch(
 
   .station-record-card {
     grid-template-columns: 1fr;
-  }
-
-  .station-record-image-wrapper {
-    height: 180px;
-    min-height: 0;
   }
 
   .station-record-details {

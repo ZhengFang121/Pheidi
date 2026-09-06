@@ -2,7 +2,6 @@
 import { isAxiosError } from 'axios'
 import { BatteryLow, Cloud, CloudRain, Frown, Laugh, Meh, Smile, Sun } from '@lucide/vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch, type Component } from 'vue'
-import Button from 'primevue/button'
 import DatePicker from 'primevue/datepicker'
 import InputNumber from 'primevue/inputnumber'
 import Message from 'primevue/message'
@@ -486,22 +485,24 @@ onBeforeUnmount(() => {
               @click="openImagePicker"
             />
 
-            <Button
+            <BaseButton
               v-if="imagePreviewUrl"
               type="button"
               label="移除照片"
               icon="pi pi-trash"
-              severity="danger"
-              text
-              rounded
-              class="run-remove-image-button"
               :disabled="submitting"
               @click="clearImage"
             />
           </div>
         </div>
 
-        <Message v-if="imageErrorMessage" severity="error" :closable="false">
+        <Message
+          v-if="imageErrorMessage"
+          severity="error"
+          variant="simple"
+          class="run-form-error-message"
+          :closable="false"
+        >
           {{ imageErrorMessage }}
         </Message>
       </div>
@@ -547,7 +548,13 @@ onBeforeUnmount(() => {
         <small v-if="weatherLoading" class="run-form-help">正在取得天氣……</small>
       </div>
 
-      <Message v-if="submitError" severity="error" :closable="false">
+      <Message
+        v-if="submitError"
+        severity="error"
+        variant="simple"
+        class="run-form-error-message"
+        :closable="false"
+      >
         {{ submitError }}
       </Message>
     </div>
@@ -556,13 +563,14 @@ onBeforeUnmount(() => {
       <BaseButton
         type="button"
         label="取消"
+        icon="pi pi-times"
         :disabled="submitting"
         @click="emit('cancel')"
       />
 
       <BaseButton
         type="submit"
-        :label="isEditMode ? '儲存修改' : '儲存跑步紀錄'"
+        label="儲存"
         icon="pi pi-check"
         :loading="submitting"
         :disabled="submitting"
@@ -591,6 +599,30 @@ onBeforeUnmount(() => {
 .run-form-help {
   color: var(--color-text-secondary);
   font-size: var(--font-size-xs);
+  line-height: var(--line-height-heading);
+  letter-spacing: var(--letter-spacing-base);
+}
+
+.run-record-form :deep(.run-form-error-message.p-message) {
+  padding: 0;
+  border: 0;
+  color: var(--color-accent);
+  background: transparent;
+  box-shadow: none;
+}
+
+.run-record-form :deep(.run-form-error-message .p-message-content) {
+  gap: 0;
+  padding: 0;
+}
+
+.run-record-form :deep(.run-form-error-message .p-message-icon) {
+  display: none;
+}
+
+.run-record-form :deep(.run-form-error-message .p-message-text) {
+  color: inherit;
+  font-size: var(--font-size-sm);
   line-height: var(--line-height-heading);
   letter-spacing: var(--letter-spacing-base);
 }
@@ -692,19 +724,6 @@ onBeforeUnmount(() => {
   min-height: var(--run-control-height);
   padding-block: 0;
   border-radius: var(--radius-full);
-}
-
-.run-upload-actions :deep(.run-remove-image-button.p-button) {
-  border-color: transparent;
-  color: var(--color-dark);
-  background: var(--color-accent-pale);
-}
-
-.run-upload-actions :deep(.run-remove-image-button.p-button:hover:not(:disabled)),
-.run-upload-actions :deep(.run-remove-image-button.p-button:active:not(:disabled)) {
-  border-color: transparent;
-  color: var(--color-dark);
-  background: var(--color-accent-soft);
 }
 
 .run-record-form :deep(.p-datepicker),
