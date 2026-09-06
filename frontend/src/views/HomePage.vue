@@ -2,6 +2,7 @@
 import { Cloudy, Snowflake, Sun, SunMedium, ThermometerSun, Wind } from '@lucide/vue'
 import { computed, onMounted, onUnmounted, ref, type Component } from 'vue'
 
+import Cloudscape from '@/components/home/Cloudscape.vue'
 import WeatherExpansionHero from '@/components/home/WeatherExpansionHero.vue'
 import RunnerProgressCard from '@/components/progress/RunnerProgressCard.vue'
 import { useRunnerProgress } from '@/composables/useRunnerProgress'
@@ -200,7 +201,10 @@ onUnmounted(() => {
 
 <template>
   <main class="home-page">
+    <Cloudscape class="home-page__background" />
+
     <WeatherExpansionHero
+      class="home-page__hero"
       :title="weatherPresentation.title"
       :tone="weatherPresentation.tone"
       :main-icon="weatherPresentation.mainIcon"
@@ -227,16 +231,22 @@ onUnmounted(() => {
 
 <style scoped>
 .home-page {
+  position: relative;
+  isolation: isolate;
   min-height: 100%;
-  background: linear-gradient(
-    180deg,
-    var(--color-primary-pale) 0%,
-    color-mix(in srgb, var(--color-background) 48%, var(--color-primary-pale)) 100dvh,
-    var(--color-primary-pale) calc(22% + 78dvh),
-    color-mix(in srgb, var(--color-primary-pale) 50%, var(--color-secondary-pale)) calc(44% + 56dvh),
-    var(--color-secondary-pale) calc(68% + 32dvh),
-    var(--color-secondary-soft) 100%
-  );
+  background: transparent;
+}
+
+.home-page > .home-page__background {
+  position: fixed;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.home-page__hero,
+.home-progress {
+  position: relative;
+  z-index: 1;
 }
 
 /* 日報與旅程卡片共用水平內距，垂直內距維持各元件原有設定。 */

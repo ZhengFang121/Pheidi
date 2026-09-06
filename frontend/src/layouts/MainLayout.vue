@@ -31,11 +31,5 @@ const route = useRoute()
 
 .footer-transition {
   height: clamp(var(--space-8), 10vw, calc(var(--space-8) + var(--space-8)));
-  background: linear-gradient(
-    180deg,
-    var(--color-background) 0%,
-    var(--color-secondary-pale) 52%,
-    var(--color-secondary-soft) 100%
-  );
 }
 </style>

@@ -24,7 +24,14 @@
         decoding="async"
       />
 
-      <p class="app-footer__copyright">© 2026 PHEIDI THE RUNNER</p>
+      <div class="app-footer__signature">
+        <span
+          class="app-footer__tagline"
+          aria-hidden="true"
+        ></span>
+
+        <p class="app-footer__copyright">© 2026 PHEIDI THE RUNNER</p>
+      </div>
     </div>
   </footer>
 </template>
@@ -38,7 +45,6 @@ import grasslandUrl from '@/assets/images/grassland.png'
   width: 100%;
   overflow: hidden;
   color: var(--color-secondary-light);
-  background: var(--color-secondary-soft);
 }
 
 .app-footer__scene {
@@ -76,7 +82,9 @@ import grasslandUrl from '@/assets/images/grassland.png'
 
 .app-footer__runner {
   position: absolute;
-  top: calc(clamp(9.75rem, 13.08vw, 11.75rem) - var(--footer-scene-trim));
+  top: calc(
+    clamp(9.75rem, 13.08vw, 11.75rem) - var(--footer-scene-trim) - var(--space-4)
+  );
   left: 50%;
   display: block;
   width: var(--footer-runner-size);
@@ -86,19 +94,38 @@ import grasslandUrl from '@/assets/images/grassland.png'
 }
 
 .app-footer__copyright {
-  position: absolute;
-  top: calc(clamp(16.75rem, 23.33vw, 21rem) - var(--footer-scene-trim));
-  left: 50%;
-  z-index: 1;
-  width: calc(100% - var(--space-6));
+  position: static;
+  width: auto;
   margin: 0;
-  padding: 0 var(--space-3);
+  padding: 0;
 
-  color: var(--color-dark);
+  color: var(--color-surface);
   text-align: center;
   letter-spacing: var(--letter-spacing-wide);
   font-size: var(--font-size-sm);
-  transform: translateX(-50%);
+  transform: none;
+}
+
+.app-footer__signature {
+  position: absolute;
+  right: 0;
+  bottom: var(--space-4);
+  left: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.app-footer__tagline {
+  display: block;
+  width: clamp(6.5rem, 8vw, 7.5rem);
+  aspect-ratio: 142 / 80;
+  background-color: var(--color-primary-pale);
+  mask: url('/tagline.svg') center / contain no-repeat;
+  transform: translateY(calc(-1 * var(--space-4)));
+  -webkit-mask: url('/tagline.svg') center / contain no-repeat;
 }
 
 @media (max-width: 480px) {

@@ -7,7 +7,6 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import AnimatedWeatherIcon from '@/components/icons/AnimatedWeatherIcon.vue'
 import type { CurrentWeather, WeatherForecast } from '@/services/weather'
 import type { WeatherIconVariant } from '@/types/weatherIcon'
-import Cloudscape from '@/components/home/Cloudscape.vue'
 
 interface Props {
   title: string
@@ -314,8 +313,6 @@ onUnmounted(() => {
     }"
     aria-labelledby="weather-hero-title"
   >
-    <Cloudscape />
-
     <div class="weather-hero__stage layout-container">
       <article
         ref="media"
@@ -444,24 +441,7 @@ onUnmounted(() => {
   height: 100dvh;
   min-height: 100dvh;
   overflow: hidden;
-  background-color: var(--color-primary-pale);
-}
-
-.weather-hero::after {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 0;
-  height: clamp(var(--space-8), 12vh, 8rem);
-  pointer-events: none;
-  content: '';
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    color-mix(in srgb, var(--color-background) 42%, transparent) 55%,
-    color-mix(in srgb, var(--color-background) 48%, var(--color-primary-pale)) 100%
-  );
+  background: transparent;
 }
 
 .weather-hero.is-interacting {
