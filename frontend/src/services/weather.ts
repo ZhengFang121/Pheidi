@@ -28,6 +28,88 @@ export interface CurrentWeather {
   windSpeed: number
 }
 
+export interface DailyWeatherForecast {
+  date: string
+  weatherCode: number
+  temperatureMax: number
+  temperatureMin: number
+  precipitationProbability: number | null
+}
+
+export interface WeatherForecast {
+  timezone: string
+  days: DailyWeatherForecast[]
+}
+
+interface OpenMeteoDailyResponse {
+  timezone: string
+  daily: {
+    time: string[]
+    weather_code: (number | null)[]
+    temperature_2m_max: (number | null)[]
+    temperature_2m_min: (number | null)[]
+    precipitation_probability_max: (number | null)[]
+  }
+}
+
+export async function getWeatherForecast(
+  latitude: number,
+  longitude: number,
+): Promise<WeatherForecast> {
+  const { data } = await axios.get<OpenMeteoDailyResponse>(
+    'https://api.open-meteo.com/v1/forecast',
+    {
+      params: {
+        latitude,
+        longitude,
+        daily: [
+          'weather_code',
+          'temperature_2m_max',
+          'temperature_2m_min',
+          'precipitation_probability_max',
+        ].join(','),
+        forecast_days: 5,
+        timezone: 'auto',
+      },
+    },
+  )
+
+  if (data.daily?.time?.length !== 5 || !data.timezone) {
+    throw new Error('五天天氣預報資料不完整')
+  }
+
+  const days = data.daily.time.map((date, index): DailyWeatherForecast => {
+    const weatherCode = data.daily.weather_code?.[index]
+    const temperatureMax = data.daily.temperature_2m_max?.[index]
+    const temperatureMin = data.daily.temperature_2m_min?.[index]
+    const probability = data.daily.precipitation_probability_max?.[index]
+
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+      typeof weatherCode !== 'number' ||
+      !Number.isFinite(weatherCode) ||
+      typeof temperatureMax !== 'number' ||
+      !Number.isFinite(temperatureMax) ||
+      typeof temperatureMin !== 'number' ||
+      !Number.isFinite(temperatureMin)
+    ) {
+      throw new Error('每日天氣預報資料不完整')
+    }
+
+    return {
+      date,
+      weatherCode,
+      temperatureMax,
+      temperatureMin,
+      // 缺少降雨機率不代表不會下雨，保留 null 讓介面顯示缺值。
+      precipitationProbability:
+        typeof probability === 'number' && Number.isFinite(probability) ? probability : null,
+    }
+  })
+
+  return { timezone: data.timezone, days }
+}
+
 const recentWeatherRangeInMilliseconds =
   7 * 24 * 60 * 60 * 1000
 
