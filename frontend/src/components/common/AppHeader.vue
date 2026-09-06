@@ -232,6 +232,8 @@ import { useAuthStore } from '@/stores/auth'
 import BaseCard from '@/components/base/BaseCard.vue'
 import BaseIconAction from '@/components/base/BaseIconAction.vue'
 import RunRecordForm from '@/components/run/RunRecordForm.vue'
+import { useRunRecordEvents } from '@/composables/useRunRecordEvents'
+import type { RunRecord } from '@/types/runRecord'
 
 interface NavigationItem extends MenuItem {
   labelEn?: string
@@ -247,6 +249,7 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const toast = useToast()
+const { emitRunRecordCreated } = useRunRecordEvents()
 
 const accountMenu = ref<InstanceType<typeof Menu> | null>(null)
 const accountMenuWidth = ref<string>()
@@ -339,8 +342,9 @@ async function handleAccountMenuShow() {
   alignMenuToTrigger(accountMenuTrigger, 'account-navigation-menu')
 }
 
-function handleRunRecordSubmitted() {
+function handleRunRecordSubmitted(runRecord: RunRecord) {
   isCheckInDialogVisible.value = false
+  emitRunRecordCreated(runRecord)
 
   toast.add({
     severity: 'success',

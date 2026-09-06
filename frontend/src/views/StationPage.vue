@@ -18,6 +18,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
 import PheidiJourneySection from '@/components/journey/PheidiJourneySection.vue'
 import RunRecordForm from '@/components/run/RunRecordForm.vue'
+import { useRunRecordEvents } from '@/composables/useRunRecordEvents'
 import { useRunnerProgress } from '@/composables/useRunnerProgress'
 import {
   RUN_LOCATION_OPTIONS,
@@ -48,6 +49,7 @@ const weatherLabels = new Map(
 )
 
 const confirm = useConfirm()
+const { onRunRecordCreated } = useRunRecordEvents()
 const { runnerProgress, isRunnerProgressLoading, runnerProgressError, loadRunnerProgress } =
   useRunnerProgress()
 
@@ -68,6 +70,7 @@ const activeRunRecordPanel = ref<string | null>(null)
 
 let latestRequestId = 0
 let loadingStateTimer: ReturnType<typeof setTimeout> | undefined
+let removeRunRecordCreatedListener: (() => void) | undefined
 
 const currentMonthTitle = computed(() =>
   getMonthTitle(currentMonth.value.getFullYear(), currentMonth.value.getMonth()),
@@ -279,6 +282,18 @@ const handleRunRecordUpdated = (updatedRunRecord: RunRecord) => {
   void loadRunnerProgress()
 }
 
+const handleRunRecordCreated = (createdRunRecord: RunRecord) => {
+  if (isInCurrentMonth(createdRunRecord.runDate)) {
+    if (!runRecords.value.some((runRecord) => runRecord.id === createdRunRecord.id)) {
+      runRecords.value = [...runRecords.value, createdRunRecord]
+    }
+
+    selectedDateKey.value = getLocalDateKey(createdRunRecord.runDate)
+  }
+
+  void loadRunnerProgress()
+}
+
 const deleteSelectedRunRecord = async (runRecord: RunRecord) => {
   if (deletingRunRecordId.value) {
     return
@@ -357,12 +372,15 @@ const goToNextMonth = () => {
 }
 
 onBeforeUnmount(() => {
+  removeRunRecordCreatedListener?.()
+
   if (loadingStateTimer) {
     clearTimeout(loadingStateTimer)
   }
 })
 
 onMounted(() => {
+  removeRunRecordCreatedListener = onRunRecordCreated(handleRunRecordCreated)
   void loadRunnerProgress()
 })
 
