@@ -388,11 +388,6 @@ onMounted(() => {
   color: var(--color-dark);
 }
 
-:global(.academy-lock-toast .p-toast-message-info .p-toast-message-icon),
-:global(.academy-lock-toast .p-toast-message-info .p-toast-summary) {
-  color: var(--color-accent);
-}
-
 .error-content {
   display: flex;
   align-items: center;
