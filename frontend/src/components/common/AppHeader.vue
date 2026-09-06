@@ -421,7 +421,9 @@ const mobileMenuItems = computed<NavigationItem[]>(() => [
 
 <style scoped>
 .app-header {
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
   z-index: 100;
   width: 100%;
   height: var(--app-header-height);

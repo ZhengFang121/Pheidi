@@ -25,6 +25,10 @@ const route = useRoute()
 </script>
 
 <style scoped>
+.page-content {
+  padding-top: var(--app-header-height);
+}
+
 .main-layout--home .page-content {
   margin-top: calc(-1 * var(--app-header-height));
 }
