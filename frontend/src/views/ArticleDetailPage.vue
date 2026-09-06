@@ -43,7 +43,7 @@
           <Tag
             :value="getCategoryLabel(article.category)"
             severity="secondary"
-            :class="{ 'academy-learning-category-tag': article.category === 'learning' }"
+            class="academy-category-tag"
           />
 
           <time :datetime="article.publishedAt">
