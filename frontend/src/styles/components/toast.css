@@ -1,0 +1,40 @@
+/* 將 PrimeVue Toast 的 icon 與第一行標題放在同一列對齊。 */
+.p-toast .p-toast-message {
+  border-radius: var(--radius-md);
+}
+
+.p-toast-message-content:has(> .p-toast-message-icon + .p-toast-message-text) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.p-toast-message-content > .p-toast-message-icon {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.p-toast-message-content > .p-toast-message-text {
+  display: contents;
+}
+
+.p-toast-message-content .p-toast-summary {
+  display: flex;
+  grid-column: 2;
+  grid-row: 1;
+  align-items: center;
+  min-width: 0;
+}
+
+.p-toast-message-content .p-toast-detail {
+  grid-column: 2;
+  grid-row: 2;
+  min-width: 0;
+}
+
+.p-toast-message-content:has(> .p-toast-message-icon + .p-toast-message-text)
+  > div:last-child:not(.p-toast-message-text) {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-self: start;
+}

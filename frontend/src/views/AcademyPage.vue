@@ -52,7 +52,6 @@
           :severity="activeCategory === option.value ? undefined : 'secondary'"
           :aria-disabled="isCategoryLocked(option.value) || undefined"
           :aria-label="getCategoryAriaLabel(option.value, option.label)"
-          size="small"
           class="category-button"
           :class="{ 'is-locked': isCategoryLocked(option.value) }"
           @click="handleCategoryChange(option.value)"
@@ -114,7 +113,11 @@
 
         <div class="article-content">
           <div class="article-meta">
-            <Tag :value="getCategoryLabel(article.category)" severity="secondary" />
+            <Tag
+              :value="getCategoryLabel(article.category)"
+              severity="secondary"
+              :class="{ 'academy-learning-category-tag': article.category === 'learning' }"
+            />
 
             <time :datetime="article.publishedAt">
               {{ formatDate(article.publishedAt) }}
@@ -350,6 +353,19 @@ onMounted(() => {
   min-height: calc(var(--space-6) + var(--space-1));
 }
 
+.category-button {
+  padding: var(--space-3) var(--space-5);
+
+  font-size: var(--font-size-base);
+
+  border-width: 0;
+  border-radius: var(--radius-full);
+}
+
+.category-button.p-button-outlined {
+  box-shadow: inset 0 0 0 1px var(--p-button-outlined-secondary-border-color);
+}
+
 .category-button.is-locked {
   color: var(--color-text-secondary);
   cursor: pointer;
@@ -365,13 +381,16 @@ onMounted(() => {
   border-color: var(--color-primary-soft);
   color: var(--color-text);
   background: var(--color-primary-pale);
-  background: color-mix(in srgb, var(--color-primary-pale) 88%, transparent);
+  background: color-mix(in srgb, var(--color-primary-pale) 82%, transparent);
+}
+
+:global(.academy-lock-toast .p-toast-message-info .p-toast-close-button) {
+  color: var(--color-dark);
 }
 
 :global(.academy-lock-toast .p-toast-message-info .p-toast-message-icon),
-:global(.academy-lock-toast .p-toast-message-info .p-toast-summary),
-:global(.academy-lock-toast .p-toast-message-info .p-toast-close-button) {
-  color: var(--color-dark);
+:global(.academy-lock-toast .p-toast-message-info .p-toast-summary) {
+  color: var(--color-accent);
 }
 
 .error-content {

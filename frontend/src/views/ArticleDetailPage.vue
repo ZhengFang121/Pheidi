@@ -1,9 +1,10 @@
 <template>
   <section class="layout-container article-detail-page">
-    <RouterLink :to="{ name: 'academy' }" class="back-link">
-      <ArrowLeft class="back-icon" aria-hidden="true" />
-      返回跑者學院
-    </RouterLink>
+    <BaseButton type="button" label="返回跑者學院" class="back-button" @click="returnToAcademy">
+      <template #icon>
+        <ArrowLeft class="back-icon" aria-hidden="true" />
+      </template>
+    </BaseButton>
 
     <div v-if="isLoading" class="article-loading">
       <Skeleton width="8rem" height="1.5rem" />
@@ -39,7 +40,11 @@
     <article v-else-if="article">
       <header class="article-header">
         <div class="article-meta">
-          <Tag :value="getCategoryLabel(article.category)" severity="secondary" />
+          <Tag
+            :value="getCategoryLabel(article.category)"
+            severity="secondary"
+            :class="{ 'academy-learning-category-tag': article.category === 'learning' }"
+          />
 
           <time :datetime="article.publishedAt">
             {{ formatDate(article.publishedAt) }}
@@ -169,20 +174,12 @@ void loadArticle()
   padding-block: var(--space-7) var(--space-8);
 }
 
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-
+.back-button {
   margin-bottom: var(--space-6);
 
-  color: var(--color-dark-light);
-  font-weight: var(--font-weight-medium);
-  text-decoration: none;
-}
+  line-height: var(--line-height-base);
 
-.back-link:hover {
-  color: var(--color-dark);
+  border-radius: var(--radius-full);
 }
 
 .back-icon {
