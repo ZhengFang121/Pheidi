@@ -188,7 +188,8 @@
   background: transparent;
 }
 
-.run-record-dialog .run-record-form {
+.run-record-dialog .run-record-form,
+.create-activity-dialog .event-form {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -197,7 +198,8 @@
   overflow: hidden;
 }
 
-.run-record-dialog .run-record-form__body {
+.run-record-dialog .run-record-form__body,
+.create-activity-dialog .event-form__body {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -212,26 +214,36 @@
   scrollbar-width: thin;
 }
 
-.run-record-dialog .run-record-form__body::-webkit-scrollbar {
+.run-record-dialog .run-record-form__body::-webkit-scrollbar,
+.create-activity-dialog .event-form__body::-webkit-scrollbar {
   width: var(--space-2);
 }
 
-.run-record-dialog .run-record-form__body::-webkit-scrollbar-track {
+.run-record-dialog .run-record-form__body::-webkit-scrollbar-track,
+.create-activity-dialog .event-form__body::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.run-record-dialog .run-record-form__body::-webkit-scrollbar-thumb {
+.run-record-dialog .run-record-form__body::-webkit-scrollbar-thumb,
+.create-activity-dialog .event-form__body::-webkit-scrollbar-thumb {
   border: 2px solid transparent;
   border-radius: var(--radius-full);
   background: var(--color-primary-soft);
   background-clip: padding-box;
 }
 
-.run-record-dialog .run-form-actions {
+.run-record-dialog .run-form-actions,
+.create-activity-dialog .event-form-actions {
   flex: 0 0 auto;
   padding: var(--space-3) var(--space-6) var(--space-5);
   background: transparent;
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-surface) 24%, transparent);
+}
+
+.create-activity-dialog .event-form-actions .p-button {
+  min-height: calc(var(--space-6) + var(--space-1));
+  padding-block: 0;
+  border-radius: var(--radius-full);
 }
 
 @media (max-width: 480px) {
@@ -251,12 +263,14 @@
 }
 
 @media (max-width: 639px) {
-  .run-record-dialog .run-record-form__body {
+  .run-record-dialog .run-record-form__body,
+  .create-activity-dialog .event-form__body {
     margin-block: var(--space-1);
     padding: var(--space-2) var(--space-4);
   }
 
-  .run-record-dialog .run-form-actions {
+  .run-record-dialog .run-form-actions,
+  .create-activity-dialog .event-form-actions {
     padding: var(--space-3) var(--space-4) var(--space-5);
   }
 }

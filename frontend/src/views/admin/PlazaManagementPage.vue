@@ -118,13 +118,17 @@
 
               <Column header="圖片" style="width: 110px">
                 <template #body="{ data }">
-                  <img
-                    v-if="data.imageUrl"
-                    :src="data.imageUrl"
-                    :alt="`${data.author.username} 的貼文縮圖`"
-                    class="post-thumbnail"
-                    loading="lazy"
-                  />
+                  <div v-if="data.images.length > 0" class="post-thumbnail-wrap">
+                    <img
+                      :src="data.images[0].url"
+                      :alt="`${data.author.username} 的貼文縮圖`"
+                      class="post-thumbnail"
+                      loading="lazy"
+                    />
+                    <span v-if="data.images.length > 1" class="post-image-count">
+                      {{ data.images.length }} 張
+                    </span>
+                  </div>
                   <Tag v-else value="無圖片" severity="secondary" />
                 </template>
               </Column>
@@ -657,6 +661,19 @@ onMounted(() => {
   object-fit: cover;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
+}
+
+.post-thumbnail-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.post-image-count {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-tight);
+  letter-spacing: normal;
 }
 
 .post-context {

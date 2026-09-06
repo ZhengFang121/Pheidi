@@ -5,10 +5,16 @@ export interface PostAuthor {
   username: string
 }
 
+export interface PostImage {
+  url: string
+  width?: number
+  height?: number
+}
+
 export interface PlazaPost {
   id: string
   content: string
-  imageUrl?: string
+  images: PostImage[]
   author: PostAuthor
   likeCount: number
   isLiked: boolean
@@ -30,13 +36,27 @@ export interface PostListResponse {
 
 export interface CreatePostPayload {
   content: string
-  imageUrl?: string
-  imagePublicId?: string
+  images?: Array<PostImage & { publicId: string }>
 }
 
 export interface CreatePostResponse {
   message: string
   post: PlazaPost
+}
+
+export interface UpdatePostPayload {
+  content: string
+  retainedImageUrls: string[]
+  newImages?: Array<PostImage & { publicId: string }>
+}
+
+export interface UpdatePostResponse {
+  message: string
+  post: PlazaPost
+}
+
+export interface DeletePostResponse {
+  message: string
 }
 
 export interface UploadedPostImage {
@@ -51,6 +71,11 @@ export interface UploadedPostImage {
 export interface UploadPostImageResponse {
   message: string
   image: UploadedPostImage
+}
+
+export interface UploadPostImagesResponse {
+  message: string
+  images: UploadedPostImage[]
 }
 
 export interface TogglePostLikeResponse {

@@ -1,6 +1,6 @@
 import api from '@/services/api'
 import type { UploadAdminArticleCoverResponse } from '@/types/article'
-import type { UploadPostImageResponse } from '@/types/post'
+import type { UploadPostImageResponse, UploadPostImagesResponse } from '@/types/post'
 
 const createImageFormData = (file: File) => {
   const formData = new FormData()
@@ -24,6 +24,16 @@ export const uploadPostImage = async (file: File) => {
     '/uploads/post-image',
     createImageFormData(file),
   )
+
+  return response.data
+}
+
+export const uploadPostImages = async (files: File[]) => {
+  const formData = new FormData()
+
+  files.forEach((file) => formData.append('images', file))
+
+  const response = await api.post<UploadPostImagesResponse>('/uploads/post-images', formData)
 
   return response.data
 }

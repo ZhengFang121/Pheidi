@@ -23,7 +23,11 @@ export interface AdminPlazaAuthor {
 export interface AdminPlazaPost {
   id: string
   content: string
-  imageUrl?: string
+  images: Array<{
+    url: string
+    width?: number
+    height?: number
+  }>
   author: AdminPlazaAuthor
   likeCount: number
   commentCount: number

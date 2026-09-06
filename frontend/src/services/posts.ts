@@ -4,6 +4,7 @@ import type {
   CreatePostCommentPayload,
   CreatePostCommentResponse,
   CreatePostResponse,
+  DeletePostResponse,
   DeletePostCommentResponse,
   GetPostCommentsParams,
   GetPostsParams,
@@ -11,6 +12,8 @@ import type {
   PostListResponse,
   TogglePostLikeResponse,
   TogglePostCommentLikeResponse,
+  UpdatePostPayload,
+  UpdatePostResponse,
   UpdatePostCommentPayload,
   UpdatePostCommentResponse,
 } from '@/types/post'
@@ -25,6 +28,18 @@ export const getPosts = async (params: GetPostsParams = {}) => {
 
 export const createPost = async (payload: CreatePostPayload) => {
   const response = await api.post<CreatePostResponse>('/posts', payload)
+
+  return response.data
+}
+
+export const updatePost = async (postId: string, payload: UpdatePostPayload) => {
+  const response = await api.patch<UpdatePostResponse>(`/posts/${postId}`, payload)
+
+  return response.data
+}
+
+export const deletePost = async (postId: string) => {
+  const response = await api.delete<DeletePostResponse>(`/posts/${postId}`)
 
   return response.data
 }

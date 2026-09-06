@@ -20,7 +20,11 @@ interface AggregateMetadata {
 interface AdminPlazaPostItem {
   id: string
   content: string
-  imageUrl?: string
+  images: Array<{
+    url: string
+    width?: number
+    height?: number
+  }>
   author: {
     id: string
     username: string
@@ -87,6 +91,13 @@ const createPaginationResponse = (page: number, limit: number, total: number) =>
   totalPages: Math.ceil(total / limit),
 })
 
+const hasPostImagesExpression = {
+  $or: [
+    { $gt: [{ $size: { $ifNull: ['$images', []] } }, 0] },
+    { $gt: [{ $strLenCP: { $ifNull: ['$imageUrl', ''] } }, 0] },
+  ],
+}
+
 export const registerAdminPlazaHandlers = (router: Router) => {
   router.get('/statistics', async (_req, res) => {
     try {
@@ -102,13 +113,7 @@ export const registerAdminPlazaHandlers = (router: Router) => {
               totalPosts: { $sum: 1 },
               postsWithImages: {
                 $sum: {
-                  $cond: [
-                    {
-                      $gt: [{ $strLenCP: { $ifNull: ['$imageUrl', ''] } }, 0],
-                    },
-                    1,
-                    0,
-                  ],
+                  $cond: [hasPostImagesExpression, 1, 0],
                 },
               },
               totalPostLikes: {
@@ -162,7 +167,9 @@ export const registerAdminPlazaHandlers = (router: Router) => {
       const initialMatch: Record<string, unknown> = {}
 
       if (hasImage !== undefined) {
-        initialMatch.imageUrl = hasImage ? { $exists: true, $nin: ['', null] } : { $in: ['', null] }
+        initialMatch.$expr = hasImage
+          ? hasPostImagesExpression
+          : { $not: [hasPostImagesExpression] }
       }
 
       const pipeline: PipelineStage[] = [
@@ -212,7 +219,29 @@ export const registerAdminPlazaHandlers = (router: Router) => {
                   _id: 0,
                   id: { $toString: '$_id' },
                   content: 1,
-                  imageUrl: 1,
+                  images: {
+                    $cond: [
+                      { $gt: [{ $size: { $ifNull: ['$images', []] } }, 0] },
+                      {
+                        $map: {
+                          input: '$images',
+                          as: 'image',
+                          in: {
+                            url: '$$image.url',
+                            width: '$$image.width',
+                            height: '$$image.height',
+                          },
+                        },
+                      },
+                      {
+                        $cond: [
+                          { $gt: [{ $strLenCP: { $ifNull: ['$imageUrl', ''] } }, 0] },
+                          [{ url: '$imageUrl' }],
+                          [],
+                        ],
+                      },
+                    ],
+                  },
                   author: {
                     id: { $toString: '$author._id' },
                     username: { $ifNull: ['$author.username', '已刪除的使用者'] },
@@ -352,16 +381,21 @@ export const registerAdminPlazaHandlers = (router: Router) => {
 
       const session = await Post.startSession()
       let postFound = false
-      let imagePublicId: string | undefined
+      let imagePublicIds: string[] = []
 
       try {
         await session.withTransaction(async () => {
-          const post = await Post.findById(postId).select('imagePublicId').session(session)
+          const post = await Post.findById(postId)
+            .select('images.publicId imagePublicId')
+            .session(session)
 
           if (!post) return
 
           postFound = true
-          imagePublicId = post.imagePublicId
+          imagePublicIds = [
+            ...post.images.flatMap((image) => (image.publicId ? [image.publicId] : [])),
+            ...(post.imagePublicId ? [post.imagePublicId] : []),
+          ].filter((publicId, index, publicIds) => publicIds.indexOf(publicId) === index)
 
           await Comment.deleteMany({ post: postId }).session(session)
           await post.deleteOne({ session })
@@ -377,14 +411,23 @@ export const registerAdminPlazaHandlers = (router: Router) => {
         return
       }
 
-      if (imagePublicId) {
-        try {
-          await cloudinary.uploader.destroy(imagePublicId, {
-            resource_type: 'image',
-          })
-        } catch (error: unknown) {
-          console.error(`Failed to delete Cloudinary image ${imagePublicId}:`, error)
-        }
+      if (imagePublicIds.length > 0) {
+        const deletionResults = await Promise.allSettled(
+          imagePublicIds.map((publicId) =>
+            cloudinary.uploader.destroy(publicId, {
+              resource_type: 'image',
+            }),
+          ),
+        )
+
+        deletionResults.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            console.error(
+              `Failed to delete Cloudinary image ${imagePublicIds[index]}:`,
+              result.reason,
+            )
+          }
+        })
       }
 
       res.status(200).json({

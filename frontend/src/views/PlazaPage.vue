@@ -2,6 +2,27 @@
   <section class="layout-container plaza-page">
     <ConfirmDialog />
 
+    <CreateActivityDialog
+      v-model:visible="isCreateActivityDialogOpen"
+      @created="handleActivityCreated"
+    />
+
+    <PostImageViewer
+      v-model:visible="isPostImageViewerOpen"
+      :images="viewerImages"
+      :initial-index="viewerInitialIndex"
+      :author-name="viewerAuthorName"
+    />
+
+    <input
+      ref="editPostImageInput"
+      type="file"
+      multiple
+      accept="image/jpeg,image/png,image/webp,image/gif"
+      class="post-image-input"
+      @change="handleEditPostImageChange"
+    />
+
     <header class="plaza-heading">
       <p class="plaza-eyebrow">PHEIDI PLAZA</p>
 
@@ -12,22 +33,42 @@
       </p>
     </header>
 
-    <Tabs v-model:value="activeTab" class="plaza-tabs">
-      <TabList>
-        <Tab value="feed">
-          <span class="tab-label">
+    <Tabs id="plaza-tabs" v-model:value="activeTab" class="plaza-tabs">
+      <div class="segmented-control plaza-segmented-control" role="group" aria-label="廣場內容">
+        <span
+          class="segmented-control__indicator"
+          :class="{ 'segmented-control__indicator--second': activeTab === 'events' }"
+          aria-hidden="true"
+        ></span>
+
+        <button
+          id="plaza-tabs_tab_feed"
+          class="segmented-control__option"
+          type="button"
+          :aria-pressed="activeTab === 'feed'"
+          aria-controls="plaza-tabs_tabpanel_feed"
+          @click="activeTab = 'feed'"
+        >
+          <span class="segmented-control__label">
             <UsersRound class="tab-icon" aria-hidden="true" />
             跑友動態
           </span>
-        </Tab>
+        </button>
 
-        <Tab value="events">
-          <span class="tab-label">
+        <button
+          id="plaza-tabs_tab_events"
+          class="segmented-control__option"
+          type="button"
+          :aria-pressed="activeTab === 'events'"
+          aria-controls="plaza-tabs_tabpanel_events"
+          @click="activeTab = 'events'"
+        >
+          <span class="segmented-control__label">
             <CalendarDays class="tab-icon" aria-hidden="true" />
             活動情報
           </span>
-        </Tab>
-      </TabList>
+        </button>
+      </div>
 
       <TabPanels>
         <TabPanel value="feed">
@@ -67,6 +108,7 @@
               <input
                 ref="postImageInput"
                 type="file"
+                multiple
                 accept="image/jpeg,image/png,image/webp,image/gif"
                 class="post-image-input"
                 @change="handlePostImageChange"
@@ -76,34 +118,51 @@
                 {{ postImageErrorMessage }}
               </Message>
 
-              <div v-if="postImagePreviewUrl" class="composer-image-preview">
-                <img
-                  :src="postImagePreviewUrl"
-                  alt="準備發布的貼文圖片預覽"
-                  class="composer-preview-image"
-                />
+              <div v-if="selectedPostImages.length > 0" class="composer-image-preview">
+                <div class="composer-preview-heading">
+                  <span>照片預覽</span>
+                  <span>{{ selectedPostImages.length }} / {{ maximumPostImageCount }} 張</span>
+                </div>
 
-                <Button
-                  type="button"
-                  label="移除照片"
-                  severity="danger"
-                  text
-                  size="small"
-                  class="remove-photo-button"
-                  :disabled="isSubmittingPost"
-                  @click="clearPostImage"
-                />
+                <div class="composer-preview-grid">
+                  <figure
+                    v-for="(image, index) in selectedPostImages"
+                    :key="image.id"
+                    class="composer-preview-item"
+                  >
+                    <img
+                      :src="image.previewUrl"
+                      :alt="`準備發布的第 ${index + 1} 張貼文照片預覽`"
+                      class="composer-preview-image"
+                    />
+
+                    <Button
+                      type="button"
+                      severity="danger"
+                      text
+                      rounded
+                      class="remove-photo-button"
+                      :aria-label="`移除第 ${index + 1} 張照片`"
+                      :disabled="isSubmittingPost"
+                      @click="removePostImage(image.id)"
+                    >
+                      <template #icon>
+                        <X aria-hidden="true" />
+                      </template>
+                    </Button>
+                  </figure>
+                </div>
               </div>
 
               <div class="composer-footer">
                 <div class="composer-tools">
                   <Button
                     type="button"
-                    :label="postImagePreviewUrl ? '更換照片' : '加入照片'"
+                    :label="selectedPostImages.length > 0 ? '繼續加入照片' : '加入照片'"
                     severity="secondary"
                     text
                     class="photo-button"
-                    :disabled="isSubmittingPost"
+                    :disabled="isSubmittingPost || !canAddPostImages"
                     @click="openPostImagePicker"
                   >
                     <template #icon>
@@ -122,6 +181,7 @@
                 <BaseButton
                   type="submit"
                   label="發布貼文"
+                  class="publish-post-button"
                   :loading="isSubmittingPost || isUploadingPostImage"
                   :disabled="!canSubmitPost || isSubmittingPost"
                 >
@@ -184,29 +244,196 @@
                     <div class="post-author-area">
                       <div class="post-author-row">
                         <h3 class="post-author">{{ post.author.username }}</h3>
-                        <Tag :value="post.runnerLevel" severity="secondary" />
+                        <Tag
+                          :value="post.runnerLevel"
+                          severity="secondary"
+                          class="runner-level-tag"
+                        />
                       </div>
 
                       <time class="post-time" :datetime="post.createdAt">
                         {{ post.createdAtLabel }}
+                        <span v-if="post.updatedAt !== post.createdAt">（已編輯）</span>
                       </time>
+                    </div>
+
+                    <div v-if="canManagePost(post)" class="post-management-actions">
+                      <Button
+                        type="button"
+                        severity="secondary"
+                        text
+                        rounded
+                        class="post-management-button post-management-button--edit"
+                        :aria-label="`編輯 ${post.author.username} 的貼文`"
+                        :disabled="isUpdatingPost || deletingPostId !== null"
+                        @click="startEditingPost(post)"
+                      >
+                        <template #icon>
+                          <Pencil aria-hidden="true" />
+                        </template>
+                      </Button>
+
+                      <Button
+                        type="button"
+                        severity="danger"
+                        text
+                        rounded
+                        class="post-management-button post-management-button--delete"
+                        :aria-label="`刪除 ${post.author.username} 的貼文`"
+                        :loading="deletingPostId === post.id"
+                        :disabled="
+                          isUpdatingPost || (deletingPostId !== null && deletingPostId !== post.id)
+                        "
+                        @click="confirmDeletePost(post)"
+                      >
+                        <template #icon>
+                          <Trash2 aria-hidden="true" />
+                        </template>
+                      </Button>
                     </div>
                   </header>
 
-                  <p class="post-content">{{ post.content }}</p>
+                  <div v-if="editingPostId === post.id" class="post-edit-form">
+                    <Textarea
+                      v-model="editingPostContent"
+                      rows="5"
+                      maxlength="500"
+                      auto-resize
+                      aria-label="編輯貼文內容"
+                      class="composer-textarea"
+                    />
 
-                  <img
-                    v-if="post.imageUrl"
-                    :src="post.imageUrl"
-                    :alt="`${post.author.username} 的貼文圖片`"
-                    class="post-image"
-                    loading="lazy"
-                  />
+                    <Message v-if="postEditErrorMessage" severity="error" :closable="false">
+                      {{ postEditErrorMessage }}
+                    </Message>
+
+                    <div
+                      v-if="retainedPostImages.length > 0 || selectedEditPostImages.length > 0"
+                      class="composer-image-preview"
+                    >
+                      <div class="composer-preview-heading">
+                        <span>貼文照片</span>
+                        <span>{{ editPostImageCount }} / {{ maximumPostImageCount }} 張</span>
+                      </div>
+
+                      <div class="composer-preview-grid">
+                        <figure
+                          v-for="(image, index) in retainedPostImages"
+                          :key="`${image.url}-${index}`"
+                          class="composer-preview-item"
+                        >
+                          <img
+                            :src="image.url"
+                            :alt="`目前貼文的第 ${index + 1} 張照片`"
+                            class="composer-preview-image"
+                          />
+
+                          <Button
+                            type="button"
+                            severity="danger"
+                            text
+                            rounded
+                            class="remove-photo-button"
+                            :aria-label="`移除目前貼文的第 ${index + 1} 張照片`"
+                            :disabled="isUpdatingPost"
+                            @click="removeRetainedPostImage(index)"
+                          >
+                            <template #icon>
+                              <X aria-hidden="true" />
+                            </template>
+                          </Button>
+                        </figure>
+
+                        <figure
+                          v-for="(image, index) in selectedEditPostImages"
+                          :key="image.id"
+                          class="composer-preview-item"
+                        >
+                          <img
+                            :src="image.previewUrl"
+                            :alt="`準備加入貼文的第 ${index + 1} 張照片`"
+                            class="composer-preview-image"
+                          />
+
+                          <Button
+                            type="button"
+                            severity="danger"
+                            text
+                            rounded
+                            class="remove-photo-button"
+                            :aria-label="`移除準備加入的第 ${index + 1} 張照片`"
+                            :disabled="isUpdatingPost"
+                            @click="removeEditPostImage(image.id)"
+                          >
+                            <template #icon>
+                              <X aria-hidden="true" />
+                            </template>
+                          </Button>
+                        </figure>
+                      </div>
+                    </div>
+
+                    <div class="post-edit-footer">
+                      <div class="post-edit-tools">
+                        <Button
+                          type="button"
+                          label="加入照片"
+                          severity="secondary"
+                          text
+                          class="photo-button"
+                          :disabled="isUpdatingPost || !canAddEditPostImages"
+                          @click="openEditPostImagePicker"
+                        >
+                          <template #icon>
+                            <ImagePlus aria-hidden="true" />
+                          </template>
+                        </Button>
+
+                        <span
+                          class="character-count"
+                          :class="{ 'character-count--warning': remainingEditPostCharacters <= 50 }"
+                        >
+                          還可以輸入 {{ remainingEditPostCharacters }} 個字
+                        </span>
+                      </div>
+
+                      <div class="post-edit-actions">
+                        <BaseButton
+                          type="button"
+                          label="取消"
+                          variant="outline"
+                          size="small"
+                          :disabled="isUpdatingPost"
+                          @click="cancelEditingPost"
+                        />
+
+                        <BaseButton
+                          type="button"
+                          label="儲存"
+                          size="small"
+                          :loading="isUpdatingPost"
+                          :disabled="!canSaveEditedPost"
+                          @click="handleUpdatePost(post)"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <template v-else>
+                    <p class="post-content">{{ post.content }}</p>
+
+                    <PostImageGrid
+                      v-if="post.images.length > 0"
+                      :images="post.images"
+                      :author-name="post.author.username"
+                      @open="openPostImageViewer(post, $event)"
+                    />
+                  </template>
 
                   <footer class="post-stats" aria-label="貼文互動統計">
                     <button
                       type="button"
-                      class="post-action"
+                      class="post-action post-action--like"
                       :class="{ 'post-action--liked': post.isLiked }"
                       :aria-pressed="post.isLiked"
                       :aria-label="post.isLiked ? '取消按讚' : '按讚'"
@@ -221,7 +448,7 @@
 
                     <button
                       type="button"
-                      class="post-action"
+                      class="post-action post-action--comment"
                       :class="{ 'post-action--active': activeCommentPostId === post.id }"
                       :aria-expanded="activeCommentPostId === post.id"
                       :aria-controls="`comment-section-${post.id}`"
@@ -270,9 +497,14 @@
                           type="submit"
                           label="送出留言"
                           size="small"
+                          class="submit-comment-button"
                           :loading="isCommentSubmitting(post.id)"
                           :disabled="!canSubmitComment || isCommentSubmitting(post.id)"
-                        />
+                        >
+                          <template #icon>
+                            <Send aria-hidden="true" />
+                          </template>
+                        </BaseButton>
                       </div>
                     </form>
 
@@ -315,6 +547,7 @@
                                   text
                                   rounded
                                   size="small"
+                                  class="comment-management-button comment-management-button--edit"
                                   :aria-label="`編輯 ${comment.author.username} 的留言`"
                                   :disabled="
                                     updatingCommentId !== null || deletingCommentId === comment.id
@@ -333,6 +566,7 @@
                                   text
                                   rounded
                                   size="small"
+                                  class="comment-management-button comment-management-button--delete"
                                   :aria-label="`刪除 ${comment.author.username} 的留言`"
                                   :loading="deletingCommentId === comment.id"
                                   :disabled="
@@ -430,7 +664,12 @@
 
               <div class="event-heading-actions">
                 <span class="event-count">共 {{ events.length }} 場</span>
-                <BaseButton label="發起活動" class="create-event-button" @click="createEvent">
+                <BaseButton
+                  type="button"
+                  label="發起活動"
+                  class="create-event-button"
+                  @click="isCreateActivityDialogOpen = true"
+                >
                   <template #icon>
                     <Plus aria-hidden="true" />
                   </template>
@@ -531,7 +770,7 @@
                   <BaseButton
                     type="button"
                     label="查看活動"
-                    variant="outline"
+                    size="small"
                     class="event-button"
                     :aria-label="`查看活動：${event.title}`"
                     @click="viewEvent(event.id)"
@@ -569,14 +808,13 @@ import {
   Send,
   Trash2,
   UsersRound,
+  X,
 } from '@lucide/vue'
 
 import Button from 'primevue/button'
 import ConfirmDialog from 'primevue/confirmdialog'
 import Message from 'primevue/message'
 import Skeleton from 'primevue/skeleton'
-import Tab from 'primevue/tab'
-import TabList from 'primevue/tablist'
 import TabPanel from 'primevue/tabpanel'
 import TabPanels from 'primevue/tabpanels'
 import Tabs from 'primevue/tabs'
@@ -586,21 +824,31 @@ import { useConfirm } from 'primevue/useconfirm'
 
 import BaseCard from '@/components/base/BaseCard.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import CreateActivityDialog from '@/components/events/CreateActivityDialog.vue'
+import PostImageGrid from '@/components/plaza/PostImageGrid.vue'
+import PostImageViewer from '@/components/plaza/PostImageViewer.vue'
 import { getEvents } from '@/services/events'
 import {
   createPost,
   createPostComment,
+  deletePost,
   deletePostComment,
   getPostComments,
   getPosts,
   togglePostCommentLike,
   togglePostLike,
+  updatePost,
   updatePostComment,
 } from '@/services/posts'
-import { uploadPostImage } from '@/services/uploads'
+import { uploadPostImages } from '@/services/uploads'
 import { useAuthStore } from '@/stores/auth'
-import type { PlazaPost as ApiPlazaPost, PostComment as ApiPostComment } from '@/types/post'
-import type { RunningEventListItem } from '@/types/event'
+import type {
+  PlazaPost as ApiPlazaPost,
+  PostComment as ApiPostComment,
+  PostImage,
+  UploadedPostImage,
+} from '@/types/post'
+import type { RunningEvent, RunningEventListItem } from '@/types/event'
 import { formatEventDay, formatEventMonth, formatEventTimeRange } from '@/utils/date'
 import {
   formatEventParticipantCount,
@@ -620,6 +868,12 @@ interface PlazaPostView extends ApiPlazaPost {
   comments: PlazaCommentView[]
 }
 
+interface SelectedPostImage {
+  id: string
+  file: File
+  previewUrl: string
+}
+
 interface PlazaEvent extends RunningEventListItem {
   month: string
   day: string
@@ -637,13 +891,12 @@ const router = useRouter()
 const activeTab = ref<PlazaTab>(route.query.tab === 'events' ? 'events' : 'feed')
 const maximumPostLength = 500
 const maximumPostImageSize = 5 * 1024 * 1024
+const maximumPostImageCount = 4
 const allowedPostImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
 const postContent = ref('')
 const postImageInput = ref<HTMLInputElement | null>(null)
-const selectedPostImage = ref<File | null>(null)
-const postImagePreviewUrl = ref('')
-const uploadedPostImageUrl = ref('')
-const uploadedPostImagePublicId = ref('')
+const selectedPostImages = ref<SelectedPostImage[]>([])
+const uploadedPostImages = ref<UploadedPostImage[]>([])
 const postImageErrorMessage = ref('')
 const postSubmitErrorMessage = ref('')
 const isUploadingPostImage = ref(false)
@@ -666,14 +919,40 @@ const postActionErrorMessage = ref('')
 const pendingPostLikeIds = ref(new Set<string>())
 const isEventLoading = ref(false)
 const eventErrorMessage = ref('')
+const isCreateActivityDialogOpen = ref(false)
 const posts = ref<PlazaPostView[]>([])
 const totalPosts = ref(0)
+const isPostImageViewerOpen = ref(false)
+const viewerImages = ref<PostImage[]>([])
+const viewerInitialIndex = ref(0)
+const viewerAuthorName = ref('跑者')
+const viewerPostId = ref<string | null>(null)
+const editPostImageInput = ref<HTMLInputElement | null>(null)
+const editingPostId = ref<string | null>(null)
+const editingPostContent = ref('')
+const retainedPostImages = ref<PostImage[]>([])
+const selectedEditPostImages = ref<SelectedPostImage[]>([])
+const uploadedEditPostImages = ref<UploadedPostImage[]>([])
+const postEditErrorMessage = ref('')
+const isUpdatingPost = ref(false)
+const deletingPostId = ref<string | null>(null)
 
 const events = ref<PlazaEvent[]>([])
 
 const remainingCharacters = computed(() => maximumPostLength - postContent.value.length)
 
 const canSubmitPost = computed(() => postContent.value.trim().length > 0)
+const canAddPostImages = computed(() => selectedPostImages.value.length < maximumPostImageCount)
+const editPostImageCount = computed(
+  () => retainedPostImages.value.length + selectedEditPostImages.value.length,
+)
+const canAddEditPostImages = computed(() => editPostImageCount.value < maximumPostImageCount)
+const remainingEditPostCharacters = computed(
+  () => maximumPostLength - editingPostContent.value.length,
+)
+const canSaveEditedPost = computed(
+  () => editingPostContent.value.trim().length > 0 && !isUpdatingPost.value,
+)
 
 const remainingCommentCharacters = computed(
   () => maximumCommentLength - commentContent.value.length,
@@ -779,55 +1058,108 @@ function viewEvent(eventId: string) {
   })
 }
 
-function createEvent() {
-  void router.push({ name: 'event-create' })
+function handleActivityCreated(event: RunningEvent) {
+  events.value = [...events.value, toPlazaEvent(event)].sort(
+    (firstEvent, secondEvent) =>
+      new Date(firstEvent.startAt).getTime() - new Date(secondEvent.startAt).getTime(),
+  )
 }
 
 function openPostImagePicker() {
   postImageInput.value?.click()
 }
 
-function revokePostImagePreviewUrl() {
-  if (!postImagePreviewUrl.value) return
-
-  URL.revokeObjectURL(postImagePreviewUrl.value)
-  postImagePreviewUrl.value = ''
+function revokePostImagePreviewUrls(images = selectedPostImages.value) {
+  images.forEach((image) => URL.revokeObjectURL(image.previewUrl))
 }
 
-function clearPostImage() {
-  revokePostImagePreviewUrl()
-  selectedPostImage.value = null
-  uploadedPostImageUrl.value = ''
-  uploadedPostImagePublicId.value = ''
+function clearPostImages() {
+  revokePostImagePreviewUrls()
+  selectedPostImages.value = []
+  uploadedPostImages.value = []
   postImageErrorMessage.value = ''
 
   if (postImageInput.value) postImageInput.value.value = ''
 }
 
+function removePostImage(imageId: string) {
+  const image = selectedPostImages.value.find((currentImage) => currentImage.id === imageId)
+
+  if (image) URL.revokeObjectURL(image.previewUrl)
+
+  selectedPostImages.value = selectedPostImages.value.filter(
+    (currentImage) => currentImage.id !== imageId,
+  )
+  uploadedPostImages.value = []
+  postImageErrorMessage.value = ''
+}
+
+function getPostImageKey(file: File) {
+  return `${file.name}-${file.size}-${file.lastModified}`
+}
+
 function handlePostImageChange(event: Event) {
   const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
+  const files = Array.from(input.files ?? [])
 
   input.value = ''
   postImageErrorMessage.value = ''
 
-  if (!file) return
+  if (files.length === 0) return
 
-  if (!allowedPostImageTypes.has(file.type)) {
-    postImageErrorMessage.value = '貼文圖片只支援 JPG、PNG、WebP 或 GIF'
-    return
+  const existingImageKeys = new Set(
+    selectedPostImages.value.map((image) => getPostImageKey(image.file)),
+  )
+  const newImages: SelectedPostImage[] = []
+  const skippedReasons = new Set<string>()
+
+  for (const file of files) {
+    if (selectedPostImages.value.length + newImages.length >= maximumPostImageCount) {
+      skippedReasons.add(`每篇貼文最多可加入 ${maximumPostImageCount} 張照片`)
+      break
+    }
+
+    if (!allowedPostImageTypes.has(file.type)) {
+      skippedReasons.add('僅支援 JPG、PNG、WebP 或 GIF')
+      continue
+    }
+
+    if (file.size > maximumPostImageSize) {
+      skippedReasons.add('每張照片不能超過 5 MB')
+      continue
+    }
+
+    const imageKey = getPostImageKey(file)
+
+    if (existingImageKeys.has(imageKey)) {
+      skippedReasons.add('已略過重複選取的照片')
+      continue
+    }
+
+    existingImageKeys.add(imageKey)
+    newImages.push({
+      id: `${imageKey}-${crypto.randomUUID()}`,
+      file,
+      previewUrl: URL.createObjectURL(file),
+    })
   }
 
-  if (file.size > maximumPostImageSize) {
-    postImageErrorMessage.value = '貼文圖片不能超過 5 MB'
-    return
+  if (newImages.length > 0) {
+    selectedPostImages.value = [...selectedPostImages.value, ...newImages]
+    uploadedPostImages.value = []
   }
 
-  revokePostImagePreviewUrl()
-  selectedPostImage.value = file
-  uploadedPostImageUrl.value = ''
-  uploadedPostImagePublicId.value = ''
-  postImagePreviewUrl.value = URL.createObjectURL(file)
+  if (skippedReasons.size > 0) {
+    postImageErrorMessage.value = `部分照片未加入：${Array.from(skippedReasons).join('、')}`
+  }
+}
+
+function openPostImageViewer(post: PlazaPostView, imageIndex: number) {
+  viewerImages.value = post.images
+  viewerInitialIndex.value = imageIndex
+  viewerAuthorName.value = post.author.username
+  viewerPostId.value = post.id
+  isPostImageViewerOpen.value = true
 }
 
 async function handleSubmitPost() {
@@ -839,14 +1171,18 @@ async function handleSubmitPost() {
   postImageErrorMessage.value = ''
   isSubmittingPost.value = true
 
-  if (selectedPostImage.value && !uploadedPostImageUrl.value) {
+  if (
+    selectedPostImages.value.length > 0 &&
+    uploadedPostImages.value.length !== selectedPostImages.value.length
+  ) {
     isUploadingPostImage.value = true
 
     try {
-      const uploadResponse = await uploadPostImage(selectedPostImage.value)
+      const uploadResponse = await uploadPostImages(
+        selectedPostImages.value.map((image) => image.file),
+      )
 
-      uploadedPostImageUrl.value = uploadResponse.image.url
-      uploadedPostImagePublicId.value = uploadResponse.image.publicId
+      uploadedPostImages.value = uploadResponse.images
     } catch (error: unknown) {
       postImageErrorMessage.value = getApiErrorMessage(error, '貼文圖片上傳失敗，請稍後再試。')
       isSubmittingPost.value = false
@@ -860,10 +1196,14 @@ async function handleSubmitPost() {
   try {
     const response = await createPost({
       content,
-      ...(uploadedPostImageUrl.value
+      ...(uploadedPostImages.value.length > 0
         ? {
-            imageUrl: uploadedPostImageUrl.value,
-            imagePublicId: uploadedPostImagePublicId.value,
+            images: uploadedPostImages.value.map(({ url, publicId, width, height }) => ({
+              url,
+              publicId,
+              width,
+              height,
+            })),
           }
         : {}),
     })
@@ -871,12 +1211,228 @@ async function handleSubmitPost() {
     posts.value.unshift(toPostView(response.post))
     totalPosts.value += 1
     postContent.value = ''
-    clearPostImage()
+    clearPostImages()
   } catch (error: unknown) {
     postSubmitErrorMessage.value = getApiErrorMessage(error, '發布貼文失敗，請稍後再試。')
   } finally {
     isSubmittingPost.value = false
   }
+}
+
+function canManagePost(post: PlazaPostView) {
+  return post.author._id === authStore.user?.id
+}
+
+function clearEditPostImages() {
+  revokePostImagePreviewUrls(selectedEditPostImages.value)
+  selectedEditPostImages.value = []
+  uploadedEditPostImages.value = []
+
+  if (editPostImageInput.value) editPostImageInput.value.value = ''
+}
+
+function startEditingPost(post: PlazaPostView) {
+  if (!canManagePost(post) || isUpdatingPost.value || deletingPostId.value) return
+
+  clearEditPostImages()
+  editingPostId.value = post.id
+  editingPostContent.value = post.content
+  retainedPostImages.value = [...post.images]
+  postEditErrorMessage.value = ''
+  postActionErrorMessage.value = ''
+}
+
+function cancelEditingPost() {
+  if (isUpdatingPost.value) return
+
+  clearEditPostImages()
+  editingPostId.value = null
+  editingPostContent.value = ''
+  retainedPostImages.value = []
+  postEditErrorMessage.value = ''
+}
+
+function openEditPostImagePicker() {
+  editPostImageInput.value?.click()
+}
+
+function removeRetainedPostImage(imageIndex: number) {
+  retainedPostImages.value.splice(imageIndex, 1)
+  postEditErrorMessage.value = ''
+}
+
+function removeEditPostImage(imageId: string) {
+  const image = selectedEditPostImages.value.find((currentImage) => currentImage.id === imageId)
+
+  if (image) URL.revokeObjectURL(image.previewUrl)
+
+  selectedEditPostImages.value = selectedEditPostImages.value.filter(
+    (currentImage) => currentImage.id !== imageId,
+  )
+  uploadedEditPostImages.value = []
+  postEditErrorMessage.value = ''
+}
+
+function handleEditPostImageChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const files = Array.from(input.files ?? [])
+
+  input.value = ''
+  postEditErrorMessage.value = ''
+
+  if (files.length === 0) return
+
+  const existingImageKeys = new Set(
+    selectedEditPostImages.value.map((image) => getPostImageKey(image.file)),
+  )
+  const newImages: SelectedPostImage[] = []
+  const skippedReasons = new Set<string>()
+
+  for (const file of files) {
+    if (editPostImageCount.value + newImages.length >= maximumPostImageCount) {
+      skippedReasons.add(`每篇貼文最多可加入 ${maximumPostImageCount} 張照片`)
+      break
+    }
+
+    if (!allowedPostImageTypes.has(file.type)) {
+      skippedReasons.add('僅支援 JPG、PNG、WebP 或 GIF')
+      continue
+    }
+
+    if (file.size > maximumPostImageSize) {
+      skippedReasons.add('每張照片不能超過 5 MB')
+      continue
+    }
+
+    const imageKey = getPostImageKey(file)
+
+    if (existingImageKeys.has(imageKey)) {
+      skippedReasons.add('已略過重複選取的照片')
+      continue
+    }
+
+    existingImageKeys.add(imageKey)
+    newImages.push({
+      id: `${imageKey}-${crypto.randomUUID()}`,
+      file,
+      previewUrl: URL.createObjectURL(file),
+    })
+  }
+
+  if (newImages.length > 0) {
+    selectedEditPostImages.value = [...selectedEditPostImages.value, ...newImages]
+    uploadedEditPostImages.value = []
+  }
+
+  if (skippedReasons.size > 0) {
+    postEditErrorMessage.value = `部分照片未加入：${Array.from(skippedReasons).join('、')}`
+  }
+}
+
+async function handleUpdatePost(post: PlazaPostView) {
+  const content = editingPostContent.value.trim()
+
+  if (!content || editingPostId.value !== post.id || isUpdatingPost.value) return
+
+  postEditErrorMessage.value = ''
+  isUpdatingPost.value = true
+
+  if (
+    selectedEditPostImages.value.length > 0 &&
+    uploadedEditPostImages.value.length !== selectedEditPostImages.value.length
+  ) {
+    try {
+      const uploadResponse = await uploadPostImages(
+        selectedEditPostImages.value.map((image) => image.file),
+      )
+
+      uploadedEditPostImages.value = uploadResponse.images
+    } catch (error: unknown) {
+      postEditErrorMessage.value = getApiErrorMessage(error, '貼文圖片上傳失敗，請稍後再試。')
+      isUpdatingPost.value = false
+      return
+    }
+  }
+
+  try {
+    const response = await updatePost(post.id, {
+      content,
+      retainedImageUrls: retainedPostImages.value.map((image) => image.url),
+      ...(uploadedEditPostImages.value.length > 0
+        ? {
+            newImages: uploadedEditPostImages.value.map(({ url, publicId, width, height }) => ({
+              url,
+              publicId,
+              width,
+              height,
+            })),
+          }
+        : {}),
+    })
+    const currentComments = post.comments
+    const postIndex = posts.value.findIndex((currentPost) => currentPost.id === post.id)
+
+    if (postIndex !== -1) {
+      posts.value[postIndex] = {
+        ...toPostView(response.post),
+        comments: currentComments,
+      }
+    }
+
+    clearEditPostImages()
+    editingPostId.value = null
+    editingPostContent.value = ''
+    retainedPostImages.value = []
+  } catch (error: unknown) {
+    postEditErrorMessage.value = getApiErrorMessage(error, '更新貼文失敗，請稍後再試。')
+  } finally {
+    isUpdatingPost.value = false
+  }
+}
+
+async function handleDeletePost(post: PlazaPostView) {
+  if (deletingPostId.value || !canManagePost(post)) return
+
+  deletingPostId.value = post.id
+  postActionErrorMessage.value = ''
+
+  try {
+    await deletePost(post.id)
+
+    posts.value = posts.value.filter((currentPost) => currentPost.id !== post.id)
+    totalPosts.value = Math.max(totalPosts.value - 1, 0)
+    loadedCommentPostIds.value.delete(post.id)
+    pendingPostLikeIds.value.delete(post.id)
+
+    if (activeCommentPostId.value === post.id) activeCommentPostId.value = null
+    if (editingPostId.value === post.id) cancelEditingPost()
+
+    if (viewerPostId.value === post.id) {
+      isPostImageViewerOpen.value = false
+      viewerImages.value = []
+      viewerPostId.value = null
+    }
+  } catch (error: unknown) {
+    postActionErrorMessage.value = getApiErrorMessage(error, '刪除貼文失敗，請稍後再試。')
+  } finally {
+    deletingPostId.value = null
+  }
+}
+
+function confirmDeletePost(post: PlazaPostView) {
+  if (deletingPostId.value || !canManagePost(post)) return
+
+  confirm.require({
+    header: '確認刪除貼文',
+    message: '確定要刪除這則貼文嗎？貼文、留言、按讚與圖片都會一併刪除，且無法復原。',
+    icon: 'pi pi-exclamation-triangle',
+    acceptLabel: '確認刪除',
+    rejectLabel: '取消',
+    acceptClass: 'p-button-danger',
+    accept: () => {
+      void handleDeletePost(post)
+    },
+  })
 }
 
 function isPostLikePending(postId: string) {
@@ -1069,7 +1625,8 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  revokePostImagePreviewUrl()
+  revokePostImagePreviewUrls(selectedPostImages.value)
+  revokePostImagePreviewUrls(selectedEditPostImages.value)
 })
 </script>
 
@@ -1114,32 +1671,8 @@ onBeforeUnmount(() => {
   width: 100%;
 }
 
-.plaza-tabs :deep(.p-tablist-tab-list) {
-  gap: var(--space-5);
-
-  background: transparent;
-  border-color: var(--color-border);
-}
-
-.plaza-tabs :deep(.p-tab) {
-  padding: var(--space-3) var(--space-2);
-
-  color: var(--color-text-secondary);
-  font-family: var(--font-family-base);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-medium);
-}
-
-.plaza-tabs :deep(.p-tab:hover) {
-  color: var(--color-dark);
-}
-
-.plaza-tabs :deep(.p-tab-active) {
-  color: var(--color-dark);
-}
-
-.plaza-tabs :deep(.p-tablist-active-bar) {
-  background: var(--color-primary);
+.plaza-segmented-control {
+  width: min(100%, 22rem);
 }
 
 .plaza-tabs :deep(.p-tabpanels) {
@@ -1152,12 +1685,6 @@ onBeforeUnmount(() => {
   margin: 0;
 
   color: var(--color-text-secondary);
-}
-
-.tab-label {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
 }
 
 .tab-icon {
@@ -1239,31 +1766,64 @@ onBeforeUnmount(() => {
 }
 
 .composer-image-preview {
-  position: relative;
-
-  width: min(100%, 640px);
-  overflow: hidden;
-
-  background: var(--color-background);
+  display: flex;
+  width: min(100%, 40rem);
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
+  background: var(--color-background);
+}
+
+.composer-preview-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.composer-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.composer-preview-item {
+  position: relative;
+  aspect-ratio: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
 }
 
 .composer-preview-image {
   display: block;
   width: 100%;
-  max-height: 480px;
-
-  object-fit: contain;
+  height: 100%;
+  object-fit: cover;
 }
 
 .remove-photo-button {
   position: absolute;
   top: var(--space-2);
-  right: var(--space-2);
+  inset-inline-end: var(--space-2);
+  width: calc(var(--space-6) + var(--space-1));
+  height: calc(var(--space-6) + var(--space-1));
+  padding: 0;
 
+  color: var(--color-accent);
   background: color-mix(in srgb, var(--color-surface) 88%, transparent);
   backdrop-filter: blur(8px);
+}
+
+.remove-photo-button :deep(svg) {
+  width: 17px;
+  height: 17px;
 }
 
 .composer-footer,
@@ -1285,6 +1845,11 @@ onBeforeUnmount(() => {
 .composer-footer :deep(.p-button svg) {
   width: 20px;
   height: 20px;
+}
+
+.composer-footer :deep(.publish-post-button.p-button),
+.event-heading-actions :deep(.create-event-button.p-button) {
+  border-radius: var(--radius-full);
 }
 
 .character-count {
@@ -1370,11 +1935,56 @@ onBeforeUnmount(() => {
 
 .post-author-area {
   min-width: 0;
+  flex: 1;
+}
+
+.post-management-actions,
+.post-edit-footer,
+.post-edit-tools,
+.post-edit-actions {
+  display: flex;
+  align-items: center;
+}
+
+.post-management-actions {
+  flex: 0 0 auto;
+  gap: var(--space-1);
+}
+
+.post-management-actions :deep(.post-management-button.p-button) {
+  width: calc(var(--space-7) - var(--space-1));
+  height: calc(var(--space-7) - var(--space-1));
+  padding: 0;
+  color: var(--color-text-secondary);
+  background: transparent;
+}
+
+.post-management-actions :deep(.post-management-button.p-button:is(:hover, :focus, :active)) {
+  background: transparent;
+}
+
+.post-management-actions :deep(.post-management-button--edit.p-button:is(:hover, :focus, :active)) {
+  color: var(--color-primary);
+}
+
+.post-management-actions
+  :deep(.post-management-button--delete.p-button:is(:hover, :focus, :active)) {
+  color: var(--color-accent);
+}
+
+.post-management-actions :deep(svg) {
+  width: 18px;
+  height: 18px;
 }
 
 .post-author-row {
   flex-wrap: wrap;
   gap: var(--space-2);
+}
+
+.post-author-row :deep(.runner-level-tag.p-tag) {
+  color: var(--color-surface);
+  background: var(--color-secondary);
 }
 
 .post-author {
@@ -1402,17 +2012,25 @@ onBeforeUnmount(() => {
   overflow-wrap: anywhere;
 }
 
-.post-image {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: 640px;
+.post-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
 
-  object-fit: contain;
+.post-edit-footer {
+  justify-content: space-between;
+  gap: var(--space-4);
+}
 
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+.post-edit-tools {
+  min-width: 0;
+  gap: var(--space-4);
+}
+
+.post-edit-actions {
+  flex: 0 0 auto;
+  gap: var(--space-2);
 }
 
 .post-stats {
@@ -1448,9 +2066,12 @@ onBeforeUnmount(() => {
     transform 0.2s ease;
 }
 
-.post-action:hover {
-  color: var(--color-dark);
-  background: var(--color-accent-pale);
+.post-action--like:hover {
+  color: var(--color-accent);
+}
+
+.post-action--comment:hover {
+  color: var(--color-primary);
 }
 
 .post-action:disabled {
@@ -1473,7 +2094,7 @@ onBeforeUnmount(() => {
 }
 
 .post-action--liked {
-  color: var(--color-dark);
+  color: var(--color-accent);
 }
 
 .post-action svg {
@@ -1484,8 +2105,7 @@ onBeforeUnmount(() => {
 }
 
 .post-action--active {
-  color: var(--color-dark);
-  background: var(--color-primary-pale);
+  color: var(--color-primary);
 }
 
 .comment-section {
@@ -1513,6 +2133,11 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
+}
+
+.comment-form-footer :deep(.submit-comment-button.p-button),
+.event-content :deep(.event-button.p-button) {
+  border-radius: var(--radius-full);
 }
 
 .comment-message {
@@ -1592,6 +2217,25 @@ onBeforeUnmount(() => {
   padding: 0;
 }
 
+.comment-management-actions :deep(.comment-management-button.p-button) {
+  color: var(--color-text-secondary);
+  background: transparent;
+}
+
+.comment-management-actions :deep(.comment-management-button.p-button:is(:hover, :focus, :active)) {
+  background: transparent;
+}
+
+.comment-management-actions
+  :deep(.comment-management-button--edit.p-button:is(:hover, :focus, :active)) {
+  color: var(--color-primary);
+}
+
+.comment-management-actions
+  :deep(.comment-management-button--delete.p-button:is(:hover, :focus, :active)) {
+  color: var(--color-accent);
+}
+
 .comment-management-actions :deep(svg) {
   width: 15px;
   height: 15px;
@@ -1659,18 +2303,12 @@ onBeforeUnmount(() => {
   border: 0;
   border-radius: var(--radius-sm);
 
-  transition:
-    color 0.2s ease,
-    background-color 0.2s ease;
+  transition: color 0.2s ease;
 }
 
-.comment-like-button:hover,
+.comment-like-button:hover:not(:disabled),
 .comment-like-button--liked {
-  color: var(--color-dark);
-}
-
-.comment-like-button:hover {
-  background: var(--color-accent-pale);
+  color: var(--color-accent);
 }
 
 .comment-like-button:disabled {
@@ -1871,6 +2509,7 @@ onBeforeUnmount(() => {
   margin-top: auto;
 }
 
+.submit-comment-button :deep(svg),
 .event-button :deep(svg) {
   width: 18px;
   height: 18px;
@@ -1934,15 +2573,6 @@ onBeforeUnmount(() => {
     font-size: var(--font-size-lg);
   }
 
-  .plaza-tabs :deep(.p-tablist-tab-list) {
-    gap: var(--space-3);
-  }
-
-  .plaza-tabs :deep(.p-tab) {
-    flex: 1;
-    justify-content: center;
-  }
-
   .plaza-tabs :deep(.p-tabpanels) {
     padding-top: var(--space-5);
   }
@@ -1960,8 +2590,25 @@ onBeforeUnmount(() => {
     flex-direction: column;
   }
 
+  .post-edit-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .post-edit-tools {
+    justify-content: space-between;
+  }
+
+  .post-edit-actions {
+    justify-content: flex-end;
+  }
+
   .composer-tools {
     justify-content: space-between;
+  }
+
+  .composer-preview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .composer-footer :deep(.p-button:not(.photo-button)) {

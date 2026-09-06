@@ -230,7 +230,7 @@ const handleRegister = async (event: FormSubmitEvent) => {
       <div class="segmented-control" role="group" aria-label="登入或註冊">
         <span
           class="segmented-control__indicator"
-          :class="{ 'segmented-control__indicator--register': activeTab === 'register' }"
+          :class="{ 'segmented-control__indicator--second': activeTab === 'register' }"
           aria-hidden="true"
         ></span>
 
@@ -593,63 +593,6 @@ const handleRegister = async (event: FormSubmitEvent) => {
   background: transparent;
 }
 
-.segmented-control {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  width: 100%;
-  height: var(--account-control-height);
-  overflow: hidden;
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius-full);
-  background: transparent;
-}
-
-.segmented-control__indicator {
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
-  width: 50%;
-  border-radius: var(--radius-full);
-  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-soft));
-  pointer-events: none;
-  transform: translateX(0);
-  transition: transform 300ms cubic-bezier(0.2, 0, 0, 1);
-}
-
-.segmented-control__indicator--register {
-  transform: translateX(100%);
-}
-
-.segmented-control__option {
-  position: relative;
-  z-index: 1;
-  padding: 0 var(--space-4);
-  border: 0;
-  border-radius: var(--radius-full);
-  color: var(--color-dark-light);
-  background: transparent;
-  font-family: var(--font-family-base);
-  font-size: inherit;
-  font-weight: var(--font-weight-medium);
-  letter-spacing: var(--letter-spacing-base);
-  cursor: pointer;
-  transition: color 150ms ease;
-}
-
-.segmented-control__label {
-  font-size: var(--font-size-sm);
-}
-
-.segmented-control__option[aria-pressed='true'] {
-  color: var(--color-surface);
-}
-
-.segmented-control__option:focus-visible {
-  outline: 2px solid var(--color-dark-light);
-  outline-offset: -3px;
-}
-
 .account-tabpanels {
   padding: var(--space-5) 0 0;
   background: transparent;
@@ -701,11 +644,5 @@ const handleRegister = async (event: FormSubmitEvent) => {
 .terms-option label {
   line-height: var(--line-height-heading);
   cursor: pointer;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .segmented-control__indicator {
-    transition: none;
-  }
 }
 </style>

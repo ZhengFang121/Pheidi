@@ -2,9 +2,9 @@
   <section class="layout-container event-detail-page">
     <ConfirmDialog />
 
-    <BaseButton label="返回活動情報" variant="outline" class="back-button" @click="returnToEvents">
+    <BaseButton type="button" label="返回活動情報" class="back-button" @click="returnToEvents">
       <template #icon>
-        <ArrowLeft aria-hidden="true" />
+        <ArrowLeft class="back-icon" aria-hidden="true" />
       </template>
     </BaseButton>
 
@@ -396,11 +396,17 @@ onBeforeUnmount(() => {
   padding-block: var(--space-7) var(--space-8);
 }
 
-.back-button {
+.event-detail-page :deep(.back-button.p-button) {
   align-self: flex-start;
+  line-height: var(--line-height-base);
+  border-radius: var(--radius-full);
 }
 
-.back-button :deep(svg),
+.back-icon {
+  width: 20px;
+  height: 20px;
+}
+
 .event-management-actions :deep(svg),
 .participation-button :deep(svg) {
   width: 18px;
@@ -424,7 +430,6 @@ onBeforeUnmount(() => {
   padding: var(--space-7);
   overflow: hidden;
 
-  background: var(--color-primary-pale);
   border-radius: var(--radius-xl);
 }
 
@@ -619,6 +624,10 @@ onBeforeUnmount(() => {
 
 .participation-button {
   flex: 0 0 auto;
+}
+
+.event-cta :deep(.participation-button.p-button) {
+  border-radius: var(--radius-full);
 }
 
 .event-state-card {

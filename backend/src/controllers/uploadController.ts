@@ -5,6 +5,7 @@ import multer from 'multer'
 import cloudinary from '../configs/cloudinary.js'
 
 const maximumImageSize = 5 * 1024 * 1024
+const maximumPostImageCount = 4
 
 const allowedImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
 
@@ -12,7 +13,7 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: maximumImageSize,
-    files: 1,
+    files: maximumPostImageCount,
   },
 })
 
@@ -22,6 +23,38 @@ const uploadSingleImage: RequestHandler = (req: Request, res: Response, next: Ne
       if (error.code === 'LIMIT_FILE_SIZE') {
         res.status(400).json({
           message: '圖片不能超過 5 MB',
+        })
+        return
+      }
+
+      res.status(400).json({
+        message: '圖片上傳格式不正確',
+      })
+      return
+    }
+
+    if (error) {
+      next(error)
+      return
+    }
+
+    next()
+  })
+}
+
+const uploadPostImageList: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
+  upload.array('images', maximumPostImageCount)(req, res, (error: unknown) => {
+    if (error instanceof multer.MulterError) {
+      if (error.code === 'LIMIT_FILE_SIZE') {
+        res.status(400).json({
+          message: '每張貼文圖片都不能超過 5 MB',
+        })
+        return
+      }
+
+      if (error.code === 'LIMIT_FILE_COUNT' || error.code === 'LIMIT_UNEXPECTED_FILE') {
+        res.status(400).json({
+          message: `每篇貼文最多可上傳 ${maximumPostImageCount} 張圖片`,
         })
         return
       }
@@ -164,6 +197,60 @@ export const registerPostUploadHandlers = (router: Router) => {
 
       res.status(500).json({
         message: '貼文圖片上傳失敗',
+      })
+    }
+  })
+
+  router.post('/post-images', uploadPostImageList, async (req, res) => {
+    const files = Array.isArray(req.files) ? req.files : []
+
+    if (files.length === 0) {
+      res.status(400).json({
+        message: '請選擇要上傳的貼文圖片',
+      })
+      return
+    }
+
+    if (files.some((file) => !isAllowedImage(file.mimetype))) {
+      res.status(400).json({
+        message: '貼文圖片只支援 JPG、PNG、WebP 或 GIF',
+      })
+      return
+    }
+
+    const uploadedPublicIds: string[] = []
+
+    try {
+      const results = []
+
+      for (const file of files) {
+        const result = await uploadImage(file.buffer, {
+          folder: 'pheidi/posts',
+          width: 1600,
+          height: 1600,
+        })
+
+        uploadedPublicIds.push(result.public_id)
+        results.push(result)
+      }
+
+      res.status(201).json({
+        message: '貼文圖片上傳成功',
+        images: results.map(toImageResponse),
+      })
+    } catch (error: unknown) {
+      await Promise.allSettled(
+        uploadedPublicIds.map((publicId) =>
+          cloudinary.uploader.destroy(publicId, {
+            resource_type: 'image',
+          }),
+        ),
+      )
+
+      console.error('Failed to upload post images:', error)
+
+      res.status(500).json({
+        message: '貼文圖片上傳失敗，已取消本次上傳',
       })
     }
   })

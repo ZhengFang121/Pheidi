@@ -2,8 +2,9 @@ import type { Router } from 'express'
 import { isValidObjectId, Types } from 'mongoose'
 import sanitizeHtml from 'sanitize-html'
 
+import cloudinary from '../configs/cloudinary.js'
 import Comment from '../models/Comment.js'
-import Post from '../models/Post.js'
+import Post, { type IPostImage } from '../models/Post.js'
 import User from '../models/User.js'
 import { parsePositiveInteger } from '../utils/query.js'
 
@@ -12,11 +13,22 @@ const defaultLimit = 10
 const maximumLimit = 30
 const defaultCommentLimit = 20
 const maximumCommentLimit = 50
+const maximumPostImageCount = 4
+
+interface PostImageFormData {
+  url: string
+  publicId?: string
+  width?: number
+  height?: number
+}
 
 interface PostFormData {
   content: string
-  imageUrl?: string
-  imagePublicId?: string
+  images: PostImageFormData[]
+}
+
+interface UpdatePostFormData extends PostFormData {
+  retainedImageUrls: string[]
 }
 
 type PostValidationResult =
@@ -49,6 +61,106 @@ const isValidImageUrl = (value: string) => {
   }
 }
 
+const normalizeImageDimension = (value: unknown) => {
+  if (value === undefined) return undefined
+
+  return typeof value === 'number' && Number.isInteger(value) && value > 0 && value <= 10000
+    ? value
+    : null
+}
+
+const normalizePostImage = (value: unknown): PostImageFormData | null => {
+  if (typeof value !== 'object' || value === null) return null
+
+  const { url, publicId, width, height } = value as Record<string, unknown>
+  const normalizedUrl = typeof url === 'string' ? url.trim() : ''
+  const normalizedPublicId = typeof publicId === 'string' ? publicId.trim() : ''
+  const normalizedWidth = normalizeImageDimension(width)
+  const normalizedHeight = normalizeImageDimension(height)
+
+  if (
+    !normalizedUrl ||
+    !isValidImageUrl(normalizedUrl) ||
+    !normalizedPublicId ||
+    normalizedPublicId.length > 255 ||
+    !normalizedPublicId.startsWith('pheidi/posts/') ||
+    normalizedWidth === null ||
+    normalizedHeight === null
+  ) {
+    return null
+  }
+
+  return {
+    url: normalizedUrl,
+    publicId: normalizedPublicId,
+    ...(normalizedWidth ? { width: normalizedWidth } : {}),
+    ...(normalizedHeight ? { height: normalizedHeight } : {}),
+  }
+}
+
+const toPostImages = (post: {
+  images?:
+    | Array<{
+        url: string
+        width?: number | undefined
+        height?: number | undefined
+      }>
+    | undefined
+  imageUrl?: string | undefined
+}) => {
+  if (post.images?.length) {
+    return post.images.map((image) => ({
+      url: image.url,
+      ...(image.width ? { width: image.width } : {}),
+      ...(image.height ? { height: image.height } : {}),
+    }))
+  }
+
+  return post.imageUrl ? [{ url: post.imageUrl }] : []
+}
+
+const getStoredPostImages = (post: {
+  images: IPostImage[]
+  imageUrl?: string | undefined
+  imagePublicId?: string | undefined
+}) => {
+  if (post.images.length > 0) return post.images
+
+  return post.imageUrl
+    ? [
+        {
+          url: post.imageUrl,
+          ...(post.imagePublicId ? { publicId: post.imagePublicId } : {}),
+        },
+      ]
+    : []
+}
+
+const getPostImagePublicIds = (post: {
+  images: IPostImage[]
+  imagePublicId?: string | undefined
+}) =>
+  [
+    ...post.images.flatMap((image) => (image.publicId ? [image.publicId] : [])),
+    ...(post.imagePublicId ? [post.imagePublicId] : []),
+  ].filter((publicId, index, publicIds) => publicIds.indexOf(publicId) === index)
+
+const deleteCloudinaryImages = async (publicIds: string[]) => {
+  const deletionResults = await Promise.allSettled(
+    publicIds.map((publicId) =>
+      cloudinary.uploader.destroy(publicId, {
+        resource_type: 'image',
+      }),
+    ),
+  )
+
+  deletionResults.forEach((result, index) => {
+    if (result.status === 'rejected') {
+      console.error(`Failed to delete Cloudinary image ${publicIds[index]}:`, result.reason)
+    }
+  })
+}
+
 const validatePostFormData = (body: unknown): PostValidationResult => {
   if (typeof body !== 'object' || body === null) {
     return {
@@ -57,7 +169,7 @@ const validatePostFormData = (body: unknown): PostValidationResult => {
     }
   }
 
-  const { content, imageUrl, imagePublicId } = body as Record<string, unknown>
+  const { content, images, imageUrl, imagePublicId } = body as Record<string, unknown>
 
   if (typeof content !== 'string' || !content.trim()) {
     return {
@@ -85,6 +197,30 @@ const validatePostFormData = (body: unknown): PostValidationResult => {
     }
   }
 
+  if (images !== undefined && !Array.isArray(images)) {
+    return {
+      isValid: false,
+      message: '貼文圖片資料格式不正確',
+    }
+  }
+
+  if (Array.isArray(images) && images.length > maximumPostImageCount) {
+    return {
+      isValid: false,
+      message: `每篇貼文最多可加入 ${maximumPostImageCount} 張圖片`,
+    }
+  }
+
+  const normalizedImages = Array.isArray(images) ? images.map(normalizePostImage) : []
+
+  if (normalizedImages.some((image) => image === null)) {
+    return {
+      isValid: false,
+      message: '貼文圖片資料格式不正確',
+    }
+  }
+
+  const validImages = normalizedImages.filter((image): image is PostImageFormData => image !== null)
   const normalizedImageUrl = typeof imageUrl === 'string' ? imageUrl.trim() : ''
   const normalizedImagePublicId = typeof imagePublicId === 'string' ? imagePublicId.trim() : ''
 
@@ -111,16 +247,89 @@ const validatePostFormData = (body: unknown): PostValidationResult => {
     isValid: true,
     data: {
       content: sanitizedContent,
-      ...(normalizedImageUrl
-        ? {
-            imageUrl: normalizedImageUrl,
-            ...(normalizedImagePublicId
-              ? {
-                  imagePublicId: normalizedImagePublicId,
-                }
-              : {}),
-          }
-        : {}),
+      images:
+        validImages.length > 0
+          ? validImages
+          : normalizedImageUrl
+            ? [
+                {
+                  url: normalizedImageUrl,
+                  ...(normalizedImagePublicId ? { publicId: normalizedImagePublicId } : {}),
+                },
+              ]
+            : [],
+    },
+  }
+}
+
+const validateUpdatePostFormData = (
+  body: unknown,
+): PostValidationResult & {
+  data?: UpdatePostFormData
+} => {
+  if (typeof body !== 'object' || body === null) {
+    return {
+      isValid: false,
+      message: '貼文資料格式不正確',
+    }
+  }
+
+  const { content, retainedImageUrls, newImages } = body as Record<string, unknown>
+
+  if (
+    !Array.isArray(retainedImageUrls) ||
+    retainedImageUrls.some((url) => typeof url !== 'string' || !url.trim() || !isValidImageUrl(url))
+  ) {
+    return {
+      isValid: false,
+      message: '保留的貼文圖片資料格式不正確',
+    }
+  }
+
+  const normalizedRetainedImageUrls = retainedImageUrls.map((url) => (url as string).trim())
+
+  if (new Set(normalizedRetainedImageUrls).size !== normalizedRetainedImageUrls.length) {
+    return {
+      isValid: false,
+      message: '貼文圖片不能重複',
+    }
+  }
+
+  const createValidationResult = validatePostFormData({
+    content,
+    images: newImages,
+  })
+
+  if (!createValidationResult.isValid) return createValidationResult
+
+  if (
+    normalizedRetainedImageUrls.length + createValidationResult.data.images.length >
+    maximumPostImageCount
+  ) {
+    return {
+      isValid: false,
+      message: `每篇貼文最多可加入 ${maximumPostImageCount} 張圖片`,
+    }
+  }
+
+  const allImageUrls = [
+    ...normalizedRetainedImageUrls,
+    ...createValidationResult.data.images.map((image) => image.url),
+  ]
+
+  if (new Set(allImageUrls).size !== allImageUrls.length) {
+    return {
+      isValid: false,
+      message: '貼文圖片不能重複',
+    }
+  }
+
+  return {
+    isValid: true,
+    data: {
+      content: createValidationResult.data.content,
+      images: createValidationResult.data.images,
+      retainedImageUrls: normalizedRetainedImageUrls,
     },
   }
 }
@@ -202,16 +411,7 @@ export const registerPostHandlers = (router: Router) => {
         content: validationResult.data.content,
         author: req.user.userId,
         likedBy: [],
-        ...(validationResult.data.imageUrl
-          ? {
-              imageUrl: validationResult.data.imageUrl,
-              ...(validationResult.data.imagePublicId
-                ? {
-                    imagePublicId: validationResult.data.imagePublicId,
-                  }
-                : {}),
-            }
-          : {}),
+        images: validationResult.data.images,
       })
 
       await post.populate('author', 'username')
@@ -221,7 +421,7 @@ export const registerPostHandlers = (router: Router) => {
         post: {
           id: post._id,
           content: post.content,
-          imageUrl: post.imageUrl,
+          images: toPostImages(post),
           author: post.author,
           likeCount: post.likedBy.length,
           isLiked: false,
@@ -256,7 +456,7 @@ export const registerPostHandlers = (router: Router) => {
 
       const [posts, total] = await Promise.all([
         Post.find()
-          .select('_id content imageUrl author likedBy createdAt updatedAt')
+          .select('_id content images imageUrl author likedBy createdAt updatedAt')
           .populate('author', 'username')
           .sort({
             createdAt: -1,
@@ -296,7 +496,7 @@ export const registerPostHandlers = (router: Router) => {
         posts: posts.map((post) => ({
           id: post._id,
           content: post.content,
-          imageUrl: post.imageUrl,
+          images: toPostImages(post),
           author: post.author,
           likeCount: post.likedBy.length,
           isLiked: post.likedBy.some((userId) => userId.toString() === currentUserId),
@@ -316,6 +516,202 @@ export const registerPostHandlers = (router: Router) => {
 
       res.status(500).json({
         message: '取得跑友動態失敗',
+      })
+    }
+  })
+
+  // 編輯自己的貼文
+  router.patch('/:postId', async (req, res) => {
+    try {
+      if (!req.user) {
+        res.status(401).json({
+          message: '請先登入',
+        })
+        return
+      }
+
+      const { postId } = req.params
+
+      if (!postId || !isValidObjectId(postId)) {
+        res.status(400).json({
+          message: '貼文 ID 格式不正確',
+        })
+        return
+      }
+
+      const post = await Post.findById(postId).select(
+        'content images imageUrl imagePublicId author likedBy createdAt updatedAt',
+      )
+
+      if (!post) {
+        res.status(404).json({
+          message: '找不到貼文',
+        })
+        return
+      }
+
+      if (post.author.toString() !== req.user.userId) {
+        res.status(403).json({
+          message: '只能編輯自己的貼文',
+        })
+        return
+      }
+
+      const validationResult = validateUpdatePostFormData(req.body)
+
+      if (!validationResult.isValid || !validationResult.data) {
+        res.status(400).json({
+          message: validationResult.isValid ? '貼文資料格式不正確' : validationResult.message,
+        })
+        return
+      }
+
+      const storedImages = getStoredPostImages(post)
+      const storedImageByUrl = new Map(storedImages.map((image) => [image.url, image]))
+      const hasUnknownRetainedImage = validationResult.data.retainedImageUrls.some(
+        (url) => !storedImageByUrl.has(url),
+      )
+
+      if (hasUnknownRetainedImage) {
+        res.status(400).json({
+          message: '只能保留原貼文中的圖片',
+        })
+        return
+      }
+
+      const storedImagePublicIds = new Set(getPostImagePublicIds(post))
+      const hasExistingImageSubmittedAsNew = validationResult.data.images.some(
+        (image) =>
+          storedImageByUrl.has(image.url) ||
+          (image.publicId ? storedImagePublicIds.has(image.publicId) : false),
+      )
+
+      if (hasExistingImageSubmittedAsNew) {
+        res.status(400).json({
+          message: '原貼文圖片必須透過保留圖片清單送出',
+        })
+        return
+      }
+
+      const retainedImages = validationResult.data.retainedImageUrls.flatMap((url) => {
+        const image = storedImageByUrl.get(url)
+
+        return image ? [image] : []
+      })
+      const retainedImageUrlSet = new Set(validationResult.data.retainedImageUrls)
+      const retainedImagePublicIds = new Set(
+        storedImages.flatMap((image) =>
+          image.publicId && retainedImageUrlSet.has(image.url) ? [image.publicId] : [],
+        ),
+      )
+      const removedImagePublicIds = getPostImagePublicIds(post).filter(
+        (publicId) => !retainedImagePublicIds.has(publicId),
+      )
+      const commentCount = await Comment.countDocuments({ post: postId })
+
+      post.content = validationResult.data.content
+      post.images = [...retainedImages, ...validationResult.data.images]
+      post.set('imageUrl', undefined)
+      post.set('imagePublicId', undefined)
+
+      await post.save()
+      await post.populate('author', 'username')
+
+      if (removedImagePublicIds.length > 0) {
+        await deleteCloudinaryImages(removedImagePublicIds)
+      }
+
+      res.status(200).json({
+        message: '貼文更新成功',
+        post: {
+          id: post._id,
+          content: post.content,
+          images: toPostImages(post),
+          author: post.author,
+          likeCount: post.likedBy.length,
+          isLiked: post.likedBy.some((userId) => userId.toString() === req.user?.userId),
+          commentCount,
+          createdAt: post.createdAt,
+          updatedAt: post.updatedAt,
+        },
+      })
+    } catch (error: unknown) {
+      console.error('Failed to update post:', error)
+
+      res.status(500).json({
+        message: '更新貼文失敗',
+      })
+    }
+  })
+
+  // 刪除自己的貼文及其留言、按讚與圖片
+  router.delete('/:postId', async (req, res) => {
+    try {
+      if (!req.user) {
+        res.status(401).json({
+          message: '請先登入',
+        })
+        return
+      }
+
+      const { postId } = req.params
+
+      if (!postId || !isValidObjectId(postId)) {
+        res.status(400).json({
+          message: '貼文 ID 格式不正確',
+        })
+        return
+      }
+
+      const post = await Post.findById(postId).select('images.publicId imagePublicId author')
+
+      if (!post) {
+        res.status(404).json({
+          message: '找不到貼文',
+        })
+        return
+      }
+
+      if (post.author.toString() !== req.user.userId) {
+        res.status(403).json({
+          message: '只能刪除自己的貼文',
+        })
+        return
+      }
+
+      const currentUserId = req.user.userId
+      const imagePublicIds = getPostImagePublicIds(post)
+      const session = await Post.startSession()
+
+      try {
+        await session.withTransaction(async () => {
+          const deleteResult = await Post.deleteOne({
+            _id: postId,
+            author: currentUserId,
+          }).session(session)
+
+          if (deleteResult.deletedCount !== 1) {
+            throw new Error('POST_DELETE_CONFLICT')
+          }
+
+          await Comment.deleteMany({ post: postId }).session(session)
+        })
+      } finally {
+        await session.endSession()
+      }
+
+      if (imagePublicIds.length > 0) {
+        await deleteCloudinaryImages(imagePublicIds)
+      }
+
+      res.status(200).json({
+        message: '貼文刪除成功',
+      })
+    } catch (error: unknown) {
+      console.error('Failed to delete post:', error)
+
+      res.status(500).json({
+        message: '刪除貼文失敗',
       })
     }
   })
