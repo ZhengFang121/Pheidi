@@ -6,7 +6,7 @@
       <router-view />
     </main>
 
-    <div v-if="route.name !== 'home'" class="footer-transition" aria-hidden="true"></div>
+    <div class="footer-transition" aria-hidden="true"></div>
 
     <AppFooter />
 
@@ -29,7 +29,17 @@ const route = useRoute()
   margin-top: calc(-1 * var(--app-header-height));
 }
 
+.main-layout .page-content > :deep(*) {
+  padding-bottom: 0;
+}
+
 .footer-transition {
-  height: clamp(var(--space-8), 10vw, calc(var(--space-8) + var(--space-8)));
+  height: var(--space-7);
+}
+
+@media (max-width: 640px) {
+  .footer-transition {
+    height: var(--space-6);
+  }
 }
 </style>

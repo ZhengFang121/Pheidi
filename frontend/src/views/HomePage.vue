@@ -256,7 +256,7 @@ onUnmounted(() => {
 }
 
 .home-progress {
-  padding: var(--space-7) 0 calc(var(--space-8) + var(--space-8));
+  padding: var(--space-7) 0 0;
 }
 
 @media (max-width: 600px) {
@@ -266,7 +266,7 @@ onUnmounted(() => {
   }
 
   .home-progress {
-    padding: var(--space-5) 0 calc(var(--space-5) + var(--space-4));
+    padding: var(--space-5) 0 0;
   }
 }
 </style>

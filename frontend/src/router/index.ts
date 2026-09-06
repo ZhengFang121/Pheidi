@@ -29,6 +29,10 @@ import UserManagementPage from '@/views/admin/UserManagementPage.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
 
+  scrollBehavior(_to, _from, savedPosition) {
+    return savedPosition ?? { top: 0 }
+  },
+
   routes: [
     /*
      * Intro 與登入相關頁面放在 Layout 外面，

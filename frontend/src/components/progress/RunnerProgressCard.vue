@@ -40,7 +40,6 @@ interface RequirementPresentation {
   label: string
   unit: string
   icon: Component
-  tone: 'primary' | 'secondary' | 'accent'
 }
 
 interface VisibleRequirement extends RequirementPresentation {
@@ -52,22 +51,20 @@ const avatarLoadFailed = ref(false)
 const runnerAvatarUrl = '/images/profile%20photo/runner.png'
 
 const requirementPresentations: RequirementPresentation[] = [
-  { key: 'runCount', label: '跑步次數', unit: '次', icon: Footprints, tone: 'primary' },
-  { key: 'totalDistance', label: '累積距離', unit: 'km', icon: Route, tone: 'secondary' },
+  { key: 'runCount', label: '跑步次數', unit: '次', icon: Footprints },
+  { key: 'totalDistance', label: '累積距離', unit: 'km', icon: Route },
   {
     key: 'distinctLocationCount',
     label: '不同地點類型',
     unit: '種',
     icon: MapPinned,
-    tone: 'secondary',
   },
-  { key: 'badgeCount', label: '徽章數量', unit: '枚', icon: Medal, tone: 'accent' },
+  { key: 'badgeCount', label: '徽章數量', unit: '枚', icon: Medal },
   {
     key: 'pheidiMission',
     label: '菲迪限定任務',
     unit: '個',
     icon: Sparkles,
-    tone: 'accent',
   },
 ]
 
@@ -143,7 +140,7 @@ const openStation = () => router.push({ name: 'station' })
         </header>
 
         <div class="journey-player-card__panel">
-          <div class="journey-player-card__avatar">
+          <div class="journey-player-card__avatar base-card base-card--glass">
             <img
               v-if="!avatarLoadFailed"
               :src="runnerAvatarUrl"
@@ -160,7 +157,9 @@ const openStation = () => router.push({ name: 'station' })
 
           <div class="journey-player-card__details">
             <p class="journey-player-card__name">{{ displayName }}</p>
-            <Tag :value="currentLevelLabel" rounded class="journey-player-card__level" />
+            <BaseCard as="span" class="journey-player-card__level">
+              {{ currentLevelLabel }}
+            </BaseCard>
           </div>
         </div>
       </div>
@@ -202,10 +201,6 @@ const openStation = () => router.push({ name: 'station' })
               v-for="requirement in visibleRequirements"
               :key="requirement.key"
               class="journey-requirement"
-              :class="[
-                `journey-requirement--${requirement.tone}`,
-                { 'journey-requirement--complete': requirement.progress.isMet },
-              ]"
             >
               <span class="journey-requirement__icon" aria-hidden="true">
                 <component :is="requirement.icon" :size="21" />
@@ -267,7 +262,7 @@ const openStation = () => router.push({ name: 'station' })
 
         <footer class="journey-progress-card__footer">
           <BaseButton
-            label="查看我的足跡"
+            label="查看足跡"
             variant="primary"
             class="journey-progress-card__cta"
             @click="openStation"
@@ -282,9 +277,9 @@ const openStation = () => router.push({ name: 'station' })
 .journey-overview {
   display: grid;
   width: 100%;
-  grid-template-columns: minmax(220px, 0.7fr) minmax(0, 2fr);
+  grid-template-columns: minmax(220px, calc(33.333333% - var(--space-2))) minmax(0, 1fr);
   align-items: stretch;
-  gap: var(--space-5);
+  gap: var(--space-7);
 }
 
 .journey-card {
@@ -306,8 +301,21 @@ const openStation = () => router.push({ name: 'station' })
 
 .journey-player-card__content {
   --journey-avatar-size: clamp(148px, 14vw, 192px);
+  --journey-player-content-shift: var(--space-2);
 
+  position: relative;
+  isolation: isolate;
+  padding-top: var(--space-4);
   justify-content: flex-start;
+}
+
+.journey-player-card__content::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--color-secondary);
+  border-radius: var(--radius-lg);
+  content: '';
 }
 
 .journey-player-card__loading {
@@ -321,7 +329,14 @@ const openStation = () => router.push({ name: 'station' })
   line-height: var(--line-height-heading);
 }
 
+.journey-player-card__heading,
+.journey-player-card__avatar,
+.journey-player-card__details {
+  top: var(--journey-player-content-shift);
+}
+
 .journey-player-card__heading {
+  position: relative;
   display: grid;
   gap: var(--space-1);
 }
@@ -332,14 +347,14 @@ const openStation = () => router.push({ name: 'station' })
 }
 
 .journey-player-card__heading p {
-  color: var(--color-secondary);
+  color: var(--color-secondary-pale);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--letter-spacing-base);
 }
 
 .journey-player-card__heading h2 {
-  color: var(--color-secondary);
+  color: var(--color-secondary-pale);
   font-size: var(--font-size-md);
   line-height: var(--line-height-heading);
 }
@@ -348,17 +363,17 @@ const openStation = () => router.push({ name: 'station' })
   position: relative;
   display: flex;
   width: 100%;
-  margin-top: calc(var(--journey-avatar-size) / 2 + var(--space-5));
+  margin-top: calc(var(--journey-avatar-size) / 2 + var(--space-1));
   padding: calc(var(--journey-avatar-size) / 2 + var(--space-5)) var(--space-4) var(--space-5);
   flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--color-secondary);
   border-radius: var(--radius-lg);
 }
 
 .journey-player-card__details {
+  position: relative;
   display: flex;
   width: 100%;
   flex-direction: column;
@@ -368,7 +383,6 @@ const openStation = () => router.push({ name: 'station' })
 
 .journey-player-card__avatar {
   position: absolute;
-  top: 0;
   left: 50%;
   display: grid;
   width: var(--journey-avatar-size);
@@ -377,13 +391,13 @@ const openStation = () => router.push({ name: 'station' })
   overflow: hidden;
   place-items: center;
   color: var(--color-secondary);
-  background: var(--color-surface);
-  border: 4px solid var(--color-secondary);
   border-radius: 50%;
   transform: translate(-50%, -50%);
 }
 
 .journey-player-card__avatar img {
+  position: relative;
+  top: calc(var(--journey-player-content-shift) * -1);
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -399,26 +413,26 @@ const openStation = () => router.push({ name: 'station' })
   color: var(--color-secondary-pale);
   font-size: clamp(var(--font-size-md), 2.2vw, var(--font-size-lg));
   font-weight: var(--font-weight-bold);
+  font-kerning: none;
   letter-spacing: var(--letter-spacing-wide);
   line-height: var(--line-height-heading);
   text-transform: uppercase;
 }
 
-.journey-player-card__level.p-tag,
+.journey-player-card__level,
 .journey-progress-card__level.p-tag {
   padding: var(--space-2) var(--space-4);
   color: var(--color-text);
   font-weight: var(--font-weight-medium);
-  background: color-mix(in srgb, var(--color-surface) 68%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-secondary) 44%, transparent);
   border-radius: var(--radius-full);
 }
 
-.journey-player-card__level.p-tag {
+.journey-player-card__level {
+  display: inline-flex;
   margin-top: var(--space-4);
   width: 72%;
+  align-items: center;
   justify-content: center;
-  background: var(--color-surface);
 }
 
 .journey-progress-card {
@@ -434,9 +448,10 @@ const openStation = () => router.push({ name: 'station' })
   gap: var(--space-4);
 }
 
-.journey-progress-card__level {
+.journey-progress-card__level.p-tag {
   flex: 0 0 auto;
-  background: var(--color-secondary-pale);
+  border: 1px solid color-mix(in srgb, var(--color-secondary) 44%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 68%, transparent);
 }
 
 .journey-progress-card__loading,
@@ -463,8 +478,8 @@ const openStation = () => router.push({ name: 'station' })
 }
 
 .journey-requirement {
-  --requirement-color: var(--color-primary);
-  --requirement-background: var(--color-primary-pale);
+  --requirement-color: var(--color-secondary);
+  --requirement-background: var(--color-secondary-pale);
   display: grid;
   min-width: 0;
   padding: var(--space-4);
@@ -473,22 +488,6 @@ const openStation = () => router.push({ name: 'station' })
   gap: var(--space-4);
   background: color-mix(in srgb, var(--color-surface) 66%, transparent);
   border-radius: var(--radius-lg);
-}
-
-.journey-requirement--secondary {
-  --requirement-color: var(--color-secondary);
-  --requirement-background: var(--color-secondary-pale);
-}
-
-.journey-requirement--accent {
-  --requirement-color: var(--color-accent);
-  --requirement-background: var(--color-accent-pale);
-}
-
-.journey-requirement--complete,
-.journey-requirement--static {
-  --requirement-color: var(--color-text-secondary);
-  --requirement-background: var(--color-background);
 }
 
 .journey-requirement__icon {
@@ -622,8 +621,15 @@ const openStation = () => router.push({ name: 'station' })
 }
 
 .journey-progress-card__footer :deep(.journey-progress-card__cta.base-button) {
+  min-width: calc(var(--space-8) + var(--space-8) + var(--space-6));
   min-height: 44px;
   border-radius: var(--radius-full);
+}
+
+@media (max-width: 1100px), (max-height: 820px) {
+  .journey-overview {
+    gap: var(--space-5);
+  }
 }
 
 @media (max-width: 900px) {
