@@ -2,9 +2,10 @@
   <section class="layout-container plaza-page">
     <ConfirmDialog />
 
-    <CreateActivityDialog
-      v-model:visible="isCreateActivityDialogOpen"
-      @created="handleActivityCreated"
+    <ActivityFormDialog
+      v-model:visible="isActivityFormDialogOpen"
+      mode="create"
+      @saved="handleActivityCreated"
     />
 
     <PostImageViewer
@@ -669,7 +670,7 @@
                   label="發起活動"
                   icon-pos="right"
                   class="create-event-button"
-                  @click="isCreateActivityDialogOpen = true"
+                  @click="isActivityFormDialogOpen = true"
                 >
                   <template #icon>
                     <Plus aria-hidden="true" />
@@ -825,7 +826,7 @@ import { useConfirm } from 'primevue/useconfirm'
 
 import BaseCard from '@/components/base/BaseCard.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
-import CreateActivityDialog from '@/components/events/CreateActivityDialog.vue'
+import ActivityFormDialog from '@/components/events/ActivityFormDialog.vue'
 import PostImageGrid from '@/components/plaza/PostImageGrid.vue'
 import PostImageViewer from '@/components/plaza/PostImageViewer.vue'
 import { getEvents } from '@/services/events'
@@ -920,7 +921,7 @@ const postActionErrorMessage = ref('')
 const pendingPostLikeIds = ref(new Set<string>())
 const isEventLoading = ref(false)
 const eventErrorMessage = ref('')
-const isCreateActivityDialogOpen = ref(false)
+const isActivityFormDialogOpen = ref(false)
 const posts = ref<PlazaPostView[]>([])
 const totalPosts = ref(0)
 const isPostImageViewerOpen = ref(false)

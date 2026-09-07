@@ -211,7 +211,7 @@
       <BaseButton
         type="submit"
         :icon="dialog ? 'pi pi-check' : undefined"
-        :label="isEditMode ? '儲存活動' : '發起活動'"
+        :label="isEditMode ? '儲存' : '發起活動'"
         :loading="isSubmitting"
         :disabled="isSubmitting"
       />
@@ -245,12 +245,14 @@ type FieldName =
 
 const props = withDefaults(
   defineProps<{
+    mode?: 'create' | 'edit'
     initialEvent?: RunningEvent
     isSubmitting?: boolean
     errorMessage?: string
     dialog?: boolean
   }>(),
   {
+    mode: 'create',
     initialEvent: undefined,
     isSubmitting: false,
     errorMessage: '',
@@ -268,9 +270,9 @@ const initialEnd = props.initialEvent ? new Date(props.initialEvent.endAt) : nul
 
 const title = ref(props.initialEvent?.title ?? '')
 const summary = ref(props.initialEvent?.summary ?? '')
-const eventDate = ref<Date | null>(initialStart)
-const startTime = ref<Date | null>(initialStart)
-const endTime = ref<Date | null>(initialEnd)
+const eventDate = ref<Date | null>(initialStart ? new Date(initialStart) : null)
+const startTime = ref<Date | null>(initialStart ? new Date(initialStart) : null)
+const endTime = ref<Date | null>(initialEnd ? new Date(initialEnd) : null)
 const location = ref(props.initialEvent?.location ?? '')
 const distance = ref(props.initialEvent?.distance ?? '')
 const capacity = ref<number | null>(props.initialEvent?.capacity ?? null)
@@ -281,7 +283,7 @@ const errors = reactive<Partial<Record<FieldName, string>>>({})
 const minimumDate = new Date()
 minimumDate.setHours(0, 0, 0, 0)
 
-const isEditMode = computed(() => Boolean(props.initialEvent))
+const isEditMode = computed(() => props.mode === 'edit')
 
 const describedBy = (field: FieldName) => (errors[field] ? `event-${field}-error` : undefined)
 

@@ -2,6 +2,14 @@
   <section class="layout-container event-detail-page">
     <ConfirmDialog />
 
+    <ActivityFormDialog
+      v-model:visible="activityFormVisible"
+      :mode="activityFormMode"
+      :activity="editingActivity"
+      @saved="handleActivitySaved"
+      @update:visible="handleActivityFormVisibleChange"
+    />
+
     <BaseButton type="button" label="返回活動情報" class="back-button" @click="returnToEvents">
       <template #icon>
         <ArrowLeft class="back-icon" aria-hidden="true" />
@@ -245,6 +253,7 @@ import { useConfirm } from 'primevue/useconfirm'
 
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
+import ActivityFormDialog from '@/components/events/ActivityFormDialog.vue'
 import { deleteEvent, getEventById, joinEvent, leaveEvent } from '@/services/events'
 import { useAuthStore } from '@/stores/auth'
 import type { RunningEvent } from '@/types/event'
@@ -270,6 +279,9 @@ const isParticipationPending = ref(false)
 const isDeleting = ref(false)
 const errorState = ref<ErrorState>(null)
 const actionError = ref('')
+const activityFormVisible = ref(false)
+const activityFormMode = ref<'create' | 'edit'>('edit')
+const editingActivity = ref<RunningEvent | null>(null)
 const titleHeading = ref<HTMLHeadingElement | null>(null)
 let requestSequence = 0
 
@@ -377,7 +389,17 @@ function returnToEvents() {
 function editEvent() {
   if (!event.value) return
 
-  void router.push({ name: 'event-edit', params: { eventId: event.value.id } })
+  activityFormMode.value = 'edit'
+  editingActivity.value = event.value
+  activityFormVisible.value = true
+}
+
+function handleActivitySaved(updatedEvent: RunningEvent) {
+  event.value = updatedEvent
+}
+
+function handleActivityFormVisibleChange(visible: boolean) {
+  if (!visible) editingActivity.value = null
 }
 
 async function handleDeleteEvent() {
