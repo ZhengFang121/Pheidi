@@ -10,7 +10,12 @@
       </div>
 
       <div class="page-actions">
-        <BaseButton type="button" label="新增文章" @click="goToCreateArticle" />
+        <BaseButton
+          type="button"
+          label="新增文章"
+          icon="pi pi-plus"
+          @click="goToCreateArticle"
+        />
       </div>
     </div>
 
@@ -131,6 +136,12 @@
             <Tag
               :value="getStatusLabel(data.status)"
               :severity="data.status === 'published' ? 'success' : 'secondary'"
+              :class="[
+                'article-status-tag',
+                data.status === 'published'
+                  ? 'article-status-tag--published'
+                  : 'article-status-tag--draft',
+              ]"
             />
           </template>
         </Column>
@@ -159,11 +170,11 @@
         <Column header="操作" style="width: 300px">
           <template #body="{ data }">
             <div class="article-actions">
-              <BaseButton
+              <Button
                 type="button"
                 label="編輯"
                 icon="pi pi-pencil"
-                variant="outline"
+                outlined
                 size="small"
                 class="article-action-button"
                 @click="goToEditArticle(data.id)"
@@ -176,7 +187,12 @@
                 :severity="data.status === 'published' ? 'warn' : 'success'"
                 outlined
                 size="small"
-                class="article-action-button"
+                :class="[
+                  'article-action-button',
+                  data.status === 'published'
+                    ? 'article-action-button--to-draft'
+                    : 'article-action-button--publish',
+                ]"
                 :loading="updatingArticleStatusId === data.id"
                 :disabled="updatingArticleStatusId !== null && updatingArticleStatusId !== data.id"
                 @click="confirmArticleStatusChange(data)"
@@ -189,7 +205,7 @@
                 severity="danger"
                 outlined
                 size="small"
-                class="article-action-button"
+                class="article-action-button article-action-button--delete"
                 :loading="deletingArticleId === data.id"
                 :disabled="deletingArticleId !== null && deletingArticleId !== data.id"
                 @click="confirmDeleteArticle(data)"
@@ -340,7 +356,8 @@ const confirmArticleStatusChange = (article: AdminArticle) => {
     icon: 'pi pi-exclamation-triangle',
     acceptLabel: isPublished ? '改為草稿' : '確認發布',
     rejectLabel: '取消',
-    acceptClass: isPublished ? 'p-button-warn' : 'p-button-success',
+    acceptClass: 'admin-confirm-button',
+    rejectClass: 'admin-confirm-button',
     accept: () => {
       void updateArticleStatus(article)
     },
@@ -375,7 +392,8 @@ const confirmDeleteArticle = (article: AdminArticle) => {
     icon: 'pi pi-exclamation-triangle',
     acceptLabel: '確認刪除',
     rejectLabel: '取消',
-    acceptClass: 'p-button-danger',
+    acceptClass: 'admin-confirm-button',
+    rejectClass: 'admin-confirm-button',
     accept: () => {
       void deleteArticle(article)
     },
@@ -470,6 +488,16 @@ onMounted(() => {
   width: 100%;
 }
 
+.filter-control,
+.filter-actions :deep(.p-button) {
+  height: calc(var(--space-6) + var(--space-1));
+  min-height: calc(var(--space-6) + var(--space-1));
+}
+
+.filter-actions :deep(.p-button) {
+  padding-block: 0;
+}
+
 .filter-actions {
   display: flex;
   gap: var(--space-2);
@@ -499,8 +527,68 @@ onMounted(() => {
   gap: var(--space-2);
 }
 
-.article-action-button {
+:deep(.article-status-tag.p-tag),
+:deep(.article-action-button.p-button) {
+  height: var(--space-6);
+  min-height: var(--space-6);
+  padding-block: 0;
+  border-radius: var(--radius-full);
+}
+
+:deep(.article-status-tag.p-tag) {
+  justify-content: center;
+  width: calc(var(--space-8) + var(--space-2));
+  padding-inline: var(--space-3);
   white-space: nowrap;
+}
+
+:deep(.article-status-tag--published.p-tag) {
+  color: var(--color-surface);
+  background: var(--color-secondary);
+}
+
+:deep(.article-status-tag--draft.p-tag) {
+  color: var(--color-surface);
+  background: var(--color-text-secondary);
+}
+
+:deep(.article-action-button.p-button) {
+  justify-content: center;
+  width: calc(var(--space-8) + var(--space-6));
+  white-space: nowrap;
+}
+
+:deep(.article-action-button--publish.p-button) {
+  color: var(--color-secondary);
+  border-color: var(--color-secondary);
+}
+
+:deep(.article-action-button--to-draft.p-button) {
+  color: var(--color-text-secondary);
+  border-color: var(--color-text-secondary);
+}
+
+:deep(.article-action-button--delete.p-button) {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+:deep(.article-action-button--publish.p-button:not(:disabled):is(:hover, :focus-visible)) {
+  color: color-mix(in srgb, var(--color-secondary) 72%, var(--color-dark));
+  background: color-mix(in srgb, var(--color-secondary) 12%, transparent);
+  border-color: color-mix(in srgb, var(--color-secondary) 72%, var(--color-dark));
+}
+
+:deep(.article-action-button--to-draft.p-button:not(:disabled):is(:hover, :focus-visible)) {
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-text-secondary) 10%, transparent);
+  border-color: var(--color-text);
+}
+
+:deep(.article-action-button--delete.p-button:not(:disabled):is(:hover, :focus-visible)) {
+  color: var(--color-accent);
+  background: var(--color-accent-pale);
+  border-color: var(--color-accent);
 }
 
 .table-empty {

@@ -80,7 +80,7 @@
           <template #body="{ data }">
             <Tag
               :value="data.role === 'admin' ? '管理員' : '玩家'"
-              :severity="data.role === 'admin' ? 'warn' : 'secondary'"
+              :class="data.role === 'admin' ? 'role-tag--admin' : 'role-tag--player'"
             />
           </template>
         </Column>
@@ -105,6 +105,7 @@
               :severity="data.role === 'admin' ? 'warn' : undefined"
               size="small"
               outlined
+              class="role-action-button"
               :loading="updatingUserId === data.id"
               :disabled="data.id === authStore.user?.id"
               :title="data.id === authStore.user?.id ? '不能修改自己的管理員角色' : undefined"
@@ -283,6 +284,8 @@ const confirmRoleChange = (user: AdminUser) => {
     icon: 'pi pi-exclamation-triangle',
     acceptLabel: '確認變更',
     rejectLabel: '取消',
+    acceptClass: 'admin-confirm-button',
+    rejectClass: 'admin-confirm-button',
     accept: () => {
       void updateUserRole(user)
     },
@@ -362,6 +365,30 @@ onMounted(() => {
 
 .search-input {
   width: min(100%, 420px);
+}
+
+.search-input,
+.search-controls :deep(.p-button) {
+  height: calc(var(--space-6) + var(--space-1));
+  min-height: calc(var(--space-6) + var(--space-1));
+}
+
+.search-controls :deep(.p-button) {
+  padding-block: 0;
+}
+
+:deep(.role-tag--player.p-tag),
+:deep(.role-tag--admin.p-tag),
+:deep(.role-action-button.p-button) {
+  height: var(--space-6);
+  min-height: var(--space-6);
+  padding-block: 0;
+}
+
+:deep(.role-action-button.p-button) {
+  justify-content: center;
+  width: calc(var(--space-8) + var(--space-6));
+  border-radius: var(--radius-full);
 }
 
 .table-empty {

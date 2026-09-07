@@ -7,7 +7,7 @@
         <p class="page-description">修改跑者學院文章內容，儲存後會保留目前的發布狀態。</p>
       </div>
 
-      <BaseButton type="button" label="返回文章列表" variant="outline" @click="goBack" />
+      <BaseButton type="button" label="返回文章列表" icon="pi pi-arrow-left" @click="goBack" />
     </div>
 
     <Message v-if="isLoading" severity="secondary" :closable="false"> 正在載入文章資料…… </Message>

@@ -24,8 +24,12 @@
     transform 200ms ease;
 }
 
-.p-button {
-  border-radius: var(--radius-full);
+.base-button.p-button {
+  border-radius: var(--radius-full) !important;
+}
+
+.admin-confirm-button.p-button {
+  border-radius: var(--radius-full) !important;
 }
 
 .base-button__content {
@@ -44,6 +48,25 @@
 .base-button.p-button-sm {
   padding: var(--space-2) var(--space-4);
   font-size: var(--font-size-sm);
+}
+
+/* Shared card CTA dimensions, based on the homepage journey action. */
+
+.base-button.card-cta {
+  display: inline-flex;
+  min-width: calc(var(--space-8) + var(--space-8) + var(--space-6));
+  min-height: 44px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-full);
+}
+
+@media (max-width: 600px) {
+  .base-button.card-cta {
+    width: 100%;
+  }
 }
 
 /* Expandable icon action */
@@ -168,6 +191,50 @@
 .base-icon-action:active {
   box-shadow: var(--shadow-sm);
   transform: translateY(0) scale(0.97);
+}
+
+/* Compact edit/delete actions shared by record and comment management. */
+
+.management-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.management-actions .p-button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+}
+
+.management-button.p-button {
+  color: var(--color-text-secondary) !important;
+  background: transparent !important;
+}
+
+.management-button.management-button--edit.p-button:is(
+    :hover,
+    :focus,
+    :focus-visible,
+    :active
+  ) {
+  color: var(--color-primary) !important;
+  background: transparent !important;
+}
+
+.management-button.management-button--delete.p-button:is(
+    :hover,
+    :focus,
+    :focus-visible,
+    :active
+  ) {
+  color: var(--color-accent) !important;
+  background: transparent !important;
+}
+
+.management-actions svg {
+  width: 15px;
+  height: 15px;
 }
 
 /* Primary */

@@ -129,7 +129,12 @@
                       {{ data.images.length }} 張
                     </span>
                   </div>
-                  <Tag v-else value="無圖片" severity="secondary" />
+                  <Tag
+                    v-else
+                    value="無圖片"
+                    severity="secondary"
+                    class="plaza-image-status-tag"
+                  />
                 </template>
               </Column>
 
@@ -151,6 +156,7 @@
                     severity="danger"
                     outlined
                     size="small"
+                    class="plaza-delete-button"
                     :loading="deletingPostIds.has(data.id)"
                     @click="confirmDeletePost(data)"
                   />
@@ -264,6 +270,7 @@
                     severity="danger"
                     outlined
                     size="small"
+                    class="plaza-delete-button"
                     :loading="deletingCommentIds.has(data.id)"
                     @click="confirmDeleteComment(data)"
                   />
@@ -549,8 +556,9 @@ const confirmDeletePost = (post: AdminPlazaPost) => {
     message: '刪除貼文會連同其所有留言一起刪除，且無法復原。確定要繼續嗎？',
     icon: 'pi pi-exclamation-triangle',
     rejectLabel: '取消',
-    acceptLabel: '刪除貼文',
-    acceptClass: 'p-button-danger',
+    acceptLabel: '確認刪除',
+    acceptClass: 'admin-confirm-button',
+    rejectClass: 'admin-confirm-button',
     accept: () => void deletePost(post),
   })
 }
@@ -562,7 +570,8 @@ const confirmDeleteComment = (comment: AdminPlazaComment) => {
     icon: 'pi pi-exclamation-triangle',
     rejectLabel: '取消',
     acceptLabel: '刪除留言',
-    acceptClass: 'p-button-danger',
+    acceptClass: 'admin-confirm-button',
+    rejectClass: 'admin-confirm-button',
     accept: () => void deleteComment(comment),
   })
 }
@@ -639,6 +648,16 @@ onMounted(() => {
   width: 100%;
 }
 
+.filter-control,
+.filter-actions :deep(.p-button) {
+  height: calc(var(--space-6) + var(--space-1));
+  min-height: calc(var(--space-6) + var(--space-1));
+}
+
+.filter-actions :deep(.p-button) {
+  padding-block: 0;
+}
+
 .filter-actions {
   display: flex;
   gap: var(--space-2);
@@ -674,6 +693,35 @@ onMounted(() => {
   font-size: var(--font-size-xs);
   line-height: var(--line-height-tight);
   letter-spacing: normal;
+}
+
+:deep(.plaza-image-status-tag.p-tag),
+:deep(.plaza-delete-button.p-button) {
+  height: var(--space-6);
+  min-height: var(--space-6);
+  padding-block: 0;
+  border-radius: var(--radius-full);
+}
+
+:deep(.plaza-image-status-tag.p-tag) {
+  justify-content: center;
+  width: calc(var(--space-8) + var(--space-2));
+  padding-inline: var(--space-3);
+  color: var(--color-surface);
+  background: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+:deep(.plaza-delete-button.p-button) {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  white-space: nowrap;
+}
+
+:deep(.plaza-delete-button.p-button:not(:disabled):is(:hover, :focus-visible)) {
+  color: var(--color-accent);
+  background: var(--color-accent-pale);
+  border-color: var(--color-accent);
 }
 
 .post-context {

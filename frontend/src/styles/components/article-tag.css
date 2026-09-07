@@ -2,3 +2,30 @@
   color: var(--color-surface);
   background: var(--color-secondary);
 }
+
+.role-tag--player.p-tag,
+.role-tag--admin.p-tag {
+  justify-content: center;
+  width: var(--space-8);
+  border-radius: var(--radius-full);
+}
+
+.role-tag--player.p-tag {
+  color: var(--color-surface);
+  background: var(--color-primary);
+}
+
+.role-tag--admin.p-tag {
+  color: var(--color-surface);
+  background: var(--color-accent);
+}
+
+.event-status-tag--available.p-tag {
+  color: var(--color-surface) !important;
+  background: var(--color-secondary) !important;
+}
+
+.event-participation-tag.p-tag {
+  color: var(--color-surface) !important;
+  background: var(--color-accent) !important;
+}

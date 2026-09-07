@@ -68,51 +68,19 @@
       </BaseCard>
     </div>
 
-    <BaseCard as="section" class="latest-users-panel">
-      <div class="panel-heading">
-        <div>
-          <p class="panel-eyebrow">LATEST USERS</p>
-          <h3 class="panel-title">最新註冊使用者</h3>
-        </div>
+    <div v-if="isLoading" class="trend-grid" aria-label="趨勢資料載入中">
+      <Skeleton
+        v-for="index in 3"
+        :key="index"
+        width="100%"
+        height="25rem"
+        border-radius="var(--radius-lg)"
+      />
+    </div>
 
-        <RouterLink to="/admin/users" class="view-all-link">
-          查看全部玩家
-          <ArrowRight class="view-all-icon" aria-hidden="true" />
-        </RouterLink>
-      </div>
-
-      <DataTable
-        :value="latestUsers"
-        :loading="isLoading"
-        striped-rows
-        scrollable
-        table-style="min-width: 640px"
-        class="latest-users-table"
-      >
-        <template #empty>
-          <div class="table-empty">目前還沒有使用者資料</div>
-        </template>
-
-        <Column field="username" header="跑者名稱" />
-
-        <Column field="email" header="Email" />
-
-        <Column field="role" header="身分">
-          <template #body="{ data }">
-            <Tag
-              :value="data.role === 'admin' ? '管理員' : '玩家'"
-              :severity="data.role === 'admin' ? 'warn' : 'secondary'"
-            />
-          </template>
-        </Column>
-
-        <Column field="createdAt" header="註冊日期">
-          <template #body="{ data }">
-            {{ formatDate(data.createdAt) }}
-          </template>
-        </Column>
-      </DataTable>
-    </BaseCard>
+    <div v-else-if="trend" class="trend-grid">
+      <AdminTrendCard v-for="card in trendCards" :key="card.title" v-bind="card" />
+    </div>
   </section>
 </template>
 
@@ -122,18 +90,14 @@ import type { Component } from 'vue'
 import { RouterLink } from 'vue-router'
 import { isAxiosError } from 'axios'
 import { ArrowRight, Files, MessageSquareText, UsersRound } from '@lucide/vue'
-import Column from 'primevue/column'
-import DataTable from 'primevue/datatable'
 import Message from 'primevue/message'
 import Skeleton from 'primevue/skeleton'
-import Tag from 'primevue/tag'
 
 import BaseButton from '@/components/base/BaseButton.vue'
-
 import BaseCard from '@/components/base/BaseCard.vue'
+import AdminTrendCard from '@/components/admin/AdminTrendCard.vue'
 import { getAdminDashboard } from '@/services/adminDashboard'
-import type { AdminDashboardStatistics, AdminLatestUser } from '@/types/user'
-import { formatNumericDate } from '@/utils/date'
+import type { AdminDashboardStatistics, AdminDashboardTrend } from '@/types/user'
 
 interface ManagementModule {
   eyebrow: string
@@ -150,7 +114,7 @@ interface ManagementModule {
 }
 
 const statistics = ref<AdminDashboardStatistics | null>(null)
-const latestUsers = ref<AdminLatestUser[]>([])
+const trend = ref<AdminDashboardTrend | null>(null)
 const isLoading = ref(false)
 const errorMessage = ref('')
 
@@ -198,9 +162,70 @@ const managementModules = computed<ManagementModule[]>(() => {
   ]
 })
 
-const formatDate = (date: string) => {
-  return formatNumericDate(date, 'Asia/Taipei')
-}
+const trendCards = computed(() => {
+  if (!trend.value) return []
+
+  const usersTotal = trend.value.users.reduce((sum, item) => sum + item.count, 0)
+  const articlesTotal = trend.value.articles.reduce((sum, item) => sum + item.count, 0)
+  const postsTotal = trend.value.plaza.reduce((sum, item) => sum + item.posts, 0)
+  const commentsTotal = trend.value.plaza.reduce((sum, item) => sum + item.comments, 0)
+
+  return [
+    {
+      category: '玩家管理',
+      title: '新註冊玩家趨勢',
+      icon: UsersRound,
+      dates: trend.value.users.map((item) => item.date),
+      series: [
+        {
+          label: '新增玩家',
+          data: trend.value.users.map((item) => item.count),
+          tone: 'primary' as const,
+        },
+      ],
+      summaryItems: [{ label: '近 30 天新增玩家', value: usersTotal }],
+      valueUnit: '人' as const,
+    },
+    {
+      category: '文章管理',
+      title: '文章發布趨勢',
+      icon: Files,
+      dates: trend.value.articles.map((item) => item.date),
+      series: [
+        {
+          label: '發布文章',
+          data: trend.value.articles.map((item) => item.count),
+          tone: 'primary' as const,
+        },
+      ],
+      summaryItems: [{ label: '近 30 天發布文章', value: articlesTotal }],
+      valueUnit: '篇' as const,
+    },
+    {
+      category: '廣場管理',
+      title: '貼文與留言趨勢',
+      icon: MessageSquareText,
+      dates: trend.value.plaza.map((item) => item.date),
+      series: [
+        {
+          label: '貼文數',
+          data: trend.value.plaza.map((item) => item.posts),
+          tone: 'primary' as const,
+        },
+        {
+          label: '留言數',
+          data: trend.value.plaza.map((item) => item.comments),
+          tone: 'accent' as const,
+        },
+      ],
+      summaryItems: [
+        { label: '貼文數', value: postsTotal, color: 'var(--color-primary)' },
+        { label: '留言數', value: commentsTotal, color: 'var(--color-accent)' },
+      ],
+      valueUnit: '筆' as const,
+    },
+  ]
+})
 
 const loadDashboard = async () => {
   isLoading.value = true
@@ -210,7 +235,7 @@ const loadDashboard = async () => {
     const response = await getAdminDashboard()
 
     statistics.value = response.statistics
-    latestUsers.value = response.latestUsers
+    trend.value = response.trend
   } catch (error: unknown) {
     if (isAxiosError(error)) {
       errorMessage.value =
@@ -237,8 +262,7 @@ onMounted(() => {
   gap: var(--space-4);
 }
 
-.dashboard-eyebrow,
-.panel-eyebrow {
+.dashboard-eyebrow {
   margin: 0 0 var(--space-1);
 
   color: var(--color-dark-light);
@@ -341,19 +365,11 @@ onMounted(() => {
   height: 24px;
 }
 
-.management-card--primary .management-card-icon {
+.management-card--primary .management-card-icon,
+.management-card--secondary .management-card-icon,
+.management-card--accent .management-card-icon {
   color: var(--color-primary);
   background: var(--color-primary-pale);
-}
-
-.management-card--secondary .management-card-icon {
-  color: var(--color-secondary);
-  background: var(--color-secondary-pale);
-}
-
-.management-card--accent .management-card-icon {
-  color: var(--color-accent);
-  background: var(--color-accent-pale);
 }
 
 .management-card-arrow {
@@ -423,72 +439,31 @@ onMounted(() => {
   font-weight: var(--font-weight-bold);
 }
 
-.latest-users-panel {
-  display: flex;
-  flex-direction: column;
+.trend-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-3);
-
-  padding: var(--space-4);
-
-  border-radius: var(--radius-lg);
-}
-
-.panel-heading {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.panel-title {
-  margin: 0;
-
-  color: var(--color-text);
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-bold);
-}
-
-.view-all-link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-
-  color: var(--color-dark-light);
-  font-weight: var(--font-weight-medium);
-  text-decoration: none;
-}
-
-.view-all-link:hover {
-  color: var(--color-dark);
-}
-
-.view-all-icon {
-  width: 18px;
-  height: 18px;
-}
-
-.table-empty {
-  padding: var(--space-4);
-
-  color: var(--color-text-secondary);
-  text-align: center;
+  min-width: 0;
 }
 
 @media (max-width: 1200px) {
-  .management-overview-grid {
+  .management-overview-grid,
+  .trend-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 800px) {
+  .management-overview-grid,
+  .trend-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 }
 
 @media (max-width: 640px) {
-  .panel-heading,
   .error-content {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .latest-users-panel {
-    padding: var(--space-3);
   }
 }
 

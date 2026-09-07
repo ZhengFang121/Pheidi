@@ -42,10 +42,28 @@ export interface AdminLatestUser extends AuthUser {
   createdAt: string
 }
 
+export interface AdminDashboardDailyCount {
+  date: string
+  count: number
+}
+
+export interface AdminDashboardPlazaDailyCount {
+  date: string
+  posts: number
+  comments: number
+}
+
+export interface AdminDashboardTrend {
+  users: AdminDashboardDailyCount[]
+  articles: AdminDashboardDailyCount[]
+  plaza: AdminDashboardPlazaDailyCount[]
+}
+
 export interface AdminDashboardResponse {
   message: string
   statistics: AdminDashboardStatistics
   latestUsers: AdminLatestUser[]
+  trend: AdminDashboardTrend
 }
 
 export interface AdminUserListResponse {

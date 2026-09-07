@@ -7,7 +7,7 @@
         <p class="page-description">建立跑者學院文章，儲存後會先保留為草稿。</p>
       </div>
 
-      <BaseButton type="button" label="返回文章列表" variant="outline" @click="goBack" />
+      <BaseButton type="button" label="返回文章列表" icon="pi pi-arrow-left" @click="goBack" />
     </div>
 
     <ArticleForm

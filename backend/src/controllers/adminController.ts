@@ -13,6 +13,67 @@ const defaultPage = 1
 const defaultLimit = 10
 const maximumLimit = 50
 const mongoObjectIdPattern = /^[a-f\d]{24}$/i
+const dashboardTrendDays = 30
+const dashboardTimeZone = 'Asia/Taipei'
+const taipeiOffsetMilliseconds = 8 * 60 * 60 * 1000
+
+interface DailyCountAggregation {
+  _id: string
+  count: number
+}
+
+const getTaipeiDayStart = (date: Date) => {
+  const taipeiDate = new Date(date.getTime() + taipeiOffsetMilliseconds)
+  taipeiDate.setUTCHours(0, 0, 0, 0)
+
+  return new Date(taipeiDate.getTime() - taipeiOffsetMilliseconds)
+}
+
+const getDashboardDateKeys = (startDate: Date) =>
+  Array.from({ length: dashboardTrendDays }, (_, index) => {
+    const date = new Date(startDate.getTime() + index * 24 * 60 * 60 * 1000)
+
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: dashboardTimeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(date)
+  })
+
+const getDailyCounts = async (
+  model: typeof User | typeof Article | typeof Post | typeof Comment,
+  dateField: 'createdAt' | 'publishedAt',
+  startDate: Date,
+  match: Record<string, unknown> = {},
+) =>
+  model.aggregate<DailyCountAggregation>([
+    {
+      $match: {
+        ...match,
+        [dateField]: mongoose.trusted({ $gte: startDate }),
+      },
+    },
+    {
+      $group: {
+        _id: {
+          $dateToString: {
+            date: `$${dateField}`,
+            format: '%Y-%m-%d',
+            timezone: dashboardTimeZone,
+          },
+        },
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ])
+
+const fillDailyCounts = (dateKeys: string[], values: DailyCountAggregation[]) => {
+  const countByDate = new Map(values.map((item) => [item._id, item.count]))
+
+  return dateKeys.map((date) => ({ date, count: countByDate.get(date) ?? 0 }))
+}
 
 const getUserStatistics = async () => {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
@@ -48,6 +109,11 @@ router.get('/check', (_req, res) => {
 
 router.get('/dashboard', async (_req, res) => {
   try {
+    const todayStart = getTaipeiDayStart(new Date())
+    const trendStart = new Date(
+      todayStart.getTime() - (dashboardTrendDays - 1) * 24 * 60 * 60 * 1000,
+    )
+    const trendDateKeys = getDashboardDateKeys(trendStart)
     const [
       userStatistics,
       latestUsers,
@@ -56,6 +122,10 @@ router.get('/dashboard', async (_req, res) => {
       draftArticles,
       totalPosts,
       totalComments,
+      userTrend,
+      articleTrend,
+      postTrend,
+      commentTrend,
     ] = await Promise.all([
       getUserStatistics(),
       User.find()
@@ -68,7 +138,14 @@ router.get('/dashboard', async (_req, res) => {
       Article.countDocuments({ status: 'draft' }),
       Post.countDocuments(),
       Comment.countDocuments(),
+      getDailyCounts(User, 'createdAt', trendStart),
+      getDailyCounts(Article, 'publishedAt', trendStart, { status: 'published' }),
+      getDailyCounts(Post, 'createdAt', trendStart),
+      getDailyCounts(Comment, 'createdAt', trendStart),
     ])
+
+    const filledPostTrend = fillDailyCounts(trendDateKeys, postTrend)
+    const filledCommentTrend = fillDailyCounts(trendDateKeys, commentTrend)
 
     res.status(200).json({
       message: '取得管理員儀表板資料成功',
@@ -87,6 +164,15 @@ router.get('/dashboard', async (_req, res) => {
         role: user.role,
         createdAt: user.createdAt,
       })),
+      trend: {
+        users: fillDailyCounts(trendDateKeys, userTrend),
+        articles: fillDailyCounts(trendDateKeys, articleTrend),
+        plaza: trendDateKeys.map((date, index) => ({
+          date,
+          posts: filledPostTrend[index]?.count ?? 0,
+          comments: filledCommentTrend[index]?.count ?? 0,
+        })),
+      },
     })
   } catch (error: unknown) {
     console.error('Failed to get admin dashboard:', error)

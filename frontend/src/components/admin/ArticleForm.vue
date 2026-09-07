@@ -100,21 +100,18 @@
         <div class="cover-actions">
           <BaseButton
             type="button"
-            :label="form.coverImageUrl ? '更換封面圖片' : '上傳封面圖片'"
-            icon="pi pi-upload"
-            variant="outline"
+            :label="form.coverImageUrl ? '更換封面' : '上傳封面圖片'"
+            icon="pi pi-image"
             :loading="isUploadingCover"
             :disabled="isSubmitting"
             @click="openCoverImagePicker"
           />
 
-          <Button
+          <BaseButton
             v-if="form.coverImageUrl"
             type="button"
             label="移除封面"
             icon="pi pi-trash"
-            severity="danger"
-            text
             :disabled="isSubmitting || isUploadingCover"
             @click="removeCoverImage"
           />
@@ -198,7 +195,6 @@
 import { reactive, ref, watch } from 'vue'
 import { isAxiosError } from 'axios'
 
-import Button from 'primevue/button'
 import Editor from 'primevue/editor'
 import InputText from 'primevue/inputtext'
 import Message from 'primevue/message'
@@ -466,8 +462,15 @@ watch(
 
 .cover-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
+}
+
+.cover-actions :deep(.p-button) {
+  min-height: calc(var(--space-6) + var(--space-1));
+  padding-block: 0;
+  border-radius: var(--radius-full);
 }
 
 .cover-preview {

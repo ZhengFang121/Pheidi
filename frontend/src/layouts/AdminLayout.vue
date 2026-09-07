@@ -8,7 +8,7 @@
     ]"
   >
     <!-- 桌面版側邊欄 -->
-    <aside id="admin-sidebar" class="admin-sidebar">
+    <aside id="admin-sidebar" class="admin-sidebar base-card--glass">
       <div class="admin-sidebar-header">
         <RouterLink
           to="/admin"
@@ -227,11 +227,15 @@ const closeMobileDrawer = () => {
 
   display: grid;
   grid-template-columns: var(--admin-sidebar-width) minmax(0, 1fr);
+  gap: var(--space-5);
 
-  min-height: 100vh;
+  box-sizing: border-box;
+  height: 100vh;
+  padding: var(--space-5);
+  overflow: hidden;
 
   color: var(--color-text);
-  background: var(--color-background);
+  background: var(--color-primary-soft);
 
   transition: grid-template-columns 0.25s ease;
 }
@@ -245,17 +249,17 @@ const closeMobileDrawer = () => {
 /* Desktop sidebar */
 .admin-sidebar {
   position: sticky;
-  top: 0;
+  top: var(--space-5);
 
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
 
-  height: 100vh;
+  height: 100%;
 
   overflow: hidden;
 
-  background: var(--color-primary-pale);
+  border-radius: var(--radius-xl);
 }
 
 .admin-sidebar-header {
@@ -369,12 +373,22 @@ const closeMobileDrawer = () => {
 
   width: 32px;
   height: 32px;
+  color: var(--color-primary);
+  border-radius: var(--radius-full);
 }
 
-.sidebar-toggle-button:hover,
-.sidebar-toggle-button:focus-visible {
+.admin-layout:not(.is-sidebar-collapsed) .sidebar-toggle-button:hover {
+  color: var(--color-secondary);
+}
+
+.is-sidebar-collapsed .sidebar-toggle-button:focus-visible {
   color: var(--color-surface);
-  background: var(--color-primary-light);
+  background: var(--color-primary);
+}
+
+.is-sidebar-collapsed .sidebar-toggle-button:hover {
+  color: var(--color-secondary);
+  background: transparent;
 }
 
 .sidebar-toggle-button:focus-visible,
@@ -383,7 +397,11 @@ const closeMobileDrawer = () => {
   outline-offset: 2px;
 }
 
-.sidebar-toggle-icon,
+.sidebar-toggle-icon {
+  width: 20px;
+  height: 20px;
+}
+
 .mobile-menu-icon {
   width: 22px;
   height: 22px;
@@ -416,7 +434,7 @@ const closeMobileDrawer = () => {
 
   overflow: hidden;
 
-  color: var(--color-dark-light);
+  color: var(--color-primary);
   text-decoration: none;
   white-space: nowrap;
 
@@ -430,13 +448,14 @@ const closeMobileDrawer = () => {
 .admin-layout:not(.is-sidebar-collapsed) .admin-navigation-link,
 .admin-layout:not(.is-sidebar-collapsed) .back-to-site-link {
   padding-left: var(--space-5);
+  border-radius: var(--radius-full);
 }
 
 .admin-navigation-link:hover,
 .admin-navigation-link.router-link-exact-active,
 .back-to-site-link:hover {
   color: var(--color-surface);
-  background: var(--color-primary-light);
+  background: var(--color-primary);
 }
 
 .admin-navigation-link:focus-visible,
@@ -482,16 +501,11 @@ const closeMobileDrawer = () => {
   right: auto;
   left: 50%;
 
-  width: calc(100% - var(--space-2) * 2);
+  width: 48px;
   height: 48px;
   padding: var(--space-2);
 
   transform: translateX(-50%);
-}
-
-.is-sidebar-collapsed .sidebar-toggle-icon {
-  width: 20px;
-  height: 20px;
 }
 
 .is-sidebar-collapsed .admin-brand-text,
@@ -513,32 +527,44 @@ const closeMobileDrawer = () => {
 }
 
 .is-sidebar-collapsed .admin-navigation {
+  align-items: center;
   margin-top: var(--space-8);
-}
-
-.is-sidebar-collapsed .admin-navigation-link {
-  width: 100%;
 }
 
 .is-sidebar-collapsed .admin-navigation-link,
 .is-sidebar-collapsed .back-to-site-link {
   justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
 }
 
 /* Main */
 .admin-main {
+  display: flex;
+  flex-direction: column;
+
   min-width: 0;
+  min-height: 0;
+  height: 100%;
+
+  overflow: hidden;
+
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
 }
 
 .admin-header {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: var(--space-3);
 
   min-height: 100px;
   padding: var(--space-3) var(--space-6);
 
-  background: var(--color-surface);
+  background: transparent;
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -559,7 +585,34 @@ const closeMobileDrawer = () => {
 }
 
 .admin-content {
+  flex: 1;
+  min-height: 0;
   padding: var(--space-5) var(--space-6);
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-color: var(--color-primary-soft) transparent;
+  scrollbar-width: thin;
+}
+
+.admin-content::-webkit-scrollbar {
+  width: var(--space-2);
+}
+
+.admin-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-content::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-soft);
+  background-clip: padding-box;
+}
+
+.admin-content::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .mobile-menu-button {
@@ -660,6 +713,14 @@ const closeMobileDrawer = () => {
 }
 
 @media (max-width: 640px) {
+  .admin-layout {
+    padding: var(--space-3);
+  }
+
+  .admin-main {
+    border-radius: var(--radius-lg);
+  }
+
   .admin-header {
     min-height: 80px;
     padding: var(--space-2) var(--space-3);
