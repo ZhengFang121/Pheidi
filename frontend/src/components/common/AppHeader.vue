@@ -136,7 +136,7 @@
                     v-bind="props.action"
                     :href="item.route ? router.resolve(item.route).href : undefined"
                     :aria-current="isMobileRouteActive(item.route) ? 'page' : undefined"
-                    class="base-button base-button--primary account-menu-link"
+                    class="account-menu-link"
                     :class="{ 'is-active': isMobileRouteActive(item.route) }"
                     @click.prevent
                   >
@@ -166,7 +166,7 @@
                   <a
                     v-ripple
                     v-bind="props.action"
-                    class="base-button base-button--primary account-menu-link"
+                    class="account-menu-link"
                   >
                     <component
                       :is="item.lucideIcon"
@@ -658,20 +658,25 @@ const mobileMenuItems = computed<NavigationItem[]>(() => [
   text-decoration: none;
 
   border-radius: var(--radius-full);
+  color: var(--color-text) !important;
+  background: transparent !important;
+  transition:
+    color 150ms ease,
+    background 200ms ease;
 }
 
 :global(.account-menu .account-menu-link:hover),
 :global(.account-menu .account-menu-link:active),
 :global(.mobile-navigation-menu .account-menu-link.is-active),
 :global(.account-menu .p-menu-item[data-p-focused='true'] .account-menu-link) {
-  color: var(--color-surface);
+  color: var(--color-surface) !important;
   background: linear-gradient(
     90deg,
     var(--color-secondary) 0%,
     var(--color-secondary-soft) 50%,
     var(--color-secondary) 100%
-  );
-  background-size: 220% 100%;
+  ) !important;
+  background-size: 220% 100% !important;
 }
 
 :global(.account-menu .account-menu-link:focus-visible),
