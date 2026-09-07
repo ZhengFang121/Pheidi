@@ -34,4 +34,15 @@
   --color-background: #f8fcfc;
   --color-surface: #ffffff;
   --color-border: #dce8e8;
+
+  /* Glass surfaces */
+  --glass-surface-card: rgba(255, 255, 255, 0.38);
+  --glass-surface-overlay: rgba(255, 255, 255, 0.88);
+}
+
+@supports (color: color-mix(in srgb, white, transparent)) {
+  :root {
+    --glass-surface-card: color-mix(in srgb, var(--color-surface) 38%, transparent);
+    --glass-surface-overlay: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  }
 }
