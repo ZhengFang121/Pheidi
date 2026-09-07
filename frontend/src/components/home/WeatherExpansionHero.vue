@@ -599,7 +599,7 @@ onUnmounted(() => {
   min-width: 0;
   min-height: 0;
   padding: var(--space-6);
-  background-color: var(--color-primary-soft);
+  background-color: var(--color-primary-light);
   border-radius: var(--radius-lg);
   visibility: hidden;
   opacity: 0;
