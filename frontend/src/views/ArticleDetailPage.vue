@@ -76,7 +76,7 @@
       </div>
 
       <!-- eslint-disable vue/no-v-html -->
-      <div class="article-body" v-html="article.content" />
+      <div class="article-body" v-html="articleContent" />
       <!-- eslint-enable vue/no-v-html -->
     </article>
   </section>
@@ -84,7 +84,7 @@
 
 <script setup lang="ts">
 import { isAxiosError } from 'axios'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, BookOpen, Lock } from '@lucide/vue'
 
@@ -113,6 +113,14 @@ const article = ref<ArticleDetail | null>(null)
 const lockedCategory = ref<ArticleCategory | null>(null)
 const isLoading = ref(false)
 const errorMessage = ref('')
+
+const articleContent = computed(() => {
+  const content = article.value?.content ?? ''
+
+  return content
+    .replaceAll('<blockquote>', '<blockquote><span class="article-callout-content">')
+    .replaceAll('</blockquote>', '</span></blockquote>')
+})
 
 const getCategoryLabel = getArticleCategoryLabel
 const getUnlockDetail = getAcademyCategoryUnlockDetail
@@ -190,7 +198,7 @@ void loadArticle()
 .article-loading {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-3);
 }
 
 .locked-state {
@@ -340,13 +348,37 @@ void loadArticle()
 }
 
 .article-body :deep(blockquote) {
-  padding: var(--space-4) var(--space-5);
+  --article-callout-avatar-size: 110px;
+
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+
+  min-height: 90px;
+  padding: var(--space-1) var(--space-6) var(--space-1) var(--space-4);
 
   color: var(--color-text-secondary);
+  text-align: left;
 
-  background: var(--color-primary-pale);
-  border-left: 4px solid var(--color-primary);
+  background: var(--color-accent-pale);
+  border-left: 4px solid var(--color-accent);
   border-radius: var(--radius-sm);
+}
+
+.article-body :deep(blockquote::before) {
+  flex-shrink: 0;
+
+  width: var(--article-callout-avatar-size);
+  height: var(--article-callout-avatar-size);
+
+  background: url('/images/ally.png') center / contain no-repeat;
+
+  content: '';
+}
+
+.article-body :deep(.article-callout-content) {
+  flex: 1;
+  min-width: 0;
 }
 
 .article-body :deep(li + li) {
@@ -377,6 +409,13 @@ void loadArticle()
 
   .article-cover {
     aspect-ratio: 4 / 3;
+  }
+
+  .article-body :deep(blockquote) {
+    --article-callout-avatar-size: calc(var(--space-8) + var(--space-2));
+
+    gap: var(--space-3);
+    padding-inline: var(--space-4);
   }
 
   .error-content {
