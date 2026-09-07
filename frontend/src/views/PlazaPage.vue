@@ -263,7 +263,7 @@
                         severity="secondary"
                         text
                         rounded
-                        class="post-management-button post-management-button--edit"
+                        class="post-management-button management-button management-button--edit"
                         :aria-label="`編輯 ${post.author.username} 的貼文`"
                         :disabled="isUpdatingPost || deletingPostId !== null"
                         @click="startEditingPost(post)"
@@ -278,7 +278,7 @@
                         severity="danger"
                         text
                         rounded
-                        class="post-management-button post-management-button--delete"
+                        class="post-management-button management-button management-button--delete"
                         :aria-label="`刪除 ${post.author.username} 的貼文`"
                         :loading="deletingPostId === post.id"
                         :disabled="
@@ -538,7 +538,7 @@
 
                               <div
                                 v-if="canEditComment(comment) || canDeleteComment(comment)"
-                                class="comment-management-actions"
+                                class="comment-management-actions management-actions"
                               >
                                 <Button
                                   v-if="canEditComment(comment)"
@@ -547,7 +547,7 @@
                                   text
                                   rounded
                                   size="small"
-                                  class="comment-management-button comment-management-button--edit"
+                                  class="management-button management-button--edit"
                                   :aria-label="`編輯 ${comment.author.username} 的留言`"
                                   :disabled="
                                     updatingCommentId !== null || deletingCommentId === comment.id
@@ -566,7 +566,7 @@
                                   text
                                   rounded
                                   size="small"
-                                  class="comment-management-button comment-management-button--delete"
+                                  class="management-button management-button--delete"
                                   :aria-label="`刪除 ${comment.author.username} 的留言`"
                                   :loading="deletingCommentId === comment.id"
                                   :disabled="
@@ -667,6 +667,7 @@
                 <BaseButton
                   type="button"
                   label="發起活動"
+                  icon-pos="right"
                   class="create-event-button"
                   @click="isCreateActivityDialogOpen = true"
                 >
@@ -724,7 +725,11 @@
                   <div class="event-title-row">
                     <h3 class="event-title">{{ event.title }}</h3>
 
-                    <Tag :value="event.statusLabel" :severity="event.statusSeverity" />
+                    <Tag
+                      :value="event.statusLabel"
+                      :severity="event.statusSeverity"
+                      :class="{ 'event-status-tag--available': event.status === 'available' }"
+                    />
                   </div>
 
                   <p class="event-description">
@@ -770,15 +775,12 @@
                   <BaseButton
                     type="button"
                     label="查看活動"
-                    size="small"
-                    class="event-button"
+                    icon="pi pi-arrow-right"
+                    icon-pos="right"
+                    class="event-button card-cta"
                     :aria-label="`查看活動：${event.title}`"
                     @click="viewEvent(event.id)"
-                  >
-                    <template #icon>
-                      <ArrowRight aria-hidden="true" />
-                    </template>
-                  </BaseButton>
+                  />
                 </div>
               </BaseCard>
             </div>
@@ -794,7 +796,6 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { isAxiosError } from 'axios'
 import {
-  ArrowRight,
   CalendarDays,
   CircleUserRound,
   Clock3,
@@ -1675,6 +1676,12 @@ onBeforeUnmount(() => {
   width: min(100%, 22rem);
 }
 
+.plaza-segmented-control .segmented-control__option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .plaza-tabs :deep(.p-tabpanels) {
   padding: var(--space-6) 0 0;
 
@@ -1955,21 +1962,6 @@ onBeforeUnmount(() => {
   width: calc(var(--space-7) - var(--space-1));
   height: calc(var(--space-7) - var(--space-1));
   padding: 0;
-  color: var(--color-text-secondary);
-  background: transparent;
-}
-
-.post-management-actions :deep(.post-management-button.p-button:is(:hover, :focus, :active)) {
-  background: transparent;
-}
-
-.post-management-actions :deep(.post-management-button--edit.p-button:is(:hover, :focus, :active)) {
-  color: var(--color-primary);
-}
-
-.post-management-actions
-  :deep(.post-management-button--delete.p-button:is(:hover, :focus, :active)) {
-  color: var(--color-accent);
 }
 
 .post-management-actions :deep(svg) {
@@ -2135,8 +2127,7 @@ onBeforeUnmount(() => {
   gap: var(--space-4);
 }
 
-.comment-form-footer :deep(.submit-comment-button.p-button),
-.event-content :deep(.event-button.p-button) {
+.comment-form-footer :deep(.submit-comment-button.p-button) {
   border-radius: var(--radius-full);
 }
 
@@ -2205,40 +2196,6 @@ onBeforeUnmount(() => {
 .comment-meta-actions {
   justify-content: flex-end;
   gap: var(--space-2);
-}
-
-.comment-management-actions {
-  gap: var(--space-1);
-}
-
-.comment-management-actions :deep(.p-button) {
-  width: 30px;
-  height: 30px;
-  padding: 0;
-}
-
-.comment-management-actions :deep(.comment-management-button.p-button) {
-  color: var(--color-text-secondary);
-  background: transparent;
-}
-
-.comment-management-actions :deep(.comment-management-button.p-button:is(:hover, :focus, :active)) {
-  background: transparent;
-}
-
-.comment-management-actions
-  :deep(.comment-management-button--edit.p-button:is(:hover, :focus, :active)) {
-  color: var(--color-primary);
-}
-
-.comment-management-actions
-  :deep(.comment-management-button--delete.p-button:is(:hover, :focus, :active)) {
-  color: var(--color-accent);
-}
-
-.comment-management-actions :deep(svg) {
-  width: 15px;
-  height: 15px;
 }
 
 .comment-author {
@@ -2369,6 +2326,10 @@ onBeforeUnmount(() => {
   gap: var(--space-3);
 }
 
+.create-event-button {
+  flex-direction: row-reverse;
+}
+
 .create-event-button :deep(svg) {
   width: 18px;
   height: 18px;
@@ -2437,6 +2398,7 @@ onBeforeUnmount(() => {
   display: flex;
   min-width: 0;
   flex: 1;
+  align-self: stretch;
   flex-direction: column;
   gap: var(--space-4);
 }
@@ -2664,10 +2626,6 @@ onBeforeUnmount(() => {
   .event-title-row {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .event-button {
-    width: 100%;
   }
 
   .state-message {

@@ -67,25 +67,50 @@
         <div class="event-hero-content">
           <div class="event-meta-row">
             <time :datetime="event.startAt">{{ eventLongDate }}</time>
-            <Tag :value="statusPresentation.label" :severity="statusPresentation.severity" />
-            <Tag v-if="event.isParticipant" value="已參加" severity="success" />
+            <Tag
+              :value="statusPresentation.label"
+              :severity="statusPresentation.severity"
+              :class="{ 'event-status-tag--available': event.status === 'available' }"
+            />
+            <Tag
+              v-if="event.isParticipant"
+              value="已參加"
+              severity="success"
+              class="event-participation-tag"
+            />
           </div>
           <h1 ref="titleHeading" tabindex="-1">{{ event.title }}</h1>
           <p>{{ event.summary }}</p>
         </div>
       </header>
 
-      <div v-if="canManageEvent" class="event-management-actions" aria-label="活動管理">
-        <BaseButton label="編輯活動" variant="outline" @click="editEvent">
+      <div
+        v-if="canManageEvent"
+        class="event-management-actions management-actions"
+        aria-label="活動管理"
+      >
+        <Button
+          type="button"
+          severity="secondary"
+          text
+          rounded
+          size="small"
+          class="management-button management-button--edit"
+          aria-label="編輯活動"
+          @click="editEvent"
+        >
           <template #icon>
             <Pencil aria-hidden="true" />
           </template>
-        </BaseButton>
+        </Button>
         <Button
           type="button"
-          label="刪除活動"
           severity="danger"
-          outlined
+          text
+          rounded
+          size="small"
+          class="management-button management-button--delete"
+          aria-label="刪除活動"
           :loading="isDeleting"
           :disabled="isDeleting || isParticipationPending"
           @click="confirmDeleteEvent"
@@ -164,9 +189,13 @@
           variant="secondary"
           :loading="isParticipationPending"
           :disabled="isParticipationPending || isDeleting"
-          class="participation-button"
+          class="participation-button participation-button--leave"
           @click="leaveCurrentEvent"
-        />
+        >
+          <template #icon>
+            <UserMinus aria-hidden="true" />
+          </template>
+        </BaseButton>
         <BaseButton
           v-else-if="event.status === 'full'"
           label="活動已額滿"
@@ -201,6 +230,7 @@ import {
   Pencil,
   Route as RouteIcon,
   Trash2,
+  UserMinus,
   UserPlus,
   UserRound,
   UsersRound,
@@ -407,7 +437,6 @@ onBeforeUnmount(() => {
   height: 20px;
 }
 
-.event-management-actions :deep(svg),
 .participation-button :deep(svg) {
   width: 18px;
   height: 18px;
@@ -489,6 +518,7 @@ onBeforeUnmount(() => {
 
 .event-management-actions {
   justify-content: flex-end;
+  gap: var(--space-1);
   margin-top: calc(-1 * var(--space-4));
 }
 
@@ -630,6 +660,20 @@ onBeforeUnmount(() => {
   border-radius: var(--radius-full);
 }
 
+@media (hover: hover) {
+  .event-cta :deep(.participation-button--leave.base-button:hover:not(:disabled)) {
+    color: var(--color-surface);
+    background: linear-gradient(
+      90deg,
+      var(--color-accent) 0%,
+      var(--color-accent-soft) 50%,
+      var(--color-accent) 100%
+    );
+    background-size: 220% 100%;
+    border-color: var(--color-accent);
+  }
+}
+
 .event-state-card {
   display: flex;
   align-items: center;
@@ -734,7 +778,6 @@ onBeforeUnmount(() => {
   }
 
   .event-management-actions,
-  .event-management-actions :deep(.p-button),
   .event-state-actions,
   .event-state-actions :deep(.base-button) {
     width: 100%;
