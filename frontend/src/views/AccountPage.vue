@@ -290,6 +290,7 @@ async function handlePasswordSubmit() {
             <Message
               v-if="passwordMessage"
               :severity="passwordMessageSeverity"
+              :variant="passwordMessageSeverity === 'success' ? 'simple' : undefined"
               :closable="false"
             >
               {{ passwordMessage }}
