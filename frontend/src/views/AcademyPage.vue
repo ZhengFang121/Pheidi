@@ -144,12 +144,15 @@
                   slug: article.slug,
                 },
               }"
-              class="base-button base-button--primary read-more"
+              class="p-button p-component base-button base-button--primary card-cta read-more"
               :aria-label="`閱讀文章：${article.title}`"
             >
-              <span class="base-button__content">閱讀文章</span>
+              <span class="p-button-label base-button__content base-button__label">閱讀文章</span>
 
-              <i class="pi pi-arrow-right base-button__content" aria-hidden="true" />
+              <i
+                class="p-button-icon pi pi-arrow-right base-button__content"
+                aria-hidden="true"
+              />
             </RouterLink>
           </div>
         </div>
@@ -404,6 +407,9 @@ onMounted(() => {
 }
 
 .article-card {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
   overflow: hidden;
 
   border-radius: var(--radius-lg);
@@ -452,6 +458,7 @@ onMounted(() => {
 .article-content {
   display: flex;
   min-height: 230px;
+  flex: 1;
   flex-direction: column;
   gap: var(--space-3);
 
@@ -499,10 +506,6 @@ onMounted(() => {
 }
 
 .read-more {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-
   text-decoration: none;
 }
 
@@ -578,6 +581,13 @@ onMounted(() => {
   .error-content {
     align-items: stretch;
     flex-direction: column;
+  }
+}
+
+@media (max-width: 600px) {
+  .article-footer {
+    align-items: flex-start;
+    flex-wrap: wrap;
   }
 }
 </style>
