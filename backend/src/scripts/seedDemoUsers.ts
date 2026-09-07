@@ -9,7 +9,7 @@ import User from '../models/User.js'
 import { ensureRunnerProgress } from '../services/runnerProgressService.js'
 import { isDuplicateKeyError } from '../utils/mongoose.js'
 
-const demoPassword = 'Runner2026!'
+const demoPassword = 'runner2026'
 
 const demoUsers = [
   { username: 'Ethan', email: 'ethan@runner.com', createdAt: '2026-08-18T09:20:00+08:00' },
