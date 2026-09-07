@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "seed:academy": "tsx src/scripts/seedAcademyArticles.ts",
+    "seed:demo-users": "tsx src/scripts/seedDemoUsers.ts",
     "test": "tsx --test tests/**/*.test.ts",
     "type-check": "tsc --noEmit",
     "lint": "eslint .",
