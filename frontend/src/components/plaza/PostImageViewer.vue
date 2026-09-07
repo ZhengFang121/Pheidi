@@ -150,7 +150,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
   place-items: center;
   overflow: hidden;
   border-radius: var(--radius-md);
-  background: var(--color-dark);
 }
 
 .post-image-viewer__image {
