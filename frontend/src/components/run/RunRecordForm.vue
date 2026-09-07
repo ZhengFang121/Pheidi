@@ -9,6 +9,7 @@ import Select from 'primevue/select'
 import SelectButton from 'primevue/selectbutton'
 
 import BaseButton from '@/components/base/BaseButton.vue'
+import RunSaveButton from '@/components/run/RunSaveButton.vue'
 import {
   RUN_LOCATION_OPTIONS,
   RUN_MOOD_OPTIONS,
@@ -568,13 +569,7 @@ onBeforeUnmount(() => {
         @click="emit('cancel')"
       />
 
-      <BaseButton
-        type="submit"
-        label="儲存"
-        icon="pi pi-check"
-        :loading="submitting"
-        :disabled="submitting"
-      />
+      <RunSaveButton :loading="submitting" :disabled="submitting" />
     </footer>
   </form>
 </template>
@@ -719,8 +714,7 @@ onBeforeUnmount(() => {
   gap: var(--space-2);
 }
 
-.run-upload-actions :deep(.p-button),
-.run-form-actions :deep(.p-button) {
+.run-upload-actions :deep(.p-button) {
   min-height: var(--run-control-height);
   padding-block: 0;
   border-radius: var(--radius-full);

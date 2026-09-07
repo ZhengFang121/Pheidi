@@ -7,6 +7,7 @@ import Password from "primevue/password";
 import { CircleUserRound, KeyRound, UserRound } from "@lucide/vue";
 
 import BaseButton from "@/components/base/BaseButton.vue";
+import RunSaveButton from "@/components/run/RunSaveButton.vue";
 import BaseCard from "@/components/base/BaseCard.vue";
 import { updatePassword, updateProfile } from "@/services/auth";
 import { useAuthStore } from "@/stores/auth";
@@ -231,6 +232,7 @@ async function handlePasswordSubmit() {
             <Message
               v-if="profileMessage"
               :severity="profileMessageSeverity"
+              :variant="profileMessageSeverity === 'success' ? 'simple' : undefined"
               :closable="false"
             >
               {{ profileMessage }}
@@ -269,10 +271,7 @@ async function handlePasswordSubmit() {
             </div>
 
             <div class="form-actions">
-              <BaseButton
-                type="submit"
-                label="儲存變更"
-                icon="pi pi-check"
+              <RunSaveButton
                 :loading="isProfileSubmitting"
                 :disabled="isProfileSubmitting"
               />
@@ -380,7 +379,7 @@ async function handlePasswordSubmit() {
               </div>
             </div>
 
-            <div class="form-actions">
+            <div class="form-actions form-actions--security">
               <BaseButton
                 type="submit"
                 label="更新密碼"
@@ -434,7 +433,7 @@ async function handlePasswordSubmit() {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
   gap: var(--space-6);
-  align-items: start;
+  align-items: stretch;
 }
 .account-sidebar,
 .settings-card {
@@ -442,6 +441,7 @@ async function handlePasswordSubmit() {
 }
 .account-sidebar {
   padding: var(--space-5);
+  padding-top: calc(var(--space-5) + var(--space-1));
 }
 .runner-summary {
   display: flex;
@@ -470,6 +470,7 @@ async function handlePasswordSubmit() {
   overflow: hidden;
   max-width: 160px;
   text-overflow: ellipsis;
+  letter-spacing: var(--letter-spacing-tight);
   white-space: nowrap;
 }
 .runner-summary span {
@@ -487,10 +488,10 @@ async function handlePasswordSubmit() {
   align-items: center;
   width: 100%;
   padding: var(--space-3) var(--space-4);
-  color: var(--color-dark-light);
+  color: var(--color-primary);
   background: transparent;
   border: 0;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   font: inherit;
   text-align: left;
   cursor: pointer;
@@ -499,13 +500,16 @@ async function handlePasswordSubmit() {
     background-color 0.2s ease;
 }
 .account-navigation button:hover,
+.account-navigation button:active,
 .account-navigation button.is-active {
   color: var(--color-surface);
-  background: var(--color-primary-light);
+  background: var(--color-primary);
 }
 .account-navigation svg {
   width: 20px;
   height: 20px;
+  color: currentColor;
+  stroke: currentColor;
 }
 .settings-card {
   min-height: 520px;
@@ -626,7 +630,7 @@ async function handlePasswordSubmit() {
   padding-top: var(--space-5);
   border-top: 1px solid var(--color-border);
 }
-:deep(.form-actions .p-button) {
+:deep(.form-actions--security .p-button) {
   border-color: var(--color-primary);
   background-color: var(--color-primary);
   color: var(--color-surface);
@@ -634,7 +638,7 @@ async function handlePasswordSubmit() {
   font-weight: var(--font-weight-bold);
   letter-spacing: var(--letter-spacing-base);
 }
-:deep(.form-actions .p-button:hover) {
+:deep(.form-actions--security .p-button:hover) {
   border-color: color-mix(in srgb, var(--color-primary) 85%, var(--color-dark));
   background-color: color-mix(
     in srgb,
@@ -668,7 +672,7 @@ async function handlePasswordSubmit() {
   .section-heading {
     align-items: flex-start;
   }
-  .form-actions :deep(.p-button) {
+  .form-actions--security :deep(.p-button) {
     width: 100%;
   }
 }
