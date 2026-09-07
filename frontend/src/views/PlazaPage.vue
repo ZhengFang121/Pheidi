@@ -650,6 +650,42 @@
                     <p v-else class="comment-empty">目前還沒有留言，成為第一位留言的跑友吧！</p>
                   </div>
                 </BaseCard>
+
+                <div
+                  ref="feedSentinel"
+                  class="feed-sentinel"
+                  :aria-busy="isLoadingMore"
+                  aria-live="polite"
+                >
+                  <div v-if="isLoadingMore" class="feed-pagination-state">
+                    <Skeleton
+                      height="4rem"
+                      border-radius="var(--radius-lg)"
+                      aria-label="正在載入更多跑友動態"
+                    />
+                  </div>
+
+                  <Message
+                    v-else-if="loadingMoreErrorMessage"
+                    severity="error"
+                    :closable="false"
+                    class="feed-load-more-error"
+                  >
+                    <div class="state-message">
+                      <span>{{ loadingMoreErrorMessage }}</span>
+
+                      <BaseButton
+                        type="button"
+                        label="再試一次"
+                        variant="secondary"
+                        size="small"
+                        @click="loadMorePosts"
+                      />
+                    </div>
+                  </Message>
+
+                  <p v-else-if="!hasMorePosts" class="feed-end-message">已經到底了</p>
+                </div>
               </div>
             </section>
           </div>
@@ -793,7 +829,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { isAxiosError } from 'axios'
 import {
@@ -850,6 +886,7 @@ import type {
   PostImage,
   UploadedPostImage,
 } from '@/types/post'
+import type { Pagination } from '@/types/api'
 import type { RunningEvent, RunningEventListItem } from '@/types/event'
 import { formatEventDay, formatEventMonth, formatEventTimeRange } from '@/utils/date'
 import {
@@ -915,15 +952,24 @@ const editingCommentContent = ref('')
 const updatingCommentId = ref<string | null>(null)
 const deletingCommentId = ref<string | null>(null)
 const isFeedLoading = ref(false)
+const isLoadingMore = ref(false)
 const isSubmittingPost = ref(false)
 const feedErrorMessage = ref('')
+const loadingMoreErrorMessage = ref('')
 const postActionErrorMessage = ref('')
 const pendingPostLikeIds = ref(new Set<string>())
 const isEventLoading = ref(false)
 const eventErrorMessage = ref('')
 const isActivityFormDialogOpen = ref(false)
 const posts = ref<PlazaPostView[]>([])
-const totalPosts = ref(0)
+const feedSentinel = ref<HTMLElement | null>(null)
+const postsPerPage = 10
+const postPagination = ref<Pagination>({
+  page: 0,
+  limit: postsPerPage,
+  total: 0,
+  totalPages: 0,
+})
 const isPostImageViewerOpen = ref(false)
 const viewerImages = ref<PostImage[]>([])
 const viewerInitialIndex = ref(0)
@@ -940,6 +986,13 @@ const isUpdatingPost = ref(false)
 const deletingPostId = ref<string | null>(null)
 
 const events = ref<PlazaEvent[]>([])
+
+const totalPosts = computed(() => postPagination.value.total)
+const hasMorePosts = computed(
+  () =>
+    postPagination.value.page < postPagination.value.totalPages &&
+    posts.value.length < postPagination.value.total,
+)
 
 const remainingCharacters = computed(() => maximumPostLength - postContent.value.length)
 
@@ -1008,14 +1061,17 @@ function getApiErrorMessage(error: unknown, fallbackMessage: string) {
 }
 
 async function loadFeed() {
+  if (isFeedLoading.value) return
+
   feedErrorMessage.value = ''
+  loadingMoreErrorMessage.value = ''
   isFeedLoading.value = true
 
   try {
-    const response = await getPosts({ page: 1, limit: 10 })
+    const response = await getPosts({ page: 1, limit: postsPerPage })
 
     posts.value = response.posts.map(toPostView)
-    totalPosts.value = response.pagination.total
+    postPagination.value = response.pagination
     loadedCommentPostIds.value.clear()
     activeCommentPostId.value = null
   } catch (error: unknown) {
@@ -1024,6 +1080,43 @@ async function loadFeed() {
     isFeedLoading.value = false
   }
 }
+
+async function loadMorePosts() {
+  if (isFeedLoading.value || isLoadingMore.value || !hasMorePosts.value) return
+
+  isLoadingMore.value = true
+  loadingMoreErrorMessage.value = ''
+
+  try {
+    const response = await getPosts({
+      page: postPagination.value.page + 1,
+      limit: postsPerPage,
+    })
+    const loadedPostIds = new Set(posts.value.map((post) => post.id))
+    const newPosts = response.posts.filter((post) => !loadedPostIds.has(post.id)).map(toPostView)
+
+    posts.value.push(...newPosts)
+    postPagination.value = response.pagination
+  } catch (error: unknown) {
+    loadingMoreErrorMessage.value = getApiErrorMessage(error, '載入更多跑友動態失敗，請稍後再試。')
+  } finally {
+    isLoadingMore.value = false
+  }
+}
+
+const feedObserver = new IntersectionObserver(
+  (entries) => {
+    if (entries.some((entry) => entry.isIntersecting)) void loadMorePosts()
+  },
+  {
+    rootMargin: '0px 0px 320px',
+  },
+)
+
+watch(feedSentinel, (sentinel, previousSentinel) => {
+  if (previousSentinel) feedObserver.unobserve(previousSentinel)
+  if (sentinel) feedObserver.observe(sentinel)
+})
 
 function toPlazaEvent(event: RunningEventListItem): PlazaEvent {
   const statusPresentation = getEventStatusPresentation(event.status)
@@ -1210,8 +1303,13 @@ async function handleSubmitPost() {
         : {}),
     })
 
-    posts.value.unshift(toPostView(response.post))
-    totalPosts.value += 1
+    const createdPost = toPostView(response.post)
+
+    posts.value = [createdPost, ...posts.value.filter((post) => post.id !== createdPost.id)]
+    postPagination.value.total += 1
+    postPagination.value.totalPages = Math.ceil(
+      postPagination.value.total / postPagination.value.limit,
+    )
     postContent.value = ''
     clearPostImages()
   } catch (error: unknown) {
@@ -1402,7 +1500,11 @@ async function handleDeletePost(post: PlazaPostView) {
     await deletePost(post.id)
 
     posts.value = posts.value.filter((currentPost) => currentPost.id !== post.id)
-    totalPosts.value = Math.max(totalPosts.value - 1, 0)
+    postPagination.value.total = Math.max(postPagination.value.total - 1, 0)
+    postPagination.value.totalPages = Math.ceil(
+      postPagination.value.total / postPagination.value.limit,
+    )
+    postPagination.value.page = Math.max(postPagination.value.page - 1, 0)
     loadedCommentPostIds.value.delete(post.id)
     pendingPostLikeIds.value.delete(post.id)
 
@@ -1627,6 +1729,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  feedObserver.disconnect()
   revokePostImagePreviewUrls(selectedPostImages.value)
   revokePostImagePreviewUrls(selectedEditPostImages.value)
 })
@@ -1913,6 +2016,22 @@ onBeforeUnmount(() => {
 .post-list {
   display: grid;
   gap: var(--space-5);
+}
+
+.feed-sentinel {
+  min-height: var(--space-5);
+}
+
+.feed-pagination-state,
+.feed-load-more-error,
+.feed-end-message {
+  margin: 0;
+}
+
+.feed-end-message {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  text-align: center;
 }
 
 .post-card {
