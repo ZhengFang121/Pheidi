@@ -10,6 +10,7 @@ type IntroCharacter = {
   description: string
   portrait: string
   placement?: 'left' | 'right'
+  placementDistance?: 'default' | 'wide'
   hitArea?: 'full' | 'beginner' | 'pheidi' | 'ally'
   color?: 'primary' | 'secondary' | 'accent'
 }
@@ -143,9 +144,10 @@ const scenes: IntroScene[] = [
         character: {
           name: '菲迪',
           englishName: 'PHEIDI',
-          description: '傳說中的神秘跑者。\n他的足跡，似乎一直在引導你走向某個地方……',
+          description: '傳說中的神秘跑者。\n他的足跡，似乎一直在引導你走向某個地方 ...',
           portrait: '/images/profile photo/pheidi.png',
           placement: 'right',
+          placementDistance: 'wide',
           hitArea: 'pheidi',
           color: 'primary',
         },
@@ -877,6 +879,7 @@ onBeforeUnmount(() => {
               :description="layer.character.description"
               :portrait="layer.character.portrait"
               :placement="layer.character.placement"
+              :placement-distance="layer.character.placementDistance"
               :hit-area="layer.character.hitArea"
               :color="layer.character.color"
               :image="layer.image"
