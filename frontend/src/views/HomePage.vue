@@ -249,14 +249,28 @@ onUnmounted(() => {
   z-index: 1;
 }
 
-/* 日報與旅程卡片共用水平內距，垂直內距維持各元件原有設定。 */
+/* Hero 與旅程卡片共用主要內容邊界。 */
 .home-page :deep(.weather-newspaper),
 .home-page :deep(.journey-card) {
-  padding-inline: calc(var(--space-6) * 1.5);
+  padding: var(--space-8) calc(var(--space-6) * 1.5);
 }
 
 .home-progress {
   padding: var(--space-7) 0 0;
+}
+
+@media (max-width: 1100px), (max-height: 820px) {
+  .home-page :deep(.weather-newspaper),
+  .home-page :deep(.journey-card) {
+    padding-block: var(--space-6);
+  }
+}
+
+@media (max-width: 720px) {
+  .home-page :deep(.weather-newspaper),
+  .home-page :deep(.journey-card) {
+    padding-block: var(--space-5);
+  }
 }
 
 @media (max-width: 600px) {

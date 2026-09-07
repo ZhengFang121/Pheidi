@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { isAxiosError } from 'axios'
-import { ChevronLeft, ChevronRight } from '@lucide/vue'
+import { ChevronLeft, ChevronRight, Pencil, Trash2 } from '@lucide/vue'
 import Accordion from 'primevue/accordion'
 import AccordionContent from 'primevue/accordioncontent'
 import AccordionHeader from 'primevue/accordionheader'
@@ -648,30 +648,41 @@ watch(
                       </div>
                     </dl>
 
-                    <div class="station-record-actions">
-                      <BaseButton
+                    <div class="station-record-actions management-actions">
+                      <Button
                         type="button"
-                        label="編輯"
-                        icon="pi pi-pencil"
-                        variant="outline"
+                        severity="secondary"
+                        text
+                        rounded
                         size="small"
+                        class="management-button management-button--edit"
+                        aria-label="編輯跑步紀錄"
                         :disabled="deletingRunRecordId !== null"
                         @click="openEditDialog(runRecord)"
-                      />
+                      >
+                        <template #icon>
+                          <Pencil aria-hidden="true" />
+                        </template>
+                      </Button>
 
-                      <BaseButton
+                      <Button
                         type="button"
-                        label="刪除"
-                        icon="pi pi-trash"
-                        variant="outline"
+                        severity="danger"
+                        text
+                        rounded
                         size="small"
-                        class="station-record-delete-button"
+                        class="management-button management-button--delete"
+                        aria-label="刪除跑步紀錄"
                         :loading="deletingRunRecordId === runRecord.id"
                         :disabled="
                           deletingRunRecordId !== null && deletingRunRecordId !== runRecord.id
                         "
                         @click="confirmDeleteRunRecord(runRecord)"
-                      />
+                      >
+                        <template #icon>
+                          <Trash2 aria-hidden="true" />
+                        </template>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -998,31 +1009,10 @@ watch(
 }
 
 .station-record-actions {
-  display: flex;
   margin-top: auto;
   padding-top: var(--space-2);
-  flex-wrap: wrap;
-  gap: var(--space-2);
 
   border-top: 1px solid var(--color-border);
-}
-
-.station-record-actions :deep(.station-record-delete-button.base-button--outline) {
-  color: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
-.station-record-actions
-  :deep(.station-record-delete-button.base-button--outline:hover:not(:disabled)),
-.station-record-actions
-  :deep(.station-record-delete-button.base-button--outline:active:not(:disabled)) {
-  color: var(--color-surface);
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
-.station-record-actions :deep(.station-record-delete-button.base-button--outline:focus-visible) {
-  outline-color: var(--color-accent);
 }
 
 .station-record-details {
@@ -1335,9 +1325,5 @@ watch(
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .station-record-actions > :deep(.p-button) {
-    flex: 1 1 0;
-    justify-content: center;
-  }
 }
 </style>

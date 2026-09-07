@@ -264,7 +264,9 @@ const openStation = () => router.push({ name: 'station' })
           <BaseButton
             label="查看足跡"
             variant="primary"
-            class="journey-progress-card__cta"
+            icon="pi pi-arrow-right"
+            icon-pos="right"
+            class="journey-progress-card__cta card-cta"
             @click="openStation"
           />
         </footer>
@@ -436,6 +438,8 @@ const openStation = () => router.push({ name: 'station' })
 }
 
 .journey-progress-card {
+  --journey-progress-action-width: calc(var(--space-8) + var(--space-8) + var(--space-6));
+
   display: flex;
   flex-direction: column;
 }
@@ -450,6 +454,8 @@ const openStation = () => router.push({ name: 'station' })
 
 .journey-progress-card__level.p-tag {
   flex: 0 0 auto;
+  width: var(--journey-progress-action-width);
+  justify-content: center;
   border: 1px solid color-mix(in srgb, var(--color-secondary) 44%, transparent);
   background: color-mix(in srgb, var(--color-surface) 68%, transparent);
 }
@@ -620,12 +626,6 @@ const openStation = () => router.push({ name: 'station' })
   justify-content: flex-end;
 }
 
-.journey-progress-card__footer :deep(.journey-progress-card__cta.base-button) {
-  min-width: calc(var(--space-8) + var(--space-8) + var(--space-6));
-  min-height: 44px;
-  border-radius: var(--radius-full);
-}
-
 @media (max-width: 1100px), (max-height: 820px) {
   .journey-overview {
     gap: var(--space-5);
@@ -677,10 +677,6 @@ const openStation = () => router.push({ name: 'station' })
     grid-template-columns: 1fr;
   }
 
-  .journey-progress-card__footer :deep(.base-button) {
-    width: 100%;
-    min-height: 44px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
