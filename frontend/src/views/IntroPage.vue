@@ -2,6 +2,17 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import gsap from 'gsap'
 import BaseButton from '@/components/base/BaseButton.vue'
+import IntroCharacterCard from '@/components/intro/IntroCharacterCard.vue'
+
+type IntroCharacter = {
+  name: string
+  englishName: string
+  description: string
+  portrait: string
+  placement?: 'left' | 'right'
+  hitArea?: 'full' | 'beginner' | 'pheidi' | 'ally'
+  color?: 'primary' | 'secondary' | 'accent'
+}
 
 type IntroScene = {
   id: number
@@ -13,6 +24,7 @@ type IntroScene = {
     alt?: string
     className: string
     usesFallingAnchor?: boolean
+    character?: IntroCharacter
   }>
 }
 
@@ -24,7 +36,20 @@ const scenes: IntroScene[] = [
     text: '在《跑者菲迪 Pheidi the Runner》的世界裡\n有一位神祕的傳奇跑者 - 菲迪 Pheidi',
     showDaily: true,
     layers: [
-      { image: imagePath('working.png'), alt: '跑者一邊看著手機一邊前進', className: 'working' },
+      {
+        image: imagePath('working.png'),
+        alt: '跑者一邊看著手機一邊前進',
+        className: 'working',
+        character: {
+          name: '新手跑者',
+          englishName: 'BEGINNER RUNNER',
+          description: '剛踏上跑步旅程的你。\n從第一步開始，慢慢找到屬於自己的跑步節奏。',
+          portrait: '/images/profile photo/runner.png',
+          placement: 'right',
+          hitArea: 'beginner',
+          color: 'secondary',
+        },
+      },
     ],
   },
   {
@@ -115,6 +140,15 @@ const scenes: IntroScene[] = [
         image: imagePath('pheidi.png'),
         alt: '傳奇跑者菲迪出現在前方',
         className: 'pheidi pheidi--reveal',
+        character: {
+          name: '菲迪',
+          englishName: 'PHEIDI',
+          description: '傳說中的神秘跑者。\n他的足跡，似乎一直在引導你走向某個地方……',
+          portrait: '/images/profile photo/pheidi.png',
+          placement: 'right',
+          hitArea: 'pheidi',
+          color: 'primary',
+        },
       },
     ],
   },
@@ -160,6 +194,15 @@ const scenes: IntroScene[] = [
         image: imagePath('running-2.png'),
         alt: '跑者與夥伴阿里一起奔跑',
         className: 'running',
+        character: {
+          name: '阿里',
+          englishName: 'ALLY',
+          description: '陪伴新手跑者旅程的夥伴。\n在你需要的時候，總會出現在身邊。',
+          portrait: '/images/profile photo/ally.png',
+          placement: 'right',
+          hitArea: 'ally',
+          color: 'accent',
+        },
       },
     ],
   },
@@ -551,6 +594,9 @@ function handleWheel(event: WheelEvent) {
 }
 
 function handleKeydown(event: KeyboardEvent) {
+  if (event.target instanceof HTMLElement && event.target.closest('button, a, input, textarea')) {
+    return
+  }
   if (wheelNeedsQuiet && currentScene.value.id === 11 && event.repeat) return
   if (['ArrowDown', 'PageDown', ' '].includes(event.key)) {
     event.preventDefault()
@@ -800,6 +846,7 @@ onBeforeUnmount(() => {
         :aria-label="`故事第 ${currentStep} 段，共 ${scenes.length} 段`"
       >
         <header v-if="currentScene.showDaily" class="daily-header">
+          <p class="daily-header__eyebrow" lang="en">Pheidi Daily</p>
           <h2 class="daily-header__title">菲迪日報</h2>
           <time class="daily-header__date" :datetime="todayDateTime">{{ todayDisplay }}</time>
         </header>
@@ -822,6 +869,20 @@ onBeforeUnmount(() => {
             <div v-if="layer.usesFallingAnchor" class="story-layer falling-sequence-anchor">
               <img :src="layer.image" :alt="layer.alt ?? ''" :class="layer.className" />
             </div>
+            <IntroCharacterCard
+              v-else-if="layer.character"
+              class="story-layer"
+              :name="layer.character.name"
+              :english-name="layer.character.englishName"
+              :description="layer.character.description"
+              :portrait="layer.character.portrait"
+              :placement="layer.character.placement"
+              :hit-area="layer.character.hitArea"
+              :color="layer.character.color"
+              :image="layer.image"
+              :image-alt="layer.alt ?? ''"
+              :image-class="layer.className"
+            />
             <img
               v-else
               :src="layer.image"
@@ -1004,12 +1065,20 @@ onBeforeUnmount(() => {
 
 .daily-header {
   position: absolute;
-  top: clamp(var(--space-7), 12vh, 7.5rem);
+  top: calc(clamp(var(--space-7), 12vh, 7.5rem) - var(--space-4));
   left: 50%;
   z-index: 2;
   width: min(calc(100% - (var(--space-6) * 2)), 56rem);
   text-align: center;
   transform: translateX(-50%);
+}
+
+.daily-header__eyebrow {
+  margin: 0 0 var(--space-2);
+  color: var(--color-primary-soft);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-wide);
 }
 
 .daily-header__title {
@@ -1292,7 +1361,7 @@ onBeforeUnmount(() => {
     font-size: var(--font-size-sm);
   }
   .daily-header {
-    top: var(--space-7);
+    top: calc(var(--space-7) - var(--space-4));
     width: calc(100% - (var(--space-5) * 2));
   }
   .daily-header__title {
