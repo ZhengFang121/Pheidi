@@ -40,6 +40,8 @@ const todayDisplay = ref('')
 const todayDateTime = ref('')
 
 const progressProxy = { value: 0 }
+const CONTENT_REVEAL_START = 0.18
+const CONTENT_REVEAL_END = 0.74
 let targetProgress = 0
 let touchY: number | null = null
 let progressTo: ((value: number) => void) | null = null
@@ -57,7 +59,6 @@ let layoutGeometry = {
   finalScale: 1,
   revealY: 0,
   ruleScale: 1,
-  revealStart: 0,
 }
 
 // Grid 決定展開終點；只在尺寸改變時量測，避免每個動畫影格反覆讀取版面。
@@ -92,17 +93,6 @@ function measureLayout() {
   const finalScale = Math.min(slot.width / panelWidth, slot.height / panelHeight)
   const slotCenterX = slot.left - bounds.left + slot.width / 2
   const slotCenterY = slot.top - bounds.top + media.value.scrollTop + slot.height / 2
-  // Desktop 比對左右邊界，手機比對上下邊界，等日報讓出空間才淡入天氣。
-  const initialEdge = isMobile
-    ? bounds.height / 2 + (panelHeight * initialScale) / 2
-    : bounds.width / 2 + (panelWidth * initialScale) / 2
-  const finalEdge = isMobile
-    ? slotCenterY + (panelHeight * finalScale) / 2
-    : slotCenterX + (panelWidth * finalScale) / 2
-  const contentEdge = isMobile
-    ? media.value.clientTop + content.value.offsetTop
-    : media.value.clientLeft + content.value.offsetLeft
-
   layoutGeometry = {
     insetX,
     insetY,
@@ -110,10 +100,6 @@ function measureLayout() {
     dailyY: bounds.height / 2 - slotCenterY,
     initialScale,
     finalScale,
-    revealStart:
-      initialEdge > contentEdge && initialEdge > finalEdge
-        ? clamp((initialEdge - contentEdge) / (initialEdge - finalEdge))
-        : 0,
     revealY: parseFloat(getComputedStyle(content.value).rowGap),
     ruleScale: (panelWidth * initialScale) / topRule.value.offsetWidth,
   }
@@ -151,8 +137,9 @@ function renderProgress() {
   const progress = reducedMotion.value ? 1 : clamp(progressProxy.value)
   const remaining = 1 - progress
   const geometry = layoutGeometry
-  const contentProgress =
-    progress === 1 ? 1 : clamp((progress - geometry.revealStart) / (1 - geometry.revealStart))
+  const contentProgress = clamp(
+    (progress - CONTENT_REVEAL_START) / (CONTENT_REVEAL_END - CONTENT_REVEAL_START),
+  )
 
   gsap.set(media.value, {
     clipPath: `inset(${geometry.insetY * remaining}px ${geometry.insetX * remaining}px round var(--radius-xl))`,
