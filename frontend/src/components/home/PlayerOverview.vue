@@ -340,7 +340,7 @@ const remainingDistance = Math.max(
   margin: 0 0 6px;
   color: var(--color-primary);
   font-size: 0.7rem;
-  font-weight: var(--font-weight-b, 700);
+  font-weight: var(--font-weight-bold);
   letter-spacing: 0.16em;
 }
 
@@ -354,7 +354,7 @@ const remainingDistance = Math.max(
 .player-level {
   background: var(--color-primary-pale, #d4f9f4);
   color: var(--color-dark, #3c435e);
-  font-weight: var(--font-weight-b, 700);
+  font-weight: var(--font-weight-bold);
 }
 
 .recent-badges {

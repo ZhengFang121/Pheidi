@@ -23,13 +23,14 @@
 
   /* Letter Spacing */
   --letter-spacing-tight: 0.05em;
-  --letter-spacing-base: 0.1em;
+  --letter-spacing-base: normal;
   --letter-spacing-wide: 0.2em;
 }
 
 html,
 body {
   font-family: var(--font-family-base);
+  font-kerning: normal;
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-regular);
   line-height: var(--line-height-base);
@@ -41,4 +42,14 @@ body {
 
 #app {
   font-family: inherit;
+}
+
+button,
+input,
+textarea,
+select,
+option,
+optgroup,
+.p-component {
+  font-family: var(--font-family-base);
 }
