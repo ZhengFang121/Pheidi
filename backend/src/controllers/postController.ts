@@ -6,6 +6,7 @@ import cloudinary from '../configs/cloudinary.js'
 import Comment from '../models/Comment.js'
 import Post, { type IPostImage } from '../models/Post.js'
 import User from '../models/User.js'
+import { getRunnerLevelNamesByUserIds } from '../services/runnerProgressService.js'
 import { parsePositiveInteger } from '../utils/query.js'
 
 const defaultPage = 1
@@ -415,6 +416,7 @@ export const registerPostHandlers = (router: Router) => {
       })
 
       await post.populate('author', 'username')
+      const runnerLevelByUserId = await getRunnerLevelNamesByUserIds([req.user.userId])
 
       res.status(201).json({
         message: '貼文發布成功',
@@ -423,6 +425,7 @@ export const registerPostHandlers = (router: Router) => {
           content: post.content,
           images: toPostImages(post),
           author: post.author,
+          runnerLevel: runnerLevelByUserId.get(req.user.userId),
           likeCount: post.likedBy.length,
           isLiked: false,
           commentCount: 0,
@@ -490,6 +493,8 @@ export const registerPostHandlers = (router: Router) => {
       const commentCountByPostId = new Map(
         commentCounts.map(({ _id, count }) => [_id.toString(), count]),
       )
+      const authorIds = posts.map((post) => post.author._id.toString())
+      const runnerLevelByUserId = await getRunnerLevelNamesByUserIds(authorIds)
 
       res.status(200).json({
         message: '取得跑友動態成功',
@@ -498,6 +503,7 @@ export const registerPostHandlers = (router: Router) => {
           content: post.content,
           images: toPostImages(post),
           author: post.author,
+          runnerLevel: runnerLevelByUserId.get(post.author._id.toString()),
           likeCount: post.likedBy.length,
           isLiked: post.likedBy.some((userId) => userId.toString() === currentUserId),
           commentCount: commentCountByPostId.get(post._id.toString()) ?? 0,
@@ -616,6 +622,7 @@ export const registerPostHandlers = (router: Router) => {
 
       await post.save()
       await post.populate('author', 'username')
+      const runnerLevelByUserId = await getRunnerLevelNamesByUserIds([req.user.userId])
 
       if (removedImagePublicIds.length > 0) {
         await deleteCloudinaryImages(removedImagePublicIds)
@@ -628,6 +635,7 @@ export const registerPostHandlers = (router: Router) => {
           content: post.content,
           images: toPostImages(post),
           author: post.author,
+          runnerLevel: runnerLevelByUserId.get(req.user.userId),
           likeCount: post.likedBy.length,
           isLiked: post.likedBy.some((userId) => userId.toString() === req.user?.userId),
           commentCount,

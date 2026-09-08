@@ -1,7 +1,11 @@
 import mongoose, { Types } from 'mongoose'
 
 import { resolveBadgeKey } from '../constants/badges.js'
-import { RUNNER_LEVELS, type RunnerLevel } from '../constants/runnerLevels.js'
+import {
+  getRunnerLevelDefinition,
+  RUNNER_LEVELS,
+  type RunnerLevel,
+} from '../constants/runnerLevels.js'
 import RunRecord from '../models/RunRecord.js'
 import RunnerProgress from '../models/RunnerProgress.js'
 import UserBadge from '../models/UserBadge.js'
@@ -13,6 +17,41 @@ interface RunStatsAggregationResult {
   totalDistance: number
   distinctLocationCount: number
   completedPheidiMissionCount: number
+}
+
+interface StoredRunnerLevel {
+  user: Types.ObjectId
+  currentLevel: RunnerLevel
+}
+
+export const createRunnerLevelNameMap = (
+  userIds: readonly string[],
+  storedLevels: readonly StoredRunnerLevel[],
+) => {
+  const levelByUserId = new Map(
+    storedLevels.map(({ user, currentLevel }) => [user.toString(), currentLevel]),
+  )
+
+  return new Map(
+    userIds.map((userId) => [
+      userId,
+      getRunnerLevelDefinition(levelByUserId.get(userId) ?? 1).name,
+    ]),
+  )
+}
+
+export const getRunnerLevelNamesByUserIds = async (userIds: readonly string[]) => {
+  const uniqueUserIds = [...new Set(userIds)]
+
+  if (uniqueUserIds.length === 0) return new Map<string, string>()
+
+  const storedLevels = await RunnerProgress.find({
+    user: mongoose.trusted({ $in: uniqueUserIds }),
+  })
+    .select('user currentLevel')
+    .lean()
+
+  return createRunnerLevelNameMap(uniqueUserIds, storedLevels)
 }
 
 export const calculateHighestEligibleLevel = (stats: RunnerStats): RunnerLevel => {

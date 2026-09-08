@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
+import { Types } from 'mongoose'
 
 import { BADGE_DEFINITIONS, getBadgeStorageKeys, resolveBadgeKey } from '../src/constants/badges.js'
 import type { RunnerLevel } from '../src/constants/runnerLevels.js'
@@ -8,6 +9,7 @@ import { getEligibleBadgeKeys, hasFourWeekRunningStreak } from '../src/services/
 import {
   calculateHighestEligibleLevel,
   calculateLevelAfterRefresh,
+  createRunnerLevelNameMap,
   getNextLevelProgress,
   isPheidiMissionEligible,
 } from '../src/services/runnerProgressService.js'
@@ -230,6 +232,34 @@ describe('四週之約', () => {
 })
 
 describe('等級與 Lv.5 解鎖資格', () => {
+  it('以玩家目前儲存等級建立廣場階段名稱，缺少進度時 fallback 為 Lv.1', () => {
+    const noahId = '68be7ec52788b340adc615d7'
+    const miaId = '68be7ec52788b340adc615d8'
+    const noProgressId = '68be7ec52788b340adc615d9'
+
+    const levelOneMap = createRunnerLevelNameMap(
+      [noahId, miaId, noProgressId],
+      [
+        { user: new Types.ObjectId(noahId), currentLevel: 1 },
+        { user: new Types.ObjectId(miaId), currentLevel: 5 },
+      ],
+    )
+    const levelTwoMap = createRunnerLevelNameMap(
+      [noahId],
+      [{ user: new Types.ObjectId(noahId), currentLevel: 2 }],
+    )
+    const levelThreeMap = createRunnerLevelNameMap(
+      [noahId],
+      [{ user: new Types.ObjectId(noahId), currentLevel: 3 }],
+    )
+
+    assert.equal(levelOneMap.get(noahId), '啟程者')
+    assert.equal(levelTwoMap.get(noahId), '習跑者')
+    assert.equal(levelThreeMap.get(noahId), '冒險者')
+    assert.equal(levelOneMap.get(noProgressId), '啟程者')
+    assert.equal(levelOneMap.get(miaId), '菲迪同行者')
+  })
+
   it('依關卡條件計算最高可自動升等級', () => {
     assert.equal(calculateHighestEligibleLevel(createStats({ runCount: 5, totalDistance: 10 })), 2)
     assert.equal(

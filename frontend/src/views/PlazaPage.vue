@@ -902,7 +902,6 @@ interface PlazaCommentView extends ApiPostComment {
 }
 
 interface PlazaPostView extends ApiPlazaPost {
-  runnerLevel: string
   createdAtLabel: string
   comments: PlazaCommentView[]
 }
@@ -1041,7 +1040,6 @@ function formatPostDate(date: string) {
 function toPostView(post: ApiPlazaPost): PlazaPostView {
   return {
     ...post,
-    runnerLevel: '啟程者',
     createdAtLabel: formatPostDate(post.createdAt),
     comments: [],
   }

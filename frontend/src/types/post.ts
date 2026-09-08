@@ -16,6 +16,7 @@ export interface PlazaPost {
   content: string
   images: PostImage[]
   author: PostAuthor
+  runnerLevel: string
   likeCount: number
   isLiked: boolean
   commentCount: number
