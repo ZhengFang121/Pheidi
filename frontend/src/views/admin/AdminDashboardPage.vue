@@ -22,7 +22,7 @@
       </div>
     </Message>
 
-    <div v-if="isLoading" class="management-overview-grid">
+    <div v-if="isLoading && !statistics" class="management-overview-grid">
       <Skeleton
         v-for="index in 3"
         :key="index"
@@ -68,7 +68,25 @@
       </BaseCard>
     </div>
 
-    <div v-if="isLoading" class="trend-grid" aria-label="趨勢資料載入中">
+    <div class="trend-toolbar">
+      <div class="trend-period-field">
+        <label for="dashboard-period" class="form-field__label">統計期間</label>
+        <Select
+          v-model="selectedPeriod"
+          input-id="dashboard-period"
+          :options="periodOptions"
+          option-label="label"
+          option-value="value"
+          :loading="isLoading"
+          aria-describedby="dashboard-period-status"
+        />
+      </div>
+      <p id="dashboard-period-status" class="trend-period-status" role="status">
+        {{ isLoading ? '趨勢資料載入中…' : periodDescription }}
+      </p>
+    </div>
+
+    <div v-if="isLoading" class="trend-grid" aria-label="趨勢資料載入中" aria-busy="true">
       <Skeleton
         v-for="index in 3"
         :key="index"
@@ -85,19 +103,25 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import type { Component } from 'vue'
 import { RouterLink } from 'vue-router'
 import { isAxiosError } from 'axios'
 import { ArrowRight, Files, MessageSquareText, UsersRound } from '@lucide/vue'
 import Message from 'primevue/message'
 import Skeleton from 'primevue/skeleton'
+import Select from 'primevue/select'
 
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
 import AdminTrendCard from '@/components/admin/AdminTrendCard.vue'
 import { getAdminDashboard } from '@/services/adminDashboard'
-import type { AdminDashboardStatistics, AdminDashboardTrend } from '@/types/user'
+import type {
+  AdminDashboardPeriod,
+  AdminDashboardPeriodKey,
+  AdminDashboardStatistics,
+  AdminDashboardTrend,
+} from '@/types/user'
 
 interface ManagementModule {
   eyebrow: string
@@ -117,6 +141,26 @@ const statistics = ref<AdminDashboardStatistics | null>(null)
 const trend = ref<AdminDashboardTrend | null>(null)
 const isLoading = ref(false)
 const errorMessage = ref('')
+const periodStorageKey = 'pheidi-admin-dashboard-period'
+const periodOptions = [
+  { label: '最近 30 天', value: 'recent-30-days' },
+  { label: '2026 年 9 月', value: '2026-09' },
+]
+const readSavedPeriod = (): AdminDashboardPeriodKey => {
+  try {
+    return sessionStorage.getItem(periodStorageKey) === '2026-09' ? '2026-09' : 'recent-30-days'
+  } catch {
+    return 'recent-30-days'
+  }
+}
+const selectedPeriod = ref<AdminDashboardPeriodKey>(readSavedPeriod())
+const loadedPeriod = ref<AdminDashboardPeriod | null>(null)
+const periodDescription = computed(() => {
+  if (!loadedPeriod.value) return ''
+  const { startDate, endDate } = loadedPeriod.value
+  return `${startDate.replaceAll('-', '/')}～${endDate.replaceAll('-', '/')}（台灣時間）`
+})
+let requestId = 0
 
 const managementModules = computed<ManagementModule[]>(() => {
   if (!statistics.value) return []
@@ -169,6 +213,7 @@ const trendCards = computed(() => {
   const articlesTotal = trend.value.articles.reduce((sum, item) => sum + item.count, 0)
   const postsTotal = trend.value.plaza.reduce((sum, item) => sum + item.posts, 0)
   const commentsTotal = trend.value.plaza.reduce((sum, item) => sum + item.comments, 0)
+  const summaryPeriod = loadedPeriod.value?.key === '2026-09' ? '9 月' : '近 30 天'
 
   return [
     {
@@ -183,7 +228,7 @@ const trendCards = computed(() => {
           tone: 'primary' as const,
         },
       ],
-      summaryItems: [{ label: '近 30 天新增玩家', value: usersTotal }],
+      summaryItems: [{ label: `${summaryPeriod}新增玩家`, value: usersTotal }],
       valueUnit: '人' as const,
     },
     {
@@ -198,7 +243,7 @@ const trendCards = computed(() => {
           tone: 'primary' as const,
         },
       ],
-      summaryItems: [{ label: '近 30 天發布文章', value: articlesTotal }],
+      summaryItems: [{ label: `${summaryPeriod}發布文章`, value: articlesTotal }],
       valueUnit: '篇' as const,
     },
     {
@@ -228,15 +273,23 @@ const trendCards = computed(() => {
 })
 
 const loadDashboard = async () => {
+  const currentRequestId = ++requestId
   isLoading.value = true
   errorMessage.value = ''
+  trend.value = null
+  loadedPeriod.value = null
 
   try {
-    const response = await getAdminDashboard()
+    const response = await getAdminDashboard(selectedPeriod.value)
+
+    // 快速切換時，較早送出的回應不能覆蓋目前選擇。
+    if (currentRequestId !== requestId) return
 
     statistics.value = response.statistics
     trend.value = response.trend
+    loadedPeriod.value = response.period
   } catch (error: unknown) {
+    if (currentRequestId !== requestId) return
     if (isAxiosError(error)) {
       errorMessage.value =
         typeof error.response?.data?.message === 'string'
@@ -246,12 +299,25 @@ const loadDashboard = async () => {
       errorMessage.value = '無法取得儀表板資料，請稍後再試'
     }
   } finally {
-    isLoading.value = false
+    if (currentRequestId === requestId) isLoading.value = false
   }
 }
 
+watch(selectedPeriod, (period) => {
+  try {
+    sessionStorage.setItem(periodStorageKey, period)
+  } catch {
+    // 瀏覽器停用儲存空間時，仍允許切換與查詢。
+  }
+  void loadDashboard()
+})
+
 onMounted(() => {
   void loadDashboard()
+})
+
+onBeforeUnmount(() => {
+  requestId++
 })
 </script>
 
@@ -437,6 +503,24 @@ onMounted(() => {
 .management-card-details dd {
   margin: 0;
   font-weight: var(--font-weight-bold);
+}
+
+.trend-toolbar,
+.trend-period-field {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.trend-toolbar {
+  justify-content: space-between;
+}
+
+.trend-period-status {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
 }
 
 .trend-grid {

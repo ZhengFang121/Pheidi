@@ -7,51 +7,31 @@ import Post from '../models/Post.js'
 import User from '../models/User.js'
 import { parsePositiveInteger } from '../utils/query.js'
 import { escapeRegularExpression } from '../utils/regex.js'
+import { dashboardTimeZone, resolveDashboardPeriod } from '../utils/dashboardPeriod.js'
 
 
 const defaultPage = 1
 const defaultLimit = 10
 const maximumLimit = 50
 const mongoObjectIdPattern = /^[a-f\d]{24}$/i
-const dashboardTrendDays = 30
-const dashboardTimeZone = 'Asia/Taipei'
-const taipeiOffsetMilliseconds = 8 * 60 * 60 * 1000
 
 interface DailyCountAggregation {
   _id: string
   count: number
 }
 
-const getTaipeiDayStart = (date: Date) => {
-  const taipeiDate = new Date(date.getTime() + taipeiOffsetMilliseconds)
-  taipeiDate.setUTCHours(0, 0, 0, 0)
-
-  return new Date(taipeiDate.getTime() - taipeiOffsetMilliseconds)
-}
-
-const getDashboardDateKeys = (startDate: Date) =>
-  Array.from({ length: dashboardTrendDays }, (_, index) => {
-    const date = new Date(startDate.getTime() + index * 24 * 60 * 60 * 1000)
-
-    return new Intl.DateTimeFormat('en-CA', {
-      timeZone: dashboardTimeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(date)
-  })
-
 const getDailyCounts = async (
   model: typeof User | typeof Article | typeof Post | typeof Comment,
   dateField: 'createdAt' | 'publishedAt',
   startDate: Date,
+  endDate: Date,
   match: Record<string, unknown> = {},
 ) =>
   model.aggregate<DailyCountAggregation>([
     {
       $match: {
         ...match,
-        [dateField]: mongoose.trusted({ $gte: startDate }),
+        [dateField]: mongoose.trusted({ $gte: startDate, $lt: endDate }),
       },
     },
     {
@@ -107,13 +87,16 @@ router.get('/check', (_req, res) => {
   })
 })
 
-router.get('/dashboard', async (_req, res) => {
+router.get('/dashboard', async (req, res) => {
+  const period = resolveDashboardPeriod(req.query.period)
+
+  if (!period) {
+    res.status(400).json({ message: '統計期間無效，請選擇最近 30 天或 2026 年 9 月' })
+    return
+  }
+
   try {
-    const todayStart = getTaipeiDayStart(new Date())
-    const trendStart = new Date(
-      todayStart.getTime() - (dashboardTrendDays - 1) * 24 * 60 * 60 * 1000,
-    )
-    const trendDateKeys = getDashboardDateKeys(trendStart)
+    const trendDateKeys = period.dateKeys
     const [
       userStatistics,
       latestUsers,
@@ -138,10 +121,10 @@ router.get('/dashboard', async (_req, res) => {
       Article.countDocuments({ status: 'draft' }),
       Post.countDocuments(),
       Comment.countDocuments(),
-      getDailyCounts(User, 'createdAt', trendStart),
-      getDailyCounts(Article, 'publishedAt', trendStart, { status: 'published' }),
-      getDailyCounts(Post, 'createdAt', trendStart),
-      getDailyCounts(Comment, 'createdAt', trendStart),
+      getDailyCounts(User, 'createdAt', period.start, period.end),
+      getDailyCounts(Article, 'publishedAt', period.start, period.end, { status: 'published' }),
+      getDailyCounts(Post, 'createdAt', period.start, period.end),
+      getDailyCounts(Comment, 'createdAt', period.start, period.end),
     ])
 
     const filledPostTrend = fillDailyCounts(trendDateKeys, postTrend)
@@ -149,6 +132,7 @@ router.get('/dashboard', async (_req, res) => {
 
     res.status(200).json({
       message: '取得管理員儀表板資料成功',
+      period: period.metadata,
       statistics: {
         ...userStatistics,
         totalArticles,

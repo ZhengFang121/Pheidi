@@ -59,8 +59,19 @@ export interface AdminDashboardTrend {
   plaza: AdminDashboardPlazaDailyCount[]
 }
 
+export type AdminDashboardPeriodKey = 'recent-30-days' | '2026-09'
+
+export interface AdminDashboardPeriod {
+  key: AdminDashboardPeriodKey
+  label: string
+  startDate: string
+  endDate: string
+  timeZone: 'Asia/Taipei'
+}
+
 export interface AdminDashboardResponse {
   message: string
+  period: AdminDashboardPeriod
   statistics: AdminDashboardStatistics
   latestUsers: AdminLatestUser[]
   trend: AdminDashboardTrend
