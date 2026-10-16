@@ -847,12 +847,14 @@ onBeforeUnmount(() => {
         class="story-scene"
         :aria-label="`故事第 ${currentStep} 段，共 ${scenes.length} 段`"
       >
-        <header v-if="currentScene.showDaily" class="daily-header">
-          <p class="daily-header__eyebrow" lang="en">Pheidi Daily</p>
-          <h2 class="daily-header__title">菲迪日報</h2>
-          <time class="daily-header__date" :datetime="todayDateTime">{{ todayDisplay }}</time>
-        </header>
-        <div v-if="currentScene.showDaily" class="daily-divider" aria-hidden="true"></div>
+        <div v-if="currentScene.showDaily" class="daily-masthead">
+          <header class="daily-header">
+            <p class="daily-header__eyebrow" lang="en">Pheidi Daily</p>
+            <h2 class="daily-header__title">菲迪日報</h2>
+            <time class="daily-header__date" :datetime="todayDateTime">{{ todayDisplay }}</time>
+          </header>
+          <div class="daily-divider" aria-hidden="true"></div>
+        </div>
 
         <p
           v-if="currentScene.text"
@@ -1066,11 +1068,26 @@ onBeforeUnmount(() => {
   height: 100%;
 }
 
-.daily-header {
+.daily-masthead {
+  --daily-header-top: calc(clamp(var(--space-7), 12vh, 7.5rem) - var(--space-4));
+  --daily-divider-top: clamp(8.75rem, 23vh, 14.5rem);
+
   position: absolute;
-  top: calc(clamp(var(--space-7), 12vh, 7.5rem) - var(--space-4));
+  top: var(--daily-header-top);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  /* 保留原本橫線位置；內容變高時，由日期高度與最小間距撐開。 */
+  min-height: calc(var(--daily-divider-top) - var(--daily-header-top) + 1px);
+}
+
+.daily-header {
+  position: relative;
   left: 50%;
   z-index: 2;
+  flex: none;
   width: min(calc(100% - (var(--space-6) * 2)), 56rem);
   text-align: center;
   transform: translateX(-50%);
@@ -1105,12 +1122,13 @@ onBeforeUnmount(() => {
 }
 
 .daily-divider {
-  position: absolute;
-  top: clamp(8.75rem, 23vh, 14.5rem);
+  position: relative;
   left: 50%;
   z-index: 2;
+  flex: none;
   width: min(100%, 56rem);
   height: 1px;
+  margin-top: auto;
   background-color: var(--color-primary-soft);
   transform: translateX(-50%);
 }
@@ -1363,8 +1381,11 @@ onBeforeUnmount(() => {
     padding: var(--space-2) var(--space-4);
     font-size: var(--font-size-sm);
   }
+  .daily-masthead {
+    --daily-header-top: calc(var(--space-7) - var(--space-4));
+    --daily-divider-top: 8.5rem;
+  }
   .daily-header {
-    top: calc(var(--space-7) - var(--space-4));
     width: calc(100% - (var(--space-5) * 2));
   }
   .daily-header__title {
@@ -1374,7 +1395,6 @@ onBeforeUnmount(() => {
     font-size: var(--font-size-sm);
   }
   .daily-divider {
-    top: 8.5rem;
     width: calc(100% - (var(--space-5) * 2));
   }
   .story-text {
